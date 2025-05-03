@@ -1,4 +1,5 @@
-import { Switch, Route } from "wouter";
+import { Switch, Route, useLocation } from "wouter";
+import React, { useEffect } from "react";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -14,20 +15,30 @@ import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
-import { useAuth } from "./context/auth-context";
+import { useAuth, AuthProvider } from "./context/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 
-function ProtectedRoute({ component: Component, ...rest }: any) {
-  const { isAuthenticated, isDemoMode } = useAuth();
+function ProtectedRoute({ component: Component, params }: { component: React.ComponentType<any>, params: any }) {
+  const { isAuthenticated, isDemoMode, isLoading } = useAuth();
+  const [, navigate] = useLocation();
+  
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated && !isDemoMode) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isDemoMode, isLoading, navigate]);
+  
+  if (isLoading) {
+    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+  }
   
   if (!isAuthenticated && !isDemoMode) {
-    window.location.href = "/login";
     return null;
   }
   
-  return <Component {...rest} />;
+  return <Component params={params} />;
 }
 
 function AppLayout({ children }: { children: React.ReactNode }) {
@@ -56,16 +67,36 @@ function Router() {
     <AppLayout>
       <Switch>
         <Route path="/login" component={Login} />
-        <Route path="/" component={Dashboard} />
-        <Route path="/dashboard" component={Dashboard} />
-        <Route path="/patients" component={Patients} />
-        <Route path="/patients/:id" component={PatientProfile} />
-        <Route path="/appointments" component={Appointments} />
-        <Route path="/care-plans" component={CarePlans} />
-        <Route path="/care-plans/:id" component={CarePlanDetail} />
-        <Route path="/staff" component={Staff} />
-        <Route path="/reports" component={Reports} />
-        <Route path="/settings" component={Settings} />
+        <Route path="/">
+          {(params) => <ProtectedRoute component={Dashboard} params={params} />}
+        </Route>
+        <Route path="/dashboard">
+          {(params) => <ProtectedRoute component={Dashboard} params={params} />}
+        </Route>
+        <Route path="/patients">
+          {(params) => <ProtectedRoute component={Patients} params={params} />}
+        </Route>
+        <Route path="/patients/:id">
+          {(params) => <ProtectedRoute component={PatientProfile} params={params} />}
+        </Route>
+        <Route path="/appointments">
+          {(params) => <ProtectedRoute component={Appointments} params={params} />}
+        </Route>
+        <Route path="/care-plans">
+          {(params) => <ProtectedRoute component={CarePlans} params={params} />}
+        </Route>
+        <Route path="/care-plans/:id">
+          {(params) => <ProtectedRoute component={CarePlanDetail} params={params} />}
+        </Route>
+        <Route path="/staff">
+          {(params) => <ProtectedRoute component={Staff} params={params} />}
+        </Route>
+        <Route path="/reports">
+          {(params) => <ProtectedRoute component={Reports} params={params} />}
+        </Route>
+        <Route path="/settings">
+          {(params) => <ProtectedRoute component={Settings} params={params} />}
+        </Route>
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
@@ -76,8 +107,10 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <Toaster />
-        <Router />
+        <AuthProvider>
+          <Toaster />
+          <Router />
+        </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
