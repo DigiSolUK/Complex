@@ -15,6 +15,10 @@ import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
+// Import superadmin pages
+import SuperadminDashboard from "@/pages/superadmin/dashboard";
+import TenantManagement from "@/pages/superadmin/tenant-management";
+import TenantDetail from "@/pages/superadmin/tenant-detail";
 import { useAuth, AuthProvider } from "./context/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -97,6 +101,18 @@ function Router() {
         <Route path="/settings">
           {(params) => <ProtectedRoute component={Settings} params={params} />}
         </Route>
+        
+        {/* Superadmin Routes */}
+        <Route path="/superadmin/dashboard">
+          {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} />}
+        </Route>
+        <Route path="/superadmin/tenant-management">
+          {(params) => <ProtectedRoute component={TenantManagement} params={params} />}
+        </Route>
+        <Route path="/superadmin/tenants/:id">
+          {(params) => <ProtectedRoute component={TenantDetail} params={params} />}
+        </Route>
+        
         <Route component={NotFound} />
       </Switch>
     </AppLayout>
