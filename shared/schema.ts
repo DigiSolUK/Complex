@@ -25,7 +25,7 @@ export const users = pgTable("users", {
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
   email: text("email").notNull().unique(),
-  role: text("role", { enum: ["admin", "care_staff", "patient"] }).notNull().default("care_staff"),
+  role: text("role", { enum: ["superadmin", "admin", "care_staff", "patient"] }).notNull().default("care_staff"),
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });

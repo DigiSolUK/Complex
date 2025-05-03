@@ -11,11 +11,14 @@ import {
   BarChart2,
   Settings,
   AlertCircle,
+  Building2,
+  Shield,
+  Layers,
 } from "lucide-react";
 
 export function Sidebar() {
   const [location] = useLocation();
-  const { user, isDemoMode } = useAuth();
+  const { user, isDemoMode, isAdmin, isSuperAdmin } = useAuth();
 
   const isActive = (path: string) => {
     return location === path || (path !== "/" && location.startsWith(path));

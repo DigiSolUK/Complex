@@ -6,6 +6,8 @@ interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
   isDemoMode: boolean;
+  isSuperAdmin: boolean;
+  isAdmin: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   enterDemoMode: () => Promise<void>;
@@ -18,6 +20,8 @@ const AuthContext = createContext<AuthContextType>({
   user: null,
   isAuthenticated: false,
   isDemoMode: false,
+  isSuperAdmin: false,
+  isAdmin: false,
   login: async () => {},
   logout: async () => {},
   enterDemoMode: async () => {},
@@ -116,12 +120,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     localStorage.removeItem("demoMode");
   };
 
+  // Check if user is superadmin or admin
+  const isSuperAdmin = !!user && user.role === "superadmin";
+  const isAdmin = !!user && (user.role === "admin" || user.role === "superadmin");
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isAuthenticated: !!user,
         isDemoMode,
+        isSuperAdmin,
+        isAdmin,
         login,
         logout,
         enterDemoMode,
