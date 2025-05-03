@@ -454,9 +454,9 @@ export default function TenantManagement() {
                 <div>
                   <dt className="text-muted-foreground">Subscription</dt>
                   <dd className="font-medium">
-                    <Badge variant={getTierBadgeVariant(tenant.subscriptionTier)} className="capitalize">
+                    <StatusBadge variant={getTierBadgeVariant(tenant.subscriptionTier)} className="capitalize">
                       {tenant.subscriptionTier}
-                    </Badge>
+                    </StatusBadge>
                   </dd>
                 </div>
                 <div>

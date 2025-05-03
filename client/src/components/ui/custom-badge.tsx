@@ -18,15 +18,20 @@ const statusVariants = cva("", {
   },
 });
 
-interface StatusBadgeProps extends BadgeProps {
-  variant?: "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
-}
+type StatusVariant = "default" | "secondary" | "destructive" | "outline" | "success" | "warning";
 
-export function StatusBadge({ className, variant, ...props }: StatusBadgeProps) {
+export function StatusBadge({ 
+  className, 
+  variant, 
+  children, 
+  ...props 
+}: Omit<BadgeProps, "variant"> & { variant?: StatusVariant }) {
   return (
     <Badge 
-      className={cn(statusVariants({ variant }), className)} 
+      className={cn(statusVariants({ variant: variant as any }), className)} 
       {...props} 
-    />
+    >
+      {children}
+    </Badge>
   );
 }

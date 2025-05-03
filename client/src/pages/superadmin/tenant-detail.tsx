@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/custom-badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -202,9 +203,9 @@ export default function TenantDetail() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold capitalize flex items-center">
-              <Badge variant={tenant.status === "active" ? "success" : "destructive"} className="mr-2 capitalize">
+              <StatusBadge variant={tenant.status === "active" ? "success" : "destructive"} className="mr-2 capitalize">
                 {tenant.status}
-              </Badge>
+              </StatusBadge>
             </div>
             <p className="text-xs text-muted-foreground">Since {formatDate(tenant.createdAt)}</p>
           </CardContent>
