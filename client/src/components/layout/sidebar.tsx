@@ -39,7 +39,9 @@ export function Sidebar() {
         <div className="ml-3">
           <p className="text-sm font-medium">{user?.name || "Dr. Sarah Johnson"}</p>
           <p className="text-xs text-neutral-500">
-            {user?.role === "admin"
+            {user?.role === "superadmin"
+              ? "System Administrator"
+              : user?.role === "admin"
               ? "Administrator"
               : user?.role === "care_staff"
               ? "Care Staff"
@@ -141,6 +143,44 @@ export function Sidebar() {
               Settings
             </a>
           </Link>
+          
+          {/* Superadmin Navigation Section */}
+          {(isAdmin || isSuperAdmin) && (
+            <>
+              <div className="mt-6 pt-4 border-t border-neutral-200">
+                <h3 className="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  System Administration
+                </h3>
+                <div className="mt-2 space-y-1">
+                  <Link href="/superadmin/dashboard">
+                    <a
+                      className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                        isActive("/superadmin/dashboard")
+                          ? "bg-primary-50 text-primary-700"
+                          : "text-neutral-700 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <Shield className="h-5 w-5 mr-3" />
+                      Admin Dashboard
+                    </a>
+                  </Link>
+                  
+                  <Link href="/superadmin/tenant-management">
+                    <a
+                      className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${
+                        isActive("/superadmin/tenant-management") || isActive("/superadmin/tenants/")
+                          ? "bg-primary-50 text-primary-700"
+                          : "text-neutral-700 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <Building2 className="h-5 w-5 mr-3" />
+                      Tenant Management
+                    </a>
+                  </Link>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </nav>
 

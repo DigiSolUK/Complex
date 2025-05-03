@@ -37,7 +37,7 @@ const loginFormSchema = z.object({
 
 export default function Login() {
   const [, navigate] = useLocation();
-  const { login, enterDemoMode, error, isLoading } = useAuth();
+  const { login, enterDemoMode, error, isLoading, isAdmin, isSuperAdmin } = useAuth();
   const [demoLoading, setDemoLoading] = useState(false);
 
   const form = useForm<z.infer<typeof loginFormSchema>>({
@@ -51,7 +51,15 @@ export default function Login() {
   async function onSubmit(data: z.infer<typeof loginFormSchema>) {
     try {
       await login(data.username, data.password);
-      navigate("/dashboard");
+      
+      // Check the user role after login and redirect accordingly
+      if (isSuperAdmin) {
+        navigate("/superadmin/dashboard");
+      } else if (isAdmin) {
+        navigate("/superadmin/dashboard"); // Admins also see the admin dashboard
+      } else {
+        navigate("/dashboard"); // Regular users go to the main dashboard
+      }
     } catch (error) {
       console.error("Login failed:", error);
     }

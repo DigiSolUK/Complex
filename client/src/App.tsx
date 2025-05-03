@@ -24,21 +24,32 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 
-function ProtectedRoute({ component: Component, params }: { component: React.ComponentType<any>, params: any }) {
-  const { isAuthenticated, isDemoMode, isLoading } = useAuth();
+function ProtectedRoute({ component: Component, params, requireAdmin = false }: { component: React.ComponentType<any>, params: any, requireAdmin?: boolean }) {
+  const { isAuthenticated, isDemoMode, isLoading, isAdmin, isSuperAdmin } = useAuth();
   const [, navigate] = useLocation();
   
   useEffect(() => {
-    if (!isLoading && !isAuthenticated && !isDemoMode) {
-      navigate('/login');
+    if (!isLoading) {
+      // Check authentication
+      if (!isAuthenticated && !isDemoMode) {
+        navigate('/login');
+      } 
+      // Check admin access for protected routes
+      else if (requireAdmin && !isAdmin) {
+        navigate('/dashboard'); // Redirect non-admin users
+      }
     }
-  }, [isAuthenticated, isDemoMode, isLoading, navigate]);
+  }, [isAuthenticated, isDemoMode, isLoading, isAdmin, requireAdmin, navigate]);
   
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
   
   if (!isAuthenticated && !isDemoMode) {
+    return null;
+  }
+  
+  if (requireAdmin && !isAdmin) {
     return null;
   }
   
@@ -104,13 +115,13 @@ function Router() {
         
         {/* Superadmin Routes */}
         <Route path="/superadmin/dashboard">
-          {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} />}
+          {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} requireAdmin={true} />}
         </Route>
         <Route path="/superadmin/tenant-management">
-          {(params) => <ProtectedRoute component={TenantManagement} params={params} />}
+          {(params) => <ProtectedRoute component={TenantManagement} params={params} requireAdmin={true} />}
         </Route>
         <Route path="/superadmin/tenants/:id">
-          {(params) => <ProtectedRoute component={TenantDetail} params={params} />}
+          {(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />}
         </Route>
         
         <Route component={NotFound} />
