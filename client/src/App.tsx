@@ -35,11 +35,11 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
         navigate('/login');
       } 
       // Check admin access for protected routes
-      else if (requireAdmin && !isAdmin) {
+      else if (requireAdmin && !isAdmin && !isSuperAdmin) {
         navigate('/dashboard'); // Redirect non-admin users
       }
     }
-  }, [isAuthenticated, isDemoMode, isLoading, isAdmin, requireAdmin, navigate]);
+  }, [isAuthenticated, isDemoMode, isLoading, isAdmin, isSuperAdmin, requireAdmin, navigate]);
   
   if (isLoading) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
@@ -49,7 +49,7 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
     return null;
   }
   
-  if (requireAdmin && !isAdmin) {
+  if (requireAdmin && !isAdmin && !isSuperAdmin) {
     return null;
   }
   
