@@ -1,0 +1,138 @@
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { User } from "@shared/schema";
+import { apiRequest } from "@/lib/queryClient";
+
+interface AuthContextType {
+  user: User | null;
+  isAuthenticated: boolean;
+  isDemoMode: boolean;
+  login: (username: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  enterDemoMode: () => Promise<void>;
+  exitDemoMode: () => void;
+  isLoading: boolean;
+  error: string | null;
+}
+
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isAuthenticated: false,
+  isDemoMode: false,
+  login: async () => {},
+  logout: async () => {},
+  enterDemoMode: async () => {},
+  exitDemoMode: () => {},
+  isLoading: true,
+  error: null,
+});
+
+export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const [user, setUser] = useState<User | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkAuth = async () => {
+      try {
+        const res = await fetch("/api/auth/me", {
+          credentials: "include",
+        });
+
+        if (res.ok) {
+          const userData = await res.json();
+          setUser(userData);
+        }
+      } catch (err) {
+        console.error("Authentication check failed:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    // Check if demo mode is active from localStorage
+    const storedDemoMode = localStorage.getItem("demoMode") === "true";
+    if (storedDemoMode) {
+      setIsDemoMode(true);
+      setIsLoading(false);
+    } else {
+      checkAuth();
+    }
+  }, []);
+
+  const login = async (username: string, password: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const res = await apiRequest("POST", "/api/auth/login", {
+        username,
+        password,
+      });
+      const userData = await res.json();
+      setUser(userData);
+      // Clear demo mode if it was active
+      if (isDemoMode) {
+        setIsDemoMode(false);
+        localStorage.removeItem("demoMode");
+      }
+    } catch (err) {
+      setError("Login failed. Please check your credentials and try again.");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    setIsLoading(true);
+    try {
+      await apiRequest("POST", "/api/auth/logout", {});
+      setUser(null);
+    } catch (err) {
+      console.error("Logout failed:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const enterDemoMode = async () => {
+    setIsLoading(true);
+    try {
+      setIsDemoMode(true);
+      localStorage.setItem("demoMode", "true");
+      setUser(null);
+    } catch (err) {
+      console.error("Entering demo mode failed:", err);
+      setIsDemoMode(false);
+      localStorage.removeItem("demoMode");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const exitDemoMode = () => {
+    setIsDemoMode(false);
+    localStorage.removeItem("demoMode");
+  };
+
+  return (
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isDemoMode,
+        login,
+        logout,
+        enterDemoMode,
+        exitDemoMode,
+        isLoading,
+        error,
+      }}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
+}
+
+export const useAuth = () => useContext(AuthContext);
