@@ -1,8 +1,25 @@
-import { pgTable, text, serial, integer, boolean, timestamp, json } from "drizzle-orm/pg-core";
+import { pgTable, text, serial, integer, boolean, timestamp, json, jsonb, numeric } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
 // User and authentication
+export const tenants = pgTable("tenants", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  domain: text("domain").notNull(),
+  status: text("status", { enum: ["active", "inactive", "suspended", "trial"] }).notNull().default("active"),
+  subscriptionTier: text("subscription_tier", { enum: ["standard", "professional", "enterprise"] }).notNull().default("standard"),
+  userLimit: integer("user_limit").notNull().default(10),
+  lastActivity: timestamp("last_activity"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  logo: text("logo"),
+  contactEmail: text("contact_email").notNull(),
+  contactName: text("contact_name").notNull(),
+  contactPhone: text("contact_phone"),
+  billingInfo: text("billing_info"),
+  metadata: json("metadata"),
+});
+
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
@@ -143,3 +160,36 @@ export type CarePlan = typeof carePlans.$inferSelect;
 
 export type InsertActivityLog = z.infer<typeof insertActivityLogSchema>;
 export type ActivityLog = typeof activityLogs.$inferSelect;
+
+export const subscriptions = pgTable("subscriptions", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  plan: text("plan", { enum: ["standard", "professional", "enterprise"] }).notNull(),
+  status: text("status", { enum: ["active", "canceled", "past_due", "pending"] }).notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  paymentMethod: text("payment_method"),
+  paymentId: text("payment_id"),
+  amount: integer("amount"),
+  currency: text("currency").default("USD"),
+  billingCycle: text("billing_cycle", { enum: ["monthly", "quarterly", "annual"] }),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const insertTenantSchema = createInsertSchema(tenants).omit({
+  id: true,
+  createdAt: true,
+  lastActivity: true,
+});
+
+export const insertSubscriptionSchema = createInsertSchema(subscriptions).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertTenant = z.infer<typeof insertTenantSchema>;
+export type Tenant = typeof tenants.$inferSelect;
+
+export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
+export type Subscription = typeof subscriptions.$inferSelect;
