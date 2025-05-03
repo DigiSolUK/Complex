@@ -5,6 +5,8 @@ import { auth } from "./auth";
 import { cryptoService } from "./crypto";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema } from "@shared/schema";
+import aiRoutes from "./routes/ai";
+
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication middleware
@@ -554,6 +556,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "An error occurred while updating settings" });
     }
   });
+
+  // AI route handler
+  app.use('/api/ai', aiRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);

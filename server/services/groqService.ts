@@ -1,12 +1,14 @@
-import { Groq } from 'groq';
+import fetch from 'node-fetch';
 
 class GroqService {
-  private client: Groq;
+  private apiKey: string;
+  private baseUrl: string = 'https://api.groq.com/openai/v1';
 
   constructor() {
-    this.client = new Groq({
-      apiKey: process.env.GROQ_API_KEY,
-    });
+    this.apiKey = process.env.XAI_API_KEY || '';
+    if (!this.apiKey) {
+      console.warn('GroqService: XAI_API_KEY environment variable is not set');
+    }
   }
 
   /**
@@ -24,17 +26,30 @@ class GroqService {
         ${JSON.stringify(patientData, null, 2)}
       `;
 
-      const response = await this.client.chat.completions.create({
-        model: "llama3-70b-8192",
-        messages: [
-          { role: "system", content: "You are an expert healthcare advisor providing evidence-based care plan recommendations for complex patients." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.3,
-        max_tokens: 1024,
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama3-70b-8192",
+          messages: [
+            { role: "system", content: "You are an expert healthcare advisor providing evidence-based care plan recommendations for complex patients." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.3,
+          max_tokens: 1024,
+        })
       });
 
-      return response.choices[0]?.message?.content || "Could not generate care plan recommendation";
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Groq API error: ${error.error?.message || JSON.stringify(error)}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "Could not generate care plan recommendation";
     } catch (error) {
       console.error("Error generating care plan recommendation:", error);
       throw new Error("Failed to generate care plan recommendation");
@@ -60,18 +75,31 @@ class GroqService {
         ${notes}
       `;
 
-      const response = await this.client.chat.completions.create({
-        model: "llama3-70b-8192",
-        messages: [
-          { role: "system", content: "You are a clinical documentation expert that extracts structured information from clinical notes." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.1,
-        max_tokens: 800,
-        response_format: { type: "json_object" }
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama3-70b-8192",
+          messages: [
+            { role: "system", content: "You are a clinical documentation expert that extracts structured information from clinical notes." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1,
+          max_tokens: 800,
+          response_format: { type: "json_object" }
+        })
       });
 
-      const content = response.choices[0]?.message?.content || "{}";
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Groq API error: ${error.error?.message || JSON.stringify(error)}`);
+      }
+
+      const data = await response.json();
+      const content = data.choices[0]?.message?.content || "{}";
       return JSON.parse(content);
     } catch (error) {
       console.error("Error analyzing patient notes:", error);
@@ -96,17 +124,30 @@ class GroqService {
         - Follow-up instructions
       `;
 
-      const response = await this.client.chat.completions.create({
-        model: "llama3-70b-8192",
-        messages: [
-          { role: "system", content: "You are a healthcare documentation specialist who creates concise, accurate clinical summaries." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 500
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama3-70b-8192",
+          messages: [
+            { role: "system", content: "You are a healthcare documentation specialist who creates concise, accurate clinical summaries." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 500
+        })
       });
 
-      return response.choices[0]?.message?.content || "Could not generate appointment summary";
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Groq API error: ${error.error?.message || JSON.stringify(error)}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "Could not generate appointment summary";
     } catch (error) {
       console.error("Error generating appointment summary:", error);
       throw new Error("Failed to generate appointment summary");
@@ -130,17 +171,30 @@ class GroqService {
         - Recommendations for care plan adjustments
       `;
 
-      const response = await this.client.chat.completions.create({
-        model: "llama3-70b-8192",
-        messages: [
-          { role: "system", content: "You are a clinical data analyst who identifies meaningful health trends and provides actionable insights." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.2,
-        max_tokens: 800
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama3-70b-8192",
+          messages: [
+            { role: "system", content: "You are a clinical data analyst who identifies meaningful health trends and provides actionable insights." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.2,
+          max_tokens: 800
+        })
       });
 
-      return response.choices[0]?.message?.content || "Could not analyze health trends";
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Groq API error: ${error.error?.message || JSON.stringify(error)}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "Could not analyze health trends";
     } catch (error) {
       console.error("Error analyzing health trends:", error);
       throw new Error("Failed to analyze health trends");
