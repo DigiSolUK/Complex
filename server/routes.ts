@@ -12,7 +12,10 @@ import tenantRoutes from "./routes/superadmin/tenants";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Set up authentication middleware
-  app.use(auth.initialize());
+  const authMiddlewares = auth.initialize();
+  authMiddlewares.forEach(middleware => {
+    app.use(middleware);
+  });
   
   // Auth Routes
   app.post("/api/auth/login", auth.authenticateLocal, (req, res) => {

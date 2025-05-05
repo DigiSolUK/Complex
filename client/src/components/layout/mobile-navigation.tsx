@@ -13,8 +13,8 @@ export function MobileNavigation() {
     <div className="lg:hidden fixed bottom-0 left-0 right-0 border-t border-neutral-200 bg-white">
       <div className="flex justify-around">
         <Link href="/dashboard">
-          <a
-            className={`flex flex-col items-center py-3 px-2 ${
+          <div
+            className={`flex flex-col items-center py-3 px-2 cursor-pointer ${
               isActive("/") || isActive("/dashboard")
                 ? "text-primary-600"
                 : "text-neutral-600"
@@ -22,29 +22,29 @@ export function MobileNavigation() {
           >
             <Home className="h-6 w-6" />
             <span className="text-xs">Dashboard</span>
-          </a>
+          </div>
         </Link>
 
         <Link href="/patients">
-          <a
-            className={`flex flex-col items-center py-3 px-2 ${
+          <div
+            className={`flex flex-col items-center py-3 px-2 cursor-pointer ${
               isActive("/patients") ? "text-primary-600" : "text-neutral-600"
             }`}
           >
             <Users className="h-6 w-6" />
             <span className="text-xs">Patients</span>
-          </a>
+          </div>
         </Link>
 
         <Link href="/appointments">
-          <a
-            className={`flex flex-col items-center py-3 px-2 ${
+          <div
+            className={`flex flex-col items-center py-3 px-2 cursor-pointer ${
               isActive("/appointments") ? "text-primary-600" : "text-neutral-600"
             }`}
           >
             <Calendar className="h-6 w-6" />
             <span className="text-xs">Appointments</span>
-          </a>
+          </div>
         </Link>
 
         <button
