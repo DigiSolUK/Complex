@@ -8,6 +8,7 @@ interface AuthContextType {
   isDemoMode: boolean;
   isSuperAdmin: boolean;
   isAdmin: boolean;
+  tenantId: number | null;
   login: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   enterDemoMode: () => Promise<void>;
@@ -22,6 +23,7 @@ const AuthContext = createContext<AuthContextType>({
   isDemoMode: false,
   isSuperAdmin: false,
   isAdmin: false,
+  tenantId: null,
   login: async () => {},
   logout: async () => {},
   enterDemoMode: async () => {},
@@ -133,6 +135,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Check if user is superadmin or admin
   const isSuperAdmin = !!user && user.role === "superadmin";
   const isAdmin = !!user && (user.role === "admin" || user.role === "superadmin");
+  
+  // Extract tenantId from user
+  const tenantId = user?.tenantId || null;
 
   return (
     <AuthContext.Provider
@@ -142,6 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isDemoMode,
         isSuperAdmin,
         isAdmin,
+        tenantId,
         login,
         logout,
         enterDemoMode,
