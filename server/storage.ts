@@ -1457,11 +1457,22 @@ export class DatabaseStorage implements IStorage {
   
   // Tenant methods
   async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
-    const [tenant] = await db
-      .insert(tenants)
-      .values(insertTenant)
-      .returning();
-    return tenant;
+    try {
+      // Make sure metadata exists to avoid schema validation errors
+      const tenantWithMetadata = {
+        ...insertTenant,
+        metadata: insertTenant.metadata || {}
+      };
+      
+      const [tenant] = await db
+        .insert(tenants)
+        .values(tenantWithMetadata)
+        .returning();
+      return tenant;
+    } catch (error) {
+      console.error('Error creating tenant:', error);
+      throw error;
+    }
   }
 
   async updateTenant(id: number, tenantData: InsertTenant): Promise<Tenant> {

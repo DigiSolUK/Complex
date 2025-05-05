@@ -70,11 +70,33 @@ router.get("/tenants/:id", auth.isAuthenticated, requireSuperAdmin, async (req: 
 // Create tenant
 router.post("/tenants", auth.isAuthenticated, requireSuperAdmin, async (req: Request, res: Response) => {
   try {
+    console.log('Create tenant request body:', req.body);
+    
+    // Validate tenant data and add metadata field if not present
+    let tenantData = req.body;
+    if (!tenantData.metadata) {
+      tenantData.metadata = {};
+    }
+    
+    // If themeColors not provided, add default values
+    if (!tenantData.themeColors) {
+      tenantData.themeColors = {
+        primary: "#0070f3",
+        secondary: "#6c757d",
+        accent: "#f59e0b",
+        background: "#ffffff",
+        text: "#000000",
+        success: "#10b981",
+        warning: "#f59e0b",
+        error: "#ef4444"
+      };
+    }
+    
     // Validate tenant data
-    const tenantData = insertTenantSchema.parse(req.body);
+    const validatedData = insertTenantSchema.parse(tenantData);
     
     // Create tenant in database
-    const tenant = await storage.createTenant(tenantData);
+    const tenant = await storage.createTenant(validatedData);
     
     // Add userCount and plan for backward compatibility
     const enhancedTenant = {
@@ -83,6 +105,7 @@ router.post("/tenants", auth.isAuthenticated, requireSuperAdmin, async (req: Req
       plan: tenant.subscriptionTier
     };
     
+    console.log('Tenant created successfully:', enhancedTenant.id);
     res.status(201).json(enhancedTenant);
   } catch (error) {
     console.error("Create tenant error:", error);
