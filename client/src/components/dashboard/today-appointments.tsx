@@ -68,10 +68,8 @@ export function TodayAppointments({
                     </span>
                   </div>
                   <div className="flex-1 min-w-0">
-                    <Link href={`/patients/${appointment.patientId}`}>
-                      <a className="text-sm font-medium text-neutral-900 truncate hover:text-primary-600">
-                        {appointment.patientName}
-                      </a>
+                    <Link href={`/patients/${appointment.patientId}`} className="text-sm font-medium text-neutral-900 truncate hover:text-primary-600">
+                      {appointment.patientName}
                     </Link>
                     <p className="text-sm text-neutral-500 truncate">
                       {appointment.purpose}
@@ -95,8 +93,8 @@ export function TodayAppointments({
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem>
-                          <Link href={`/appointments/${appointment.id}`}>
-                            <a className="w-full">View Details</a>
+                          <Link href={`/appointments/${appointment.id}`} className="w-full">
+                            View Details
                           </Link>
                         </DropdownMenuItem>
                         {appointment.status !== "Confirmed" && (

@@ -156,6 +156,9 @@ export default function PatientProfile({ params }: { params: { id: string } }) {
     await updateMutation.mutateAsync(data);
   };
 
+  // Use combined loading state from all queries
+  const isLoading = isLoadingPatient || isLoadingAppointments || isLoadingCarePlans;
+  
   if (isLoading) {
     return (
       <div className="flex justify-center mt-8">
