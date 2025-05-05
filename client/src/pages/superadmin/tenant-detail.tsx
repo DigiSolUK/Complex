@@ -17,15 +17,7 @@ export default function TenantDetail() {
   // Fetch tenant details
   const { data: tenant, isLoading, error } = useQuery({
     queryKey: [`/api/superadmin/tenants/${tenantId}`],
-    enabled: !!tenantId,
-    onError: (error: Error, suspend) => {
-      toast({
-        title: "Error",
-        description: error.message || "Failed to load tenant details",
-        variant: "destructive",
-      });
-      suspend; // Prevent retries
-    },
+    enabled: !!tenantId
   });
 
   const handleGoBack = () => {

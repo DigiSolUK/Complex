@@ -90,62 +90,7 @@ export default function TenantManagement() {
 
   // Fetch tenants data
   const { data: tenants, isLoading, error } = useQuery({
-    queryKey: ["/api/superadmin/tenants"],
-    queryFn: () => [
-      // Mock data until API is implemented
-      { 
-        id: 1, 
-        name: "ComplexCare Medical Group", 
-        domain: "complexcare.dev",
-        status: "active", 
-        subscriptionTier: "enterprise",
-        userLimit: 150,
-        lastActivity: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        contactEmail: "admin@complexcare.dev",
-        contactName: "John Smith",
-        contactPhone: "+1234567890",
-      },
-      { 
-        id: 2, 
-        name: "Ubercare Health Services", 
-        domain: "ubercare.dev",
-        status: "active", 
-        subscriptionTier: "professional",
-        userLimit: 75,
-        lastActivity: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        contactEmail: "admin@ubercare.dev",
-        contactName: "Sarah Johnson",
-        contactPhone: "+1987654321",
-      },
-      { 
-        id: 3, 
-        name: "MediCare Solutions", 
-        domain: "medicare.dev",
-        status: "trial", 
-        subscriptionTier: "standard",
-        userLimit: 30,
-        lastActivity: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        contactEmail: "admin@medicare.dev",
-        contactName: "Michael Brown",
-        contactPhone: "+1555123456",
-      },
-      { 
-        id: 4, 
-        name: "HealthFirst Clinic", 
-        domain: "healthfirst.dev",
-        status: "suspended", 
-        subscriptionTier: "professional",
-        userLimit: 50,
-        lastActivity: new Date().toISOString(),
-        createdAt: new Date().toISOString(),
-        contactEmail: "admin@healthfirst.dev",
-        contactName: "Lisa Wilson",
-        contactPhone: "+1555987654",
-      },
-    ]
+    queryKey: ["/api/superadmin/tenants"]
   });
 
   // Create tenant mutation
