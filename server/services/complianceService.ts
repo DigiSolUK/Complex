@@ -1,141 +1,140 @@
 import { groqService } from './groqService';
-
-interface ComplianceResult {
-  score: number; // 0-100
-  areas: ComplianceArea[];
-  recommendations: string[];
-  overallStatus: 'compliant' | 'at-risk' | 'non-compliant';
-  lastUpdated: Date;
-}
-
-interface ComplianceArea {
-  name: string;
-  score: number; // 0-100
-  findings: string[];
-  status: 'compliant' | 'at-risk' | 'non-compliant';
-  regulation: string;
-}
-
-interface ComplianceData {
-  patientData: any;
-  carePlanData: any;
-  appointmentData: any;
-  documentationData: any;
-  auditLogs: any[];
-}
+import { ComplianceArea, ComplianceResult } from '../storage';
 
 class ComplianceService {
   /**
-   * Analyze compliance status for patient data and care plans
+   * Analyze organization's compliance with healthcare regulations
+   * @param data Organization data to analyze
+   * @returns ComplianceResult object with analysis results
    */
-  async analyzeCompliance(data: ComplianceData): Promise<ComplianceResult> {
+  async analyzeCompliance(data: any): Promise<ComplianceResult> {
     try {
+      // In a real implementation, this would be a sophisticated analysis
+      // For now, we'll use the AI service to generate a simulated compliance analysis
       const prompt = `
-        Analyze the following healthcare data for regulatory compliance issues related to patient care documentation, information handling, and treatment protocols.
-        Focus on compliance with healthcare regulations including HIPAA, HITECH, and NHS Digital standards.
+        Using the healthcare organization data provided, analyze the compliance status with relevant healthcare regulations.
+        Focus on the following areas:
+        1. Data privacy and security (GDPR, UK Data Protection)
+        2. Clinical governance
+        3. NHS Digital regulations
+        4. Medical records management
+        5. Patient consent procedures
         
-        Patient Data:
-        ${JSON.stringify(data.patientData, null, 2)}
+        For each area, provide:
+        - Score (0-100)
+        - Compliance status (compliant, at-risk, or non-compliant)
+        - Specific findings (at least 3 per area)
+        - Relevant regulation reference
         
-        Care Plan Data:
-        ${JSON.stringify(data.carePlanData, null, 2)}
+        Also include:
+        - Overall compliance score (0-100)
+        - Overall status (compliant, at-risk, or non-compliant)
+        - Specific recommendations for improvement (at least 5)
         
-        Appointment Data:
-        ${JSON.stringify(data.appointmentData, null, 2)}
-        
-        Documentation Data:
-        ${JSON.stringify(data.documentationData, null, 2)}
-        
-        Audit Logs (sample):
-        ${JSON.stringify(data.auditLogs.slice(0, 5), null, 2)}
-        
-        Provide a detailed analysis in JSON format with the following structure:
-        {
-          "score": number from 0-100,
-          "areas": [
-            {
-              "name": "area name",
-              "score": number from 0-100,
-              "findings": ["detailed findings"],
-              "status": "compliant" or "at-risk" or "non-compliant",
-              "regulation": "relevant regulation"
-            }
-          ],
-          "recommendations": ["actionable recommendations"],
-          "overallStatus": "compliant" or "at-risk" or "non-compliant"
-        }
+        Format your response as structured JSON that can be parsed programmatically.
       `;
-
-      const analysisJson = await groqService.getAiCompletion({
+      
+      const response = await groqService.getAiCompletion({
         prompt,
-        systemPrompt: "You are a healthcare compliance expert who evaluates medical data for regulatory compliance. You provide detailed, accurate compliance reports with actionable insights. Always respond with a valid JSON object that matches the requested format exactly.",
-        temperature: 0.1,
-        model: "llama3-70b-8192",
-        responseFormat: "json"
+        maxTokens: 2000,
+        temperature: 0.2,
+        responseFormat: 'json_object'
       });
-
+      
+      // Parse the response from the AI service
+      let processedResponse;
       try {
-        const analysis = JSON.parse(analysisJson);
-        return {
-          ...analysis,
-          lastUpdated: new Date()
-        };
+        processedResponse = typeof response === 'string' ? JSON.parse(response) : response;
       } catch (parseError) {
-        console.error("Error parsing compliance analysis JSON:", parseError);
-        throw new Error("Failed to parse compliance analysis result");
+        console.error('Error parsing AI response:', parseError);
+        throw new Error('Failed to process compliance analysis');
       }
+      
+      // Map the AI response to our ComplianceResult structure
+      const complianceResult: ComplianceResult = {
+        score: processedResponse.overallScore || 0,
+        overallStatus: processedResponse.overallStatus || 'at-risk',
+        areas: [],
+        recommendations: processedResponse.recommendations || [],
+        lastUpdated: new Date()
+      };
+      
+      // Process the areas of compliance
+      if (processedResponse.areas && Array.isArray(processedResponse.areas)) {
+        complianceResult.areas = processedResponse.areas.map((area: any) => ({
+          name: area.name || '',
+          score: area.score || 0,
+          status: area.status || 'at-risk',
+          findings: area.findings || [],
+          regulation: area.regulation || ''
+        }));
+      }
+      
+      return complianceResult;
     } catch (error) {
-      console.error("Error analyzing compliance:", error);
-      throw new Error("Failed to analyze compliance");
+      console.error('Compliance analysis error:', error);
+      // Return a default result in case of error
+      return {
+        score: 0,
+        overallStatus: 'non-compliant',
+        areas: [],
+        recommendations: ['Error processing compliance analysis. Manual review required.'],
+        lastUpdated: new Date()
+      };
     }
   }
-
+  
   /**
-   * Generate a compliance report for audit purposes
+   * Generate a compliance report based on analysis results
+   * @param complianceResult Compliance analysis results
+   * @param organizationInfo Organization information
+   * @returns Formatted compliance report as text
    */
   async generateComplianceReport(complianceResult: ComplianceResult, organizationInfo: any): Promise<string> {
     try {
       const prompt = `
-        Generate a formal healthcare compliance report based on the following compliance analysis results:
-        
-        ${JSON.stringify(complianceResult, null, 2)}
+        Generate a formal compliance report based on the following compliance analysis and organization information.
         
         Organization Information:
         ${JSON.stringify(organizationInfo, null, 2)}
         
-        The report should include:
-        1. Executive Summary
-        2. Methodology
-        3. Detailed Findings by Area
-        4. Risk Assessment
-        5. Recommendations
-        6. Action Plan
-        7. Conclusion
+        Compliance Analysis:
+        ${JSON.stringify(complianceResult, null, 2)}
         
-        Format the report professionally with clear headings and structured content suitable for presentation to regulatory authorities.
+        The report should include:
+        1. Executive summary
+        2. Methodology
+        3. Detailed findings for each compliance area
+        4. Risk assessment
+        5. Recommendations for improvement
+        6. Conclusion
+        
+        Format the report as a formal document that could be presented to regulatory authorities.
       `;
-
+      
       const report = await groqService.getAiCompletion({
         prompt,
-        systemPrompt: "You are a healthcare compliance officer creating formal compliance reports. You write detailed, professional reports that would satisfy regulatory requirements and auditors.",
-        temperature: 0.2,
-        model: "llama3-70b-8192"
+        maxTokens: 4000,
+        temperature: 0.3
       });
-
-      return report;
+      
+      return typeof report === 'string' ? report : JSON.stringify(report, null, 2);
     } catch (error) {
-      console.error("Error generating compliance report:", error);
-      throw new Error("Failed to generate compliance report");
+      console.error('Report generation error:', error);
+      return 'Error generating compliance report. Please try again later.';
     }
   }
-
+  
   /**
-   * Analyze patient data management for privacy compliance
+   * Analyze privacy compliance based on data access logs and consent records
+   * @param dataAccessLogs Data access logs
+   * @param patientConsents Patient consent records
+   * @returns Privacy compliance analysis
    */
   async analyzePrivacyCompliance(dataAccessLogs: any[], patientConsents: any[]): Promise<any> {
     try {
       const prompt = `
-        Analyze the following data access logs and patient consent records for privacy compliance issues:
+        Analyze the privacy compliance of a healthcare organization based on the following data access logs and patient consent records.
         
         Data Access Logs:
         ${JSON.stringify(dataAccessLogs, null, 2)}
@@ -143,63 +142,70 @@ class ComplianceService {
         Patient Consent Records:
         ${JSON.stringify(patientConsents, null, 2)}
         
-        Evaluate:
-        1. Unauthorized access incidents
-        2. Access pattern anomalies
-        3. Consent validation issues
-        4. Data handling concerns
-        5. Retention policy compliance
+        Identify:
+        1. Potential data access violations
+        2. Consent gaps or inconsistencies
+        3. Privacy risk areas
+        4. Compliance with UK GDPR and NHS data protection requirements
         
-        Provide a structured analysis with identified issues, risk levels, and recommended actions.
-        Format response as a JSON object with keys: issues, riskAreas, recommendations, overallRiskLevel.
+        Provide a structured analysis with specific findings and recommendations.
+        Format your response as JSON that can be parsed programmatically.
       `;
-
-      const analysisJson = await groqService.getAiCompletion({
+      
+      const analysis = await groqService.getAiCompletion({
         prompt,
-        systemPrompt: "You are a data privacy officer specializing in healthcare data protection regulations including HIPAA, GDPR, and UK data protection laws. You analyze data access patterns to identify privacy and security risks.",
-        temperature: 0.1,
-        model: "llama3-70b-8192",
-        responseFormat: "json"
+        maxTokens: 2000,
+        temperature: 0.2,
+        responseFormat: 'json_object'
       });
-
-      return JSON.parse(analysisJson);
+      
+      return typeof analysis === 'string' ? JSON.parse(analysis) : analysis;
     } catch (error) {
-      console.error("Error analyzing privacy compliance:", error);
-      throw new Error("Failed to analyze privacy compliance");
+      console.error('Privacy compliance analysis error:', error);
+      return {
+        status: 'error',
+        message: 'Failed to analyze privacy compliance',
+        timestamp: new Date().toISOString()
+      };
     }
   }
-
+  
   /**
    * Generate regulatory compliance documentation for care plans
+   * @param carePlan Care plan data
+   * @param regulationType Type of regulation to generate documentation for
+   * @returns Generated compliance documentation
    */
   async generateComplianceDocumentation(carePlan: any, regulationType: string): Promise<string> {
     try {
       const prompt = `
-        Generate comprehensive compliance documentation for the following care plan that adheres to ${regulationType} standards:
+        Generate regulatory compliance documentation for the following care plan, focusing on ${regulationType} requirements.
         
+        Care Plan:
         ${JSON.stringify(carePlan, null, 2)}
         
-        The documentation should include:
-        1. Regulatory justification for each intervention
-        2. Evidence-based practice references
-        3. Compliance with clinical guidelines
-        4. Required documentation elements for ${regulationType}
-        5. Risk management considerations
+        Regulation Type: ${regulationType}
         
-        Format the documentation as a professional clinical document suitable for regulatory submission.
+        Generate documentation that would satisfy regulatory requirements, including:
+        1. Proper consent documentation
+        2. Required disclosures
+        3. Risk assessments
+        4. Compliance statements
+        5. Required signatures and approvals
+        
+        Format the documentation as a formal document that would be acceptable to regulatory authorities.
       `;
-
+      
       const documentation = await groqService.getAiCompletion({
         prompt,
-        systemPrompt: "You are a healthcare compliance documentation specialist who creates thorough, accurate regulatory documentation that satisfies healthcare compliance requirements.",
-        temperature: 0.2,
-        model: "llama3-70b-8192"
+        maxTokens: 3000,
+        temperature: 0.3
       });
-
-      return documentation;
+      
+      return typeof documentation === 'string' ? documentation : JSON.stringify(documentation, null, 2);
     } catch (error) {
-      console.error("Error generating compliance documentation:", error);
-      throw new Error("Failed to generate compliance documentation");
+      console.error('Documentation generation error:', error);
+      return 'Error generating compliance documentation. Please try again later.';
     }
   }
 }

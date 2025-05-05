@@ -167,6 +167,10 @@ function Router() {
           {(params) => <ProtectedRoute component={Settings} params={params} />}
         </Route>
         
+        <Route path="/compliance-dashboard">
+          {(params) => <ProtectedRoute component={ComplianceDashboard} params={params} requireAdmin={true} />}
+        </Route>
+        
         {/* Superadmin Routes */}
         <Route path="/superadmin/dashboard">
           {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} requireAdmin={true} />}

@@ -13,8 +13,6 @@ router.use(auth.hasRole(['admin', 'superadmin']));
  */
 router.get('/latest', async (req, res) => {
   try {
-    // In a real implementation, this would fetch the latest compliance result from the database
-    // For now, we'll return a sample result or null if none exists
     const latestAnalysis = await storage.getLatestComplianceAnalysis();
     
     if (!latestAnalysis) {
@@ -40,6 +38,10 @@ router.post('/analyze', async (req, res) => {
     }
     
     const complianceResult = await complianceService.analyzeCompliance(complianceData);
+    
+    // Save the analysis results
+    await storage.saveComplianceAnalysis(complianceResult);
+    
     res.json(complianceResult);
   } catch (error) {
     console.error('Error analyzing compliance:', error);
@@ -101,6 +103,20 @@ router.post('/generate-documentation', async (req, res) => {
   } catch (error) {
     console.error('Error generating compliance documentation:', error);
     res.status(500).json({ error: 'Failed to generate compliance documentation' });
+  }
+});
+
+/**
+ * Get compliance history
+ */
+router.get('/history', async (req, res) => {
+  try {
+    const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+    const history = await storage.getComplianceHistory(limit);
+    res.json(history);
+  } catch (error) {
+    console.error('Error fetching compliance history:', error);
+    res.status(500).json({ error: 'Failed to fetch compliance history' });
   }
 });
 

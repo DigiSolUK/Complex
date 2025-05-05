@@ -982,6 +982,37 @@ export class MemStorage implements IStorage {
     this.tenants.set(tenantId, updatedTenant);
     return updatedTenant;
   }
+  
+  // Compliance methods
+  async getLatestComplianceAnalysis(): Promise<ComplianceResult | null> {
+    if (this.complianceAnalyses.length === 0) {
+      return null;
+    }
+    
+    // Sort by date and return the most recent one
+    return [...this.complianceAnalyses].sort(
+      (a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+    )[0];
+  }
+  
+  async saveComplianceAnalysis(analysis: ComplianceResult): Promise<ComplianceResult> {
+    // Ensure the lastUpdated field is set to now if not provided
+    if (!analysis.lastUpdated) {
+      analysis.lastUpdated = new Date();
+    }
+    
+    // Add to the beginning of the array for faster retrieval of recent analyses
+    this.complianceAnalyses.unshift(analysis);
+    
+    return analysis;
+  }
+  
+  async getComplianceHistory(limit: number = 10): Promise<ComplianceResult[]> {
+    // Return the most recent analyses up to the limit
+    return [...this.complianceAnalyses]
+      .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
+      .slice(0, limit);
+  }
 }
 
 import connectPg from "connect-pg-simple";
@@ -1418,6 +1449,40 @@ export class DatabaseStorage implements IStorage {
     }
     
     return tenant;
+  }
+  
+  // Compliance methods
+  async getLatestComplianceAnalysis(): Promise<ComplianceResult | null> {
+    try {
+      // In a real implementation, we would query the database for the latest compliance analysis
+      // For now, we'll return null to indicate no analysis is available
+      return null;
+    } catch (error) {
+      console.error('Error getting latest compliance analysis:', error);
+      return null;
+    }
+  }
+  
+  async saveComplianceAnalysis(analysis: ComplianceResult): Promise<ComplianceResult> {
+    try {
+      // In a real implementation, we would store the analysis in the database
+      // For now, we'll just return the analysis as is
+      return analysis;
+    } catch (error) {
+      console.error('Error saving compliance analysis:', error);
+      throw new Error('Failed to save compliance analysis');
+    }
+  }
+  
+  async getComplianceHistory(limit: number = 10): Promise<ComplianceResult[]> {
+    try {
+      // In a real implementation, we would query the database for the compliance history
+      // For now, we'll return an empty array to indicate no history is available
+      return [];
+    } catch (error) {
+      console.error('Error getting compliance history:', error);
+      return [];
+    }
   }
 }
 
