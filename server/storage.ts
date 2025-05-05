@@ -14,6 +14,22 @@ import session from 'express-session';
 import MemoryStore from 'memorystore';
 
 // Define storage interface with all required methods
+export interface ComplianceArea {
+  name: string;
+  score: number;
+  findings: string[];
+  status: 'compliant' | 'at-risk' | 'non-compliant';
+  regulation: string;
+}
+
+export interface ComplianceResult {
+  score: number;
+  areas: ComplianceArea[];
+  recommendations: string[];
+  overallStatus: 'compliant' | 'at-risk' | 'non-compliant';
+  lastUpdated: Date;
+}
+
 export interface IStorage {
   // Session store
   sessionStore: session.Store;
@@ -80,6 +96,11 @@ export interface IStorage {
   updateNhsIntegration(id: number, integration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration>;
   updateNhsIntegrationLastVerified(id: number): Promise<NhsDigitalIntegration>;
   updateTenantNhsIntegration(tenantId: number, enabled: boolean): Promise<Tenant>;
+  
+  // Compliance methods
+  getLatestComplianceAnalysis(): Promise<ComplianceResult | null>;
+  saveComplianceAnalysis(analysis: ComplianceResult): Promise<ComplianceResult>;
+  getComplianceHistory(limit?: number): Promise<ComplianceResult[]>;
 }
 
 // In-memory storage implementation
@@ -92,6 +113,7 @@ export class MemStorage implements IStorage {
   private activityLogs: Map<number, ActivityLog>;
   private tenants: Map<number, Tenant>;
   private nhsIntegrations: Map<number, NhsDigitalIntegration>;
+  private complianceAnalyses: ComplianceResult[] = [];
   
   currentId: {
     users: number;

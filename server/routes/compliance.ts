@@ -1,11 +1,32 @@
 import express from 'express';
 import { complianceService } from '../services/complianceService';
 import { auth } from '../auth';
+import { storage } from '../storage';
 
 const router = express.Router();
 
 // Middleware to check authentication - require admin or higher for compliance features
 router.use(auth.hasRole(['admin', 'superadmin']));
+
+/**
+ * Get the latest compliance analysis, if any
+ */
+router.get('/latest', async (req, res) => {
+  try {
+    // In a real implementation, this would fetch the latest compliance result from the database
+    // For now, we'll return a sample result or null if none exists
+    const latestAnalysis = await storage.getLatestComplianceAnalysis();
+    
+    if (!latestAnalysis) {
+      return res.status(404).json({ error: 'No compliance analysis found' });
+    }
+    
+    res.json(latestAnalysis);
+  } catch (error) {
+    console.error('Error fetching latest compliance analysis:', error);
+    res.status(500).json({ error: 'Failed to fetch latest compliance analysis' });
+  }
+});
 
 /**
  * Analyze organizational compliance status based on healthcare data

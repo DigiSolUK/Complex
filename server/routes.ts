@@ -863,6 +863,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI route handler
   app.use('/api/ai', aiRoutes);
 
+  // Compliance routes
+  app.use('/api/compliance', complianceRoutes);
+
   // SuperAdmin routes
   app.use('/api/superadmin', nhsDigitalRoutes);
   app.use('/api/superadmin', tenantRoutes);
