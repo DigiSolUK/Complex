@@ -77,17 +77,17 @@ class Auth {
     // Create session middleware
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
-      resave: false,
-      saveUninitialized: false,
+      resave: true,
+      saveUninitialized: true,
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,
         secure: false, // Set to false for development, true for production
         path: "/",
-        sameSite: "lax"
+        sameSite: "none"
       },
       store: storage.sessionStore, // Use database session store
-      name: "complexcare.session",
+      name: "complexcare.sid",
     });
 
     return [sessionMiddleware, passport.initialize(), passport.session()];
