@@ -9,6 +9,7 @@ import aiRoutes from "./routes/ai";
 import complianceRoutes from "./routes/compliance";
 import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
 import tenantRoutes from "./routes/superadmin/tenants";
+import tenantThemeRoutes from "./routes/tenant-theme";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -908,6 +909,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // SuperAdmin routes
   app.use('/api/superadmin', nhsDigitalRoutes);
   app.use('/api/superadmin', tenantRoutes);
+  
+  // Tenant theme routes
+  app.use(tenantThemeRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);

@@ -20,6 +20,20 @@ export const tenants = pgTable("tenants", {
   metadata: json("metadata"),
   // NHS Digital API integration settings
   nhsIntegrationEnabled: boolean("nhs_integration_enabled").default(false),
+  // Theme settings
+  themeColors: json("theme_colors").default({
+    primary: "#0070f3",
+    secondary: "#6c757d",
+    accent: "#f59e0b",
+    background: "#ffffff",
+    text: "#000000",
+    success: "#10b981",
+    warning: "#f59e0b",
+    error: "#ef4444",
+  }),
+  themeName: text("theme_name").default("default"),
+  themeDarkMode: boolean("theme_dark_mode").default(false),
+  themeCustomCss: text("theme_custom_css"),
 });
 
 export const users = pgTable("users", {
