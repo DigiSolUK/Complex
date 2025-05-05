@@ -126,7 +126,7 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCustomCss(null);
       setIsInitialized(true);
     }
-  }, [tenantId]);
+  }, [tenantId, setThemeName, setThemeColors, setIsDarkMode, setCustomCss, setIsInitialized]);
 
   // Fetch tenant theme on mount if user is authenticated
   useEffect(() => {
@@ -135,12 +135,8 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [isInitialized, fetchTenantTheme]);
 
-  // Apply theme colors to CSS variables whenever they change
-  useEffect(() => {
-    applyThemeToDOM();
-  }, [themeColors, isDarkMode, customCss]);
-
-  const applyThemeToDOM = () => {
+  // Memoize applyThemeToDOM to prevent unnecessary rerenders
+  const applyThemeToDOM = useCallback(() => {
     const root = document.documentElement;
     const colors = isDarkMode && themeName === 'default' ? darkThemeColors : themeColors;
 
@@ -167,7 +163,12 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (styleTag) {
       styleTag.textContent = customCss || '';
     }
-  };
+  }, [themeColors, isDarkMode, customCss, themeName]);
+
+  // Apply theme colors to CSS variables whenever they change
+  useEffect(() => {
+    applyThemeToDOM();
+  }, [applyThemeToDOM]);
 
   const setTheme = (name: string) => {
     setThemeName(name);
