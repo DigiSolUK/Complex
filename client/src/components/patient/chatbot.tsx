@@ -1,12 +1,12 @@
+import { useState, useEffect, FormEvent } from "react";
+import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { Loader2, Send, Bot, User, RefreshCw } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest, queryClient } from "@/lib/queryClient";
-import { useMutation, useQuery } from "@tanstack/react-query";
-import { MessageCircle, SendHorizontal } from "lucide-react";
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { format } from "date-fns";
 
 type Message = {
   type: "patient" | "assistant";
@@ -20,168 +20,200 @@ interface ChatbotProps {
 
 export function Chatbot({ patientId }: ChatbotProps) {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [message, setMessage] = useState("");
   const [messages, setMessages] = useState<Message[]>([]);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [isTyping, setIsTyping] = useState(false);
 
-  // Fetch chat history on component mount
+  // Fetch chat history
   const { data: chatHistory, isLoading: isLoadingHistory } = useQuery({
-    queryKey: [`/api/patient-chatbot/history/${patientId}`],
-    enabled: !!patientId, 
+    queryKey: ["/api/patient-chatbot/history", patientId],
+    enabled: !!patientId,
   });
 
-  // Scroll to bottom of messages when a new message is added
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
-  // Load chat history when available
-  useEffect(() => {
-    if (chatHistory?.success && chatHistory.history?.length > 0) {
-      const formattedMessages = chatHistory.history.map((msg: any) => ([
-        {
-          type: "patient",
-          content: msg.patientMessage,
-          timestamp: new Date(msg.timestamp),
-        },
-        {
-          type: "assistant",
-          content: msg.aiResponse,
-          timestamp: new Date(msg.timestamp),
-        }
-      ])).flat();
-      
-      setMessages(formattedMessages);
-    }
-  }, [chatHistory]);
-
   // Send message mutation
-  const chatMutation = useMutation({
-    mutationFn: async (newMessage: string) => {
+  const sendMessageMutation = useMutation({
+    mutationFn: async (message: string) => {
       const response = await apiRequest("POST", "/api/patient-chatbot/chat", {
         patientId,
-        message: newMessage,
+        message,
       });
-      return await response.json();
+      return response.json();
     },
     onSuccess: (data) => {
-      if (data.success) {
-        setMessages([...messages, {
+      // If the response was successful, update the messages state with the AI's response
+      if (data.success && data.response) {
+        setMessages((prev) => [...prev, {
           type: "assistant",
           content: data.response,
           timestamp: new Date(),
         }]);
+        
+        // Invalidate the chat history query to refetch updated messages
+        queryClient.invalidateQueries({ queryKey: ["/api/patient-chatbot/history", patientId] });
       } else {
+        // Handle error responses that might still return a 200 status code
         toast({
           title: "Error",
-          description: "Failed to get a response from the healthcare assistant",
+          description: data.message || "Failed to get a response from the assistant.",
           variant: "destructive",
         });
       }
+      setIsTyping(false);
     },
     onError: (error) => {
+      console.error("Error sending message:", error);
       toast({
-        title: "Error",
-        description: "Something went wrong. Please try again later.",
+        title: "Message Failed",
+        description: "There was an error sending your message. Please try again.",
         variant: "destructive",
       });
-      console.error("Chat error:", error);
+      setIsTyping(false);
     },
   });
+
+  // Load chat history when it changes
+  useEffect(() => {
+    if (chatHistory?.success && chatHistory.history) {
+      const formattedMessages = chatHistory.history.map((msg: any) => ({
+        type: msg.type,
+        content: msg.content,
+        timestamp: new Date(msg.timestamp),
+      }));
+      setMessages(formattedMessages);
+    }
+  }, [chatHistory]);
 
   // Handle form submission
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!message.trim()) return;
 
-    // Add user message to the messages list
-    const newMessages = [...messages, {
+    // Add patient message to the UI immediately
+    const patientMessage: Message = {
       type: "patient",
       content: message,
       timestamp: new Date(),
-    }];
+    };
+    setMessages((prev) => [...prev, patientMessage]);
     
-    setMessages(newMessages);
-    chatMutation.mutate(message);
-    setMessage(""); // Clear the input field
+    // Show typing indicator
+    setIsTyping(true);
+    
+    // Send message to API
+    sendMessageMutation.mutate(message);
+    
+    // Clear input
+    setMessage("");
   };
 
-  // Render loading state if history is loading
-  if (isLoadingHistory) {
-    return (
-      <Card className="w-full h-[600px] flex flex-col">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <MessageCircle className="mr-2 h-5 w-5" />
-            Healthcare Assistant
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="flex-1 overflow-y-auto p-4">
-          <div className="flex justify-center items-center h-full">
-            <p className="text-muted-foreground">Loading conversation history...</p>
-          </div>
-        </CardContent>
-      </Card>
-    );
-  }
+  // Function to refresh the chat history
+  const refreshChatHistory = () => {
+    queryClient.invalidateQueries({ queryKey: ["/api/patient-chatbot/history", patientId] });
+    toast({
+      title: "Refreshed",
+      description: "Chat history has been refreshed.",
+    });
+  };
 
   return (
-    <Card className="w-full h-[600px] flex flex-col">
-      <CardHeader>
-        <CardTitle className="flex items-center">
-          <MessageCircle className="mr-2 h-5 w-5" />
-          Healthcare Assistant
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="flex-1 overflow-y-auto p-4">
-        {messages.length === 0 ? (
-          <div className="flex flex-col justify-center items-center h-full space-y-3">
-            <p className="text-muted-foreground text-center">
-              Welcome to your personal healthcare assistant. <br />
-              How can I help you today?
+    <Card className="flex flex-col h-[600px]">
+      <div className="flex items-center justify-between border-b p-4">
+        <div className="flex items-center">
+          <Bot className="h-5 w-5 mr-2 text-primary" />
+          <h3 className="font-semibold">Patient Support Assistant</h3>
+        </div>
+        <Button variant="ghost" size="icon" onClick={refreshChatHistory} title="Refresh chat history">
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      {/* Chat messages */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {isLoadingHistory ? (
+          <div className="flex items-center justify-center h-full">
+            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            <span className="ml-2 text-muted-foreground">Loading conversation history...</span>
+          </div>
+        ) : messages.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full text-center">
+            <Bot className="h-12 w-12 text-primary/20 mb-3" />
+            <h3 className="font-medium mb-1">How can I help you today?</h3>
+            <p className="text-sm text-muted-foreground max-w-md">
+              I'm here to assist with care plan questions, health information, and support. Our conversation is private and secure.
             </p>
           </div>
         ) : (
-          <div className="space-y-4">
-            {messages.map((msg, index) => (
-              <div key={index} className={`flex ${msg.type === "patient" ? "justify-end" : "justify-start"}`}>
-                <div
-                  className={`max-w-[80%] rounded-lg px-4 py-2 ${msg.type === "patient" 
-                    ? "bg-primary text-primary-foreground" 
-                    : "bg-muted"}`}
-                >
-                  <p>{msg.content}</p>
-                  <p className="text-xs opacity-70 mt-1">
-                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                  </p>
+          messages.map((msg, index) => {
+            const isAssistant = msg.type === "assistant";
+            return (
+              <div key={index} className={`flex ${isAssistant ? "justify-start" : "justify-end"}`}>
+                <div className={`flex gap-2 max-w-[80%] ${isAssistant ? "flex-row" : "flex-row-reverse"}`}>
+                  <div className={`flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center ${isAssistant ? "bg-primary/10" : "bg-secondary"}`}>
+                    {isAssistant ? (
+                      <Bot className="h-4 w-4 text-primary" />
+                    ) : (
+                      <User className="h-4 w-4 text-secondary-foreground" />
+                    )}
+                  </div>
+                  <div>
+                    <div className={`${isAssistant ? "bg-muted" : "bg-primary text-primary-foreground"} p-3 rounded-lg`}>
+                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {format(msg.timestamp, "h:mm a")}
+                    </p>
+                  </div>
                 </div>
               </div>
-            ))}
-            <div ref={messagesEndRef} />
+            );
+          })
+        )}
+        
+        {isTyping && (
+          <div className="flex justify-start">
+            <div className="flex gap-2 max-w-[80%]">
+              <div className="flex-shrink-0 h-8 w-8 rounded-full flex items-center justify-center bg-primary/10">
+                <Bot className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <div className="bg-muted p-3 rounded-lg">
+                  <div className="flex space-x-1">
+                    <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce"></div>
+                    <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce delay-100"></div>
+                    <div className="h-2 w-2 rounded-full bg-muted-foreground/40 animate-bounce delay-200"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
         )}
-      </CardContent>
-      <CardFooter className="border-t p-4">
-        <form onSubmit={handleSubmit} className="flex w-full space-x-2">
-          <Input
-            value={message}
-            onChange={(e) => setMessage(e.target.value)}
-            placeholder="Type your message here..."
-            className="flex-1"
-            disabled={chatMutation.isPending}
+      </div>
+      
+      {/* Message input */}
+      <div className="border-t p-4">
+        <form onSubmit={handleSubmit} className="flex gap-2">
+          <Textarea 
+            value={message} 
+            onChange={(e) => setMessage(e.target.value)} 
+            placeholder="Type a message..."
+            className="min-h-[60px] max-h-[120px]"
+            disabled={isTyping || isLoadingHistory}
           />
-          <Button type="submit" disabled={!message.trim() || chatMutation.isPending}>
-            {chatMutation.isPending ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+          <Button 
+            type="submit" 
+            disabled={!message.trim() || isTyping || isLoadingHistory}
+            className="self-end"
+          >
+            {isTyping ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
             ) : (
-              <SendHorizontal className="h-4 w-4" />
+              <Send className="h-4 w-4" />
             )}
-            <span className="sr-only">Send</span>
+            <span className="sr-only">Send message</span>
           </Button>
         </form>
-      </CardFooter>
+      </div>
     </Card>
   );
 }

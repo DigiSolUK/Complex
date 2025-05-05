@@ -10,6 +10,7 @@ interface AuthContextType {
   isAdmin: boolean;
   tenantId: number | null;
   login: (username: string, password: string) => Promise<void>;
+  loginDemo: (role: string) => Promise<void>;
   logout: () => Promise<void>;
   enterDemoMode: () => Promise<void>;
   exitDemoMode: () => void;
@@ -25,6 +26,7 @@ const AuthContext = createContext<AuthContextType>({
   isAdmin: false,
   tenantId: null,
   login: async () => {},
+  loginDemo: async () => {},
   logout: async () => {},
   enterDemoMode: async () => {},
   exitDemoMode: () => {},
@@ -158,6 +160,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const loginDemo = async (role: string) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log("Demo login - setting up with role:", role);
+      
+      // Create a demo user based on role
+      const demoUser: User = {
+        id: 999,
+        username: `demo_${role}`,
+        email: `demo_${role}@example.com`,
+        name: role === 'admin' ? 'Demo Administrator' : 'Demo Care Staff',
+        role: role as any,
+        tenantId: 1,
+        createdAt: new Date().toISOString() as any
+      };
+      
+      // Set demo mode and user
+      setIsDemoMode(true);
+      localStorage.setItem("demoMode", "true");
+      localStorage.setItem("demoRole", role);
+      setUser(demoUser);
+      
+      console.log("Demo login successful", demoUser);
+    } catch (err) {
+      console.error("Demo login failed:", err);
+      setError("Demo login failed. Please try again.");
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const enterDemoMode = async () => {
     setIsLoading(true);
     try {
@@ -195,6 +230,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAdmin,
         tenantId,
         login,
+        loginDemo,
         logout,
         enterDemoMode,
         exitDemoMode,
