@@ -104,6 +104,12 @@ export interface IStorage {
   getLatestComplianceAnalysis(): Promise<ComplianceResult | null>;
   saveComplianceAnalysis(analysis: ComplianceResult): Promise<ComplianceResult>;
   getComplianceHistory(limit?: number): Promise<ComplianceResult[]>;
+
+  // Chat history methods
+  getChatHistoryForPatient(patientId: number): Promise<ChatHistory[]>;
+  saveChatInteraction(data: { patientId: number, patientMessage: string, aiResponse: string, metadata?: any }): Promise<ChatHistory>;
+  getActiveCarePlansForPatient(patientId: number): Promise<CarePlan[]>;
+  getUpcomingAppointmentsForPatient(patientId: number): Promise<Appointment[]>;
 }
 
 // In-memory storage implementation
@@ -116,6 +122,7 @@ export class MemStorage implements IStorage {
   private activityLogs: Map<number, ActivityLog>;
   private tenants: Map<number, Tenant>;
   private nhsIntegrations: Map<number, NhsDigitalIntegration>;
+  private chatHistory: Map<number, ChatHistory>;
   private complianceAnalyses: ComplianceResult[] = [];
   
   currentId: {
@@ -127,6 +134,7 @@ export class MemStorage implements IStorage {
     activityLogs: number;
     tenants: number;
     nhsIntegrations: number;
+    chatHistory: number;
   };
 
   // Create memory store for session data
@@ -141,6 +149,7 @@ export class MemStorage implements IStorage {
     this.activityLogs = new Map();
     this.tenants = new Map();
     this.nhsIntegrations = new Map();
+    this.chatHistory = new Map();
     
     this.currentId = {
       users: 1,
@@ -151,6 +160,7 @@ export class MemStorage implements IStorage {
       activityLogs: 1,
       tenants: 1,
       nhsIntegrations: 1,
+      chatHistory: 1,
     };
     
     // Initialize session store
