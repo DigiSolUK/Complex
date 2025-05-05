@@ -10,8 +10,14 @@ import {
 } from "@shared/schema";
 import { cryptoService } from "./crypto";
 
+import session from 'express-session';
+import MemoryStore from 'memorystore';
+
 // Define storage interface with all required methods
 export interface IStorage {
+  // Session store
+  sessionStore: session.Store;
+  
   // User methods
   getUserById(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
@@ -98,6 +104,9 @@ export class MemStorage implements IStorage {
     nhsIntegrations: number;
   };
 
+  // Create memory store for session data
+  sessionStore: session.Store;
+
   constructor() {
     this.users = new Map();
     this.patients = new Map();
@@ -118,6 +127,12 @@ export class MemStorage implements IStorage {
       tenants: 1,
       nhsIntegrations: 1,
     };
+    
+    // Initialize session store
+    const MemoryStoreClass = MemoryStore(session);
+    this.sessionStore = new MemoryStoreClass({
+      checkPeriod: 86400000 // 24 hours
+    });
     
     // Initialize with seed data
     this.initSeedData();
