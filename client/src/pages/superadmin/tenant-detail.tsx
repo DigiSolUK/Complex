@@ -356,7 +356,7 @@ export default function TenantDetail() {
           </Card>
         </TabsContent>
         
-        <TabsContent value="settings">
+        <TabsContent value="settings" className="space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Tenant Settings</CardTitle>
@@ -365,9 +365,17 @@ export default function TenantDetail() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Tenant settings content will go here</p>
+              <div className="space-y-4">
+                <h3 className="text-lg font-medium">General Settings</h3>
+                <p className="text-sm text-muted-foreground">
+                  General tenant configuration options will be added here.
+                </p>
+              </div>
             </CardContent>
           </Card>
+          
+          {/* NHS Digital Integration */}
+          <NhsDigitalIntegration tenantId={tenant.id} />
         </TabsContent>
       </Tabs>
     </div>

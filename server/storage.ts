@@ -4,7 +4,9 @@ import {
   careStaff, type CareStaff, type InsertCareStaff,
   appointments, type Appointment, type InsertAppointment,
   carePlans, type CarePlan, type InsertCarePlan,
-  activityLogs, type ActivityLog, type InsertActivityLog
+  activityLogs, type ActivityLog, type InsertActivityLog,
+  tenants, type Tenant, type InsertTenant,
+  nhsDigitalIntegrations, type NhsDigitalIntegration, type InsertNhsDigitalIntegration
 } from "@shared/schema";
 import { cryptoService } from "./crypto";
 
@@ -59,6 +61,13 @@ export interface IStorage {
   getAppointmentAnalysisReport(startDate: string, endDate: string): Promise<any>;
   getCarePlanMetricsReport(startDate: string, endDate: string): Promise<any>;
   getStaffActivityReport(startDate: string, endDate: string): Promise<any>;
+  
+  // NHS Digital Integration methods
+  getNhsIntegrationByTenantId(tenantId: number): Promise<NhsDigitalIntegration | undefined>;
+  createNhsIntegration(integration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration>;
+  updateNhsIntegration(id: number, integration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration>;
+  updateNhsIntegrationLastVerified(id: number): Promise<NhsDigitalIntegration>;
+  updateTenantNhsIntegration(tenantId: number, enabled: boolean): Promise<Tenant>;
 }
 
 // In-memory storage implementation
@@ -69,6 +78,8 @@ export class MemStorage implements IStorage {
   private appointments: Map<number, Appointment>;
   private carePlans: Map<number, CarePlan>;
   private activityLogs: Map<number, ActivityLog>;
+  private tenants: Map<number, Tenant>;
+  private nhsIntegrations: Map<number, NhsDigitalIntegration>;
   
   currentId: {
     users: number;
@@ -77,6 +88,8 @@ export class MemStorage implements IStorage {
     appointments: number;
     carePlans: number;
     activityLogs: number;
+    tenants: number;
+    nhsIntegrations: number;
   };
 
   constructor() {
@@ -86,6 +99,8 @@ export class MemStorage implements IStorage {
     this.appointments = new Map();
     this.carePlans = new Map();
     this.activityLogs = new Map();
+    this.tenants = new Map();
+    this.nhsIntegrations = new Map();
     
     this.currentId = {
       users: 1,
@@ -94,6 +109,8 @@ export class MemStorage implements IStorage {
       appointments: 1,
       carePlans: 1,
       activityLogs: 1,
+      tenants: 1,
+      nhsIntegrations: 1,
     };
     
     // Initialize with seed data
