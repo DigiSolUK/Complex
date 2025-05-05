@@ -46,8 +46,8 @@ const getActivityTitle = (item: ActivityItem) => {
       return (
         <>
           <span className="font-medium">Care plan updated</span> for{" "}
-          <Link href={`/patients/${item.patientId}`}>
-            <a className="font-medium text-primary-600">{item.patientName}</a>
+          <Link href={`/patients/${item.patientId}`} className="font-medium text-primary-600">
+            {item.patientName}
           </Link>
         </>
       );
@@ -55,8 +55,8 @@ const getActivityTitle = (item: ActivityItem) => {
       return (
         <>
           <span className="font-medium">New appointment scheduled</span> with{" "}
-          <Link href={`/patients/${item.patientId}`}>
-            <a className="font-medium text-primary-600">{item.patientName}</a>
+          <Link href={`/patients/${item.patientId}`} className="font-medium text-primary-600">
+            {item.patientName}
           </Link>
         </>
       );
@@ -64,8 +64,8 @@ const getActivityTitle = (item: ActivityItem) => {
       return (
         <>
           <span className="font-medium">New patient registered:</span>{" "}
-          <Link href={`/patients/${item.patientId}`}>
-            <a className="font-medium text-primary-600">{item.patientName}</a>
+          <Link href={`/patients/${item.patientId}`} className="font-medium text-primary-600">
+            {item.patientName}
           </Link>
         </>
       );
@@ -73,8 +73,8 @@ const getActivityTitle = (item: ActivityItem) => {
       return (
         <>
           <span className="font-medium">Medical notes added</span> for{" "}
-          <Link href={`/patients/${item.patientId}`}>
-            <a className="font-medium text-primary-600">{item.patientName}</a>
+          <Link href={`/patients/${item.patientId}`} className="font-medium text-primary-600">
+            {item.patientName}
           </Link>
         </>
       );
@@ -82,8 +82,8 @@ const getActivityTitle = (item: ActivityItem) => {
       return (
         <>
           <span className="font-medium">Appointment cancelled</span> for{" "}
-          <Link href={`/patients/${item.patientId}`}>
-            <a className="font-medium text-primary-600">{item.patientName}</a>
+          <Link href={`/patients/${item.patientId}`} className="font-medium text-primary-600">
+            {item.patientName}
           </Link>
         </>
       );
