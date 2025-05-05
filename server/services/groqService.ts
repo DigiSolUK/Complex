@@ -249,6 +249,64 @@ class GroqService {
       throw new Error("Failed to analyze medication interactions");
     }
   }
+
+  /**
+   * Generic AI completion method for flexible use cases
+   */
+  async getAiCompletion(options: {
+    prompt: string;
+    systemPrompt?: string;
+    model?: string;
+    temperature?: number;
+    maxTokens?: number;
+    responseFormat?: string;
+  }): Promise<string> {
+    try {
+      const {
+        prompt,
+        systemPrompt = "You are a helpful healthcare AI assistant.",
+        model = "llama3-70b-8192",
+        temperature = 0.3,
+        maxTokens = 1000,
+        responseFormat
+      } = options;
+
+      const body: any = {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: prompt }
+        ],
+        temperature,
+        max_tokens: maxTokens
+      };
+
+      // Add response format if specified
+      if (responseFormat === 'json') {
+        body.response_format = { type: "json_object" };
+      }
+
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Groq API error: ${error.error?.message || JSON.stringify(error)}`);
+      }
+
+      const data = await response.json();
+      return data.choices[0]?.message?.content || "No response generated";
+    } catch (error) {
+      console.error("Error getting AI completion:", error);
+      throw new Error("Failed to get AI completion");
+    }
+  }
 }
 
 export const groqService = new GroqService();

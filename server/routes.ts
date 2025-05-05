@@ -6,6 +6,7 @@ import { cryptoService } from "./crypto";
 import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema, insertNhsDigitalIntegrationSchema, insertTenantSchema } from "@shared/schema";
 import aiRoutes from "./routes/ai";
+import complianceRoutes from "./routes/compliance";
 import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
 import tenantRoutes from "./routes/superadmin/tenants";
 
