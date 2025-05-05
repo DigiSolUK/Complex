@@ -14,6 +14,7 @@ import {
   Building2,
   Shield,
   Layers,
+  MessageCircle,
 } from "lucide-react";
 
 export function Sidebar() {
@@ -102,6 +103,19 @@ export function Sidebar() {
             >
               <ClipboardList className="h-5 w-5 mr-3" />
               Care Plans
+            </div>
+          </Link>
+          
+          <Link href="/patient-support">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/patient-support")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <MessageCircle className="h-5 w-5 mr-3" />
+              Patient Support
             </div>
           </Link>
 

@@ -1,140 +1,197 @@
 import { Groq } from 'groq-sdk';
-import { storage } from '../storage';
-
-// Create a Groq client instance
-const groq = new Groq({
-  apiKey: process.env.GROQ_API_KEY!
-});
+import { db } from '../db';
+import { chatHistory, patients } from '@shared/schema';
+import { eq, desc, asc } from 'drizzle-orm';
 
 class AIService {
+  private groqClient: Groq;
+
+  constructor() {
+    if (!process.env.GROQ_API_KEY) {
+      console.warn('GROQ_API_KEY not found in environment variables. AI features will not work properly.');
+    }
+    
+    this.groqClient = new Groq({
+      apiKey: process.env.GROQ_API_KEY,
+    });
+  }
+
   /**
-   * Generate a compassionate response to a patient question
-   * @param patientId The ID of the patient
-   * @param message The patient's message
-   * @param patientData Optional additional context about the patient
-   * @returns A compassionate AI response
+   * Get the patient's medical context from the database
    */
-  async generatePatientSupportResponse(patientId: number, message: string, patientData?: any): Promise<string> {
+  private async getPatientContext(patientId: number): Promise<string> {
     try {
-      // Get patient information if not provided
-      if (!patientData) {
-        patientData = await storage.getPatient(patientId);
+      // Fetch basic patient data from database
+      const patientData = await db.select()
+        .from(patients)
+        .where(eq(patients.id, patientId))
+        .limit(1);
+
+      if (!patientData || patientData.length === 0) {
+        return "No patient data available";
+      }
+
+      const patient = patientData[0];
+
+      // Build a context string with relevant patient information
+      let context = `Patient Information:\n`;
+      context += `Name: ${patient.name}\n`;
+      context += `Patient ID: ${patient.patientId}\n`;
+      
+      if (patient.dateOfBirth) {
+        context += `Date of Birth: ${patient.dateOfBirth}\n`;
       }
       
-      // Prepare context for the AI
-      const patientContext = patientData ? `
-        Patient Name: ${patientData.name}
-        Medical Conditions: ${patientData.medicalConditions || 'None specified'}
-        Current Medications: ${patientData.medications || 'None specified'}
-        Care Type: ${patientData.careType || 'Not specified'}
-      ` : 'No patient information available.';
-
-      // System prompt that guides the AI to be compassionate and healthcare-focused
-      const systemPrompt = `You are a compassionate healthcare assistant for ComplexCare CRM. 
-      Your purpose is to provide kind, empathetic support to patients while maintaining a professional tone. 
-      You should sound warm and human, not clinical or robotic.
+      if (patient.gender) {
+        context += `Gender: ${patient.gender}\n`;
+      }
       
-      IMPORTANT GUIDELINES:
-      - Provide emotional support first, then practical information
-      - Use simple, clear language without medical jargon when possible
-      - Never diagnose conditions or prescribe treatments
-      - Always recommend contacting healthcare providers for medical advice
-      - Respect privacy and maintain confidentiality
-      - If you don't know something, admit it and suggest talking to their care provider
-      - Keep responses concise but warm (100-150 words maximum)
+      context += `Care Type: ${patient.careType}\n`;
+      context += `Status: ${patient.status}\n`;
       
-      PATIENT CONTEXT:
-      ${patientContext}`;
+      if (patient.medicalHistory) {
+        context += `\nMedical History:\n${patient.medicalHistory}\n`;
+      }
+      
+      if (patient.notes) {
+        context += `\nNotes:\n${patient.notes}\n`;
+      }
+      
+      return context;
+    } catch (error) {
+      console.error('Error getting patient context:', error);
+      return "Error retrieving patient context";
+    }
+  }
 
-      // Generate the AI response
-      const completion = await groq.chat.completions.create({
+  /**
+   * Process a patient message and generate an AI response
+   */
+  async processPatientMessage(patientId: number, message: string): Promise<{ response: string, success: boolean }> {
+    try {
+      if (!process.env.GROQ_API_KEY) {
+        throw new Error('GROQ_API_KEY not configured');
+      }
+
+      // Get patient context
+      const patientContext = await this.getPatientContext(patientId);
+      
+      // Get chat history
+      const recentHistory = await this.getRecentChatHistory(patientId);
+      
+      // Create system prompt with healthcare assistant persona
+      const systemPrompt = `You are a compassionate healthcare assistant for ComplexCare CRM, a healthcare management system. 
+      Your purpose is to provide supportive, informative responses to patients while respecting medical ethics and privacy.
+      
+      Guidelines:
+      1. Be empathetic, patient, and compassionate in all responses
+      2. Provide general health information when appropriate
+      3. Explain medical concepts in simple, clear language
+      4. NEVER diagnose conditions or prescribe treatments
+      5. Refer medical questions to healthcare providers
+      6. Emphasize the importance of following their care plan
+      7. For urgent concerns, advise contacting their healthcare provider immediately
+      8. Maintain a warm, supportive tone
+      9. Respect patient privacy and confidentiality
+      
+      Patient Context (for reference only, DO NOT share this data with the patient):
+      ${patientContext}
+      
+      Previous conversation history:
+      ${recentHistory}`;
+
+      // Make the API call using a model that exists in the Groq API
+      const completion = await this.groqClient.chat.completions.create({
         messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
+          { role: "system", content: systemPrompt },
+          { role: "user", content: message }
         ],
-        model: 'llama-3.1-70b-versatile',
-        temperature: 0.7,
-        max_tokens: 500,
+        model: "llama3-8b-8192", // Fixed model name for Groq API
+        temperature: 0.5,
+        max_tokens: 1024,
         top_p: 0.9,
       });
 
-      return completion.choices[0]?.message?.content || "I'm sorry, I wasn't able to generate a helpful response. Please contact your care provider for assistance.";
+      // Extract the generated text from the response
+      const aiResponse = completion.choices[0]?.message?.content || "I'm sorry, I couldn't process your request at this time.";
+      
+      // Log conversation to database
+      await this.logConversation(patientId, message, aiResponse);
+      
+      return {
+        response: aiResponse,
+        success: true
+      };
     } catch (error) {
-      console.error('Error generating AI support response:', error);
-      return "I apologize, but I'm having trouble responding right now. Please try again later or contact your care provider directly.";
+      console.error('Error processing message with AI:', error);
+      return {
+        response: "I'm sorry, I'm having trouble responding right now. Please try again later or contact your healthcare provider directly.",
+        success: false
+      };
     }
   }
 
   /**
-   * Log a chat interaction for future reference and analytics
-   * @param patientId The ID of the patient
-   * @param message The patient's message
-   * @param response The AI response
-   * @param sentiment Optional sentiment analysis results
+   * Log conversation to the database
    */
-  async logChatInteraction(patientId: number, message: string, response: string, sentiment?: any): Promise<void> {
+  private async logConversation(patientId: number, patientMessage: string, aiResponse: string): Promise<void> {
     try {
-      // Create an activity log for the chat interaction
-      await storage.createActivityLog({
-        userId: patientId, // Using patientId as userId since this is patient-initiated
-        action: 'ai_chat',
-        entityType: 'patient',
-        entityId: patientId,
-        details: `AI Chatbot interaction with patient ID ${patientId}`,
-        metadata: JSON.stringify({
-          patientMessage: message,
-          aiResponse: response,
-          sentiment: sentiment || null,
-          timestamp: new Date().toISOString()
-        })
+      await db.insert(chatHistory).values({
+        patientId,
+        patientMessage,
+        aiResponse,
+        timestamp: new Date()
       });
     } catch (error) {
-      console.error('Error logging chat interaction:', error);
+      console.error('Error logging conversation:', error);
     }
   }
-  
+
   /**
-   * Get chat history for a specific patient
-   * @param patientId The ID of the patient
-   * @returns Array of chat interactions
+   * Get recent chat history for a patient
    */
-  async getChatHistory(patientId: number): Promise<any[]> {
+  private async getRecentChatHistory(patientId: number, limit: number = 10): Promise<string> {
     try {
-      // Get activities related to AI chat for this patient
-      const activities = await storage.getRecentActivities(50); // Get last 50 activities
-      
-      // Filter for AI chat activities related to this patient
-      const chatActivities = activities.filter(activity => 
-        activity.entityType === 'patient' && 
-        activity.entityId === patientId && 
-        activity.action === 'ai_chat'
-      );
-      
-      // Format the activities for display
-      return chatActivities.map(activity => {
-        try {
-          const metadata = JSON.parse(activity.metadata || '{}');
-          return {
-            id: activity.id,
-            timestamp: activity.createdAt,
-            patientMessage: metadata.patientMessage || '',
-            aiResponse: metadata.aiResponse || '',
-            sentiment: metadata.sentiment || null
-          };
-        } catch (e) {
-          console.error('Error parsing activity metadata:', e);
-          return {
-            id: activity.id,
-            timestamp: activity.createdAt,
-            patientMessage: '',
-            aiResponse: '',
-            error: 'Could not parse chat data'
-          };
-        }
-      }).sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
+      const history = await db.select()
+        .from(chatHistory)
+        .where(eq(chatHistory.patientId, patientId))
+        .orderBy(desc(chatHistory.timestamp))
+        .limit(limit);
+
+      if (!history || history.length === 0) {
+        return "No previous conversation history.";
+      }
+
+      // Format history as a string for context
+      return history.reverse().map(entry => {
+        return `Patient: ${entry.patientMessage}\nAssistant: ${entry.aiResponse}\n`;
+      }).join('\n');
     } catch (error) {
-      console.error('Error getting chat history:', error);
-      return [];
+      console.error('Error fetching chat history:', error);
+      return "Error retrieving conversation history.";
+    }
+  }
+
+  /**
+   * Get a patient's chat history from the database
+   */
+  async getChatHistory(patientId: number): Promise<{ history: any[], success: boolean }> {
+    try {
+      const history = await db.select()
+        .from(chatHistory)
+        .where(eq(chatHistory.patientId, patientId))
+        .orderBy(asc(chatHistory.timestamp));
+
+      return {
+        history,
+        success: true
+      };
+    } catch (error) {
+      console.error('Error fetching chat history:', error);
+      return {
+        history: [],
+        success: false
+      };
     }
   }
 }

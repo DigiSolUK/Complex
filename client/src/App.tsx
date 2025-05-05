@@ -9,6 +9,7 @@ import NotFound from "@/pages/not-found";
 import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
 import PatientProfile from "@/pages/patient-profile";
+import PatientSupport from "@/pages/patient-support";
 import Appointments from "@/pages/appointments";
 import CarePlans from "@/pages/care-plans";
 import CarePlanDetail from "@/pages/care-plan-detail";
@@ -187,6 +188,9 @@ function Router() {
           </Route>
           <Route path="/patients/:id">
             {(params) => <ProtectedRoute component={PatientProfile} params={params} />}
+          </Route>
+          <Route path="/patient-support">
+            {(params) => <ProtectedRoute component={PatientSupport} params={params} />}
           </Route>
           <Route path="/appointments">
             {(params) => <ProtectedRoute component={Appointments} params={params} />}

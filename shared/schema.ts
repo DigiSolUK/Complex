@@ -284,3 +284,21 @@ export interface ComplianceResult {
   overallStatus: 'compliant' | 'at-risk' | 'non-compliant';
   lastUpdated: Date;
 }
+
+// Chat history for patient support feature
+export const chatHistory = pgTable("chat_history", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  patientMessage: text("patient_message").notNull(),
+  aiResponse: text("ai_response").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  metadata: json("metadata"),
+});
+
+export const insertChatHistorySchema = createInsertSchema(chatHistory).omit({
+  id: true,
+  timestamp: true,
+});
+
+export type InsertChatHistory = z.infer<typeof insertChatHistorySchema>;
+export type ChatHistory = typeof chatHistory.$inferSelect;
