@@ -94,24 +94,20 @@ export function RecentPatients({
               </div>
             </CardContent>
             <CardFooter className="bg-neutral-50 px-5 py-3 flex justify-between">
-              <Link href={`/patients/${patient.id}`}>
-                <a className="text-sm font-medium text-primary-600 hover:text-primary-800">
-                  View Profile
-                </a>
+              <Link href={`/patients/${patient.id}`} className="text-sm font-medium text-primary-600 hover:text-primary-800">
+                View Profile
               </Link>
-              <Link href={`/care-plans?patientId=${patient.id}`}>
-                <a className="text-sm font-medium text-primary-600 hover:text-primary-800">
-                  Care Plan
-                </a>
+              <Link href={`/care-plans?patientId=${patient.id}`} className="text-sm font-medium text-primary-600 hover:text-primary-800">
+                Care Plan
               </Link>
             </CardFooter>
           </Card>
         ))}
       </div>
       <div className="mt-4 text-center">
-        <Link href="/patients">
-          <Button variant="outline">View all patients</Button>
-        </Link>
+        <Button variant="outline" asChild>
+          <Link href="/patients">View all patients</Link>
+        </Button>
       </div>
     </div>
   );
