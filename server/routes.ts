@@ -4,8 +4,9 @@ import { storage } from "./storage";
 import { auth } from "./auth";
 import { cryptoService } from "./crypto";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema, insertNhsDigitalIntegrationSchema } from "@shared/schema";
 import aiRoutes from "./routes/ai";
+import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -559,6 +560,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // AI route handler
   app.use('/api/ai', aiRoutes);
+
+  // NHS Digital Integration routes (SuperAdmin only)
+  app.use('/api/superadmin', nhsDigitalRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);

@@ -118,13 +118,13 @@ export class MemStorage implements IStorage {
   }
 
   private async initSeedData() {
-    // Create admin user
+    // Create super admin user
     const adminPassword = await cryptoService.hashPassword("admin123");
     await this.createUser({
       username: "admin",
       password: adminPassword,
       email: "admin@complexcare.dev",
-      role: "admin",
+      role: "superadmin",
       name: "Admin User",
     });
     
@@ -153,6 +153,18 @@ export class MemStorage implements IStorage {
       role: "patient",
       name: "Emma Wilson",
     });
+
+    // Create demo tenant
+    const tenant = {
+      id: this.currentId.tenants++,
+      name: "City Health Partners",
+      domain: "cityhealthpartners.com",
+      status: "active",
+      plan: "professional",
+      createdAt: new Date().toISOString(),
+      nhsIntegrationEnabled: false
+    };
+    this.tenants.set(tenant.id, tenant);
     
     // Create demo patients
     const patient1 = await this.createPatient({
@@ -825,6 +837,68 @@ export class MemStorage implements IStorage {
       byDepartment,
       topActivityByStaff,
     };
+  }
+
+  // NHS Digital Integration methods
+  async getNhsIntegrationByTenantId(tenantId: number): Promise<NhsDigitalIntegration | undefined> {
+    return Array.from(this.nhsIntegrations.values()).find(integration => integration.tenantId === tenantId);
+  }
+
+  async createNhsIntegration(integration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration> {
+    const id = this.currentId.nhsIntegrations++;
+    const newIntegration: NhsDigitalIntegration = {
+      ...integration,
+      id,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      lastVerified: null
+    };
+    this.nhsIntegrations.set(id, newIntegration);
+    return newIntegration;
+  }
+
+  async updateNhsIntegration(id: number, integration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration> {
+    const existingIntegration = this.nhsIntegrations.get(id);
+    if (!existingIntegration) {
+      throw new Error("NHS Digital integration not found");
+    }
+
+    const updatedIntegration: NhsDigitalIntegration = {
+      ...existingIntegration,
+      ...integration,
+      updatedAt: new Date().toISOString()
+    };
+    this.nhsIntegrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+
+  async updateNhsIntegrationLastVerified(id: number): Promise<NhsDigitalIntegration> {
+    const integration = this.nhsIntegrations.get(id);
+    if (!integration) {
+      throw new Error("NHS Digital integration not found");
+    }
+
+    const updatedIntegration: NhsDigitalIntegration = {
+      ...integration,
+      lastVerified: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    this.nhsIntegrations.set(id, updatedIntegration);
+    return updatedIntegration;
+  }
+
+  async updateTenantNhsIntegration(tenantId: number, enabled: boolean): Promise<Tenant> {
+    const tenant = this.tenants.get(tenantId);
+    if (!tenant) {
+      throw new Error("Tenant not found");
+    }
+
+    const updatedTenant: Tenant = {
+      ...tenant,
+      nhsIntegrationEnabled: enabled
+    };
+    this.tenants.set(tenantId, updatedTenant);
+    return updatedTenant;
   }
 }
 
