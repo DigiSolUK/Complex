@@ -67,13 +67,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     };
 
-    // Check if demo mode is active from localStorage
-    const storedDemoMode = localStorage.getItem("demoMode") === "true";
-    if (storedDemoMode) {
-      setIsDemoMode(true);
-      setIsLoading(false);
-    } else {
-      checkAuth();
+    // Unlike before, we will always check authentication first,
+    // and only enable demo mode if explicitly requested via enterDemoMode()
+    checkAuth();
+    
+    // Clear any existing demo mode from localStorage to prevent auto-login
+    if (localStorage.getItem("demoMode") === "true") {
+      localStorage.removeItem("demoMode");
     }
   }, []);
 
