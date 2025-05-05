@@ -219,17 +219,31 @@ class GroqService {
         - Recommendations for clinical monitoring
       `;
 
-      const response = await this.client.chat.completions.create({
-        model: "llama3-70b-8192",
-        messages: [
-          { role: "system", content: "You are a clinical pharmacist providing medication analysis and recommendations." },
-          { role: "user", content: prompt }
-        ],
-        temperature: 0.1,
-        max_tokens: 800
+      const response = await fetch(`${this.baseUrl}/chat/completions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.apiKey}`
+        },
+        body: JSON.stringify({
+          model: "llama3-70b-8192",
+          messages: [
+            { role: "system", content: "You are a clinical pharmacist providing medication analysis and recommendations." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1,
+          max_tokens: 800
+        })
       });
 
-      return response.choices[0]?.message?.content || "Could not analyze medication interactions";
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(`Groq API error: ${error.error?.message || JSON.stringify(error)}`);
+      }
+
+      const data = await response.json();
+
+      return data.choices[0]?.message?.content || "Could not analyze medication interactions";
     } catch (error) {
       console.error("Error analyzing medication interactions:", error);
       throw new Error("Failed to analyze medication interactions");
