@@ -8,8 +8,22 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.SESSION_SECRET || "complex-care-secret"));
 
-// Set trust proxy - essential for secure cookies to work in Replit environment 
-app.set("trust proxy", true);
+// Set trust proxy - essential for secure cookies to work in Replit environment
+// Support both proxied and direct requests
+app.set("trust proxy", 1);
+
+// Log request protocol for debugging and set secure cookie flags
+app.use((req, res, next) => {
+  // Log the request protocol information
+  console.log(`Request protocol: ${req.protocol}, secure: ${req.secure}, originalUrl: ${req.originalUrl}`);
+  console.log(`x-forwarded-proto: ${req.headers['x-forwarded-proto']}`);
+  
+  // Add a custom property to the request to indicate protocol confidence
+  (req as any).isSecureConnection = req.secure || req.headers['x-forwarded-proto'] === 'https';
+  
+  console.log(`isSecureConnection set to: ${(req as any).isSecureConnection}`);
+  next();
+});
 
 // Log all requests for better debugging
 app.use((req, res, next) => {

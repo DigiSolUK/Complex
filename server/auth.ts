@@ -79,7 +79,7 @@ class Auth {
       }
     });
 
-    // Create session middleware with optimal settings for Replit environment
+    // Create session middleware with dynamic settings based on protocol
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
       resave: true,            // Force session to save on each request to ensure nothing is lost
@@ -88,15 +88,34 @@ class Auth {
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,
-        secure: true,          // Required for SameSite=None
+        // Cookie settings will be set dynamically per request
         path: "/",
-        sameSite: 'none'       // Required for cross-site requests in Replit environment
       },
       store: storage.sessionStore, // Use database session store
       name: "connect.sid",     // Use standard name for better compatibility
     });
+    
+    // Create a middleware function to dynamically set cookie security based on protocol
+    const dynamicCookieMiddleware = (req: Request, res: Response, next: NextFunction) => {
+      // If request is detected as secure (HTTPS) through our custom property
+      const isSecure = (req as any).isSecureConnection;
+      console.log(`dynamicCookieMiddleware: isSecureConnection = ${isSecure}`);
+      
+      if (isSecure) {
+        req.session.cookie.secure = true;
+        req.session.cookie.sameSite = 'none';
+        console.log('Setting cookie: secure=true, sameSite=none');
+      } else {
+        // For HTTP, use more permissive settings
+        req.session.cookie.secure = false;
+        req.session.cookie.sameSite = 'lax';
+        console.log('Setting cookie: secure=false, sameSite=lax');
+      }
+      next();
+    };
 
-    return [sessionMiddleware, passport.initialize(), passport.session()];
+    // Return all middleware functions
+    return [sessionMiddleware, dynamicCookieMiddleware, passport.initialize(), passport.session()];
   }
 
   // Authentication middleware
@@ -189,18 +208,26 @@ class Auth {
           req.session.userId = user.id;
           req.session.lastLogin = new Date().toISOString();
           
-          // Set SameSite to none for cross-site requests in a Replit environment
-          // but still require secure for security
+          // Get secure connection status from our custom property
+          const isSecure = (req as any).isSecureConnection;
+          
+          // Set user ID cookie with settings appropriate for the request protocol
           res.cookie('user_id', user.id, {
             maxAge: 24 * 60 * 60 * 1000,
             httpOnly: true,
-            secure: true,
-            sameSite: 'none'
+            secure: isSecure,
+            sameSite: isSecure ? 'none' : 'lax'
           });
           
-          // Explicitly set session cookie parameters to match
-          req.session.cookie.secure = true;
-          req.session.cookie.sameSite = 'none';
+          // Log cookie settings for debugging
+          console.log(`Setting user_id cookie with secure=${isSecure}, sameSite=${isSecure ? 'none' : 'lax'}`);
+          
+          // Explicitly set session cookie parameters based on request protocol
+          req.session.cookie.secure = isSecure;
+          req.session.cookie.sameSite = isSecure ? 'none' : 'lax';
+          
+          // Log session cookie settings
+          console.log(`Setting session cookie with secure=${isSecure}, sameSite=${isSecure ? 'none' : 'lax'}`);
           
           console.log("Login successful for user ID:", user.id);
           console.log("Response headers being sent:", res.getHeaders());
