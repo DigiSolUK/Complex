@@ -87,6 +87,7 @@ class Auth {
         sameSite: "lax"
       },
       store: storage.sessionStore, // Use database session store
+      name: "complexcare.session",
     });
 
     return [sessionMiddleware, passport.initialize(), passport.session()];
@@ -94,9 +95,15 @@ class Auth {
 
   // Authentication middleware
   isAuthenticated(req: Request, res: Response, next: NextFunction) {
+    // Debug the session state
+    console.log('Session ID:', req.sessionID);
+    console.log('Is authenticated:', req.isAuthenticated());
+    console.log('User in session:', req.user ? `User ID: ${req.user.id}` : 'No user');
+    
     if (req.isAuthenticated()) {
       return next();
     }
+    
     res.status(401).json({ message: "Unauthorized" });
   }
 
@@ -119,17 +126,30 @@ class Auth {
   authenticateLocal(req: Request, res: Response, next: NextFunction) {
     passport.authenticate("local", (err, user, info) => {
       if (err) {
+        console.error("Authentication error:", err);
         return next(err);
       }
       if (!user) {
-        return res.status(401).json({ message: info.message || "Authentication failed" });
+        return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       
+      // Enhanced login with explicit session saving
       req.logIn(user, (err) => {
         if (err) {
+          console.error("Login error:", err);
           return next(err);
         }
-        return res.json(user);
+        
+        // Explicitly save the session to ensure it is stored
+        req.session.save(err => {
+          if (err) {
+            console.error("Session save error:", err);
+            return next(err);
+          }
+          
+          console.log("Login successful for user ID:", user.id);
+          return res.json(user);
+        });
       });
     })(req, res, next);
   }
