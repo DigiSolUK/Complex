@@ -20,6 +20,7 @@ import Login from "@/pages/login";
 import TestLogin from "@/pages/test-login";
 import DemoLogin from "@/pages/demo-login";
 import ComplianceDashboard from "@/pages/compliance-dashboard";
+import AnalyticsDashboard from "@/pages/analytics-dashboard";
 // Import superadmin pages
 import SuperadminDashboard from "@/pages/superadmin/dashboard";
 import TenantManagement from "@/pages/superadmin/tenant-management";
@@ -211,6 +212,10 @@ function Router() {
           </Route>
           <Route path="/settings">
             {(params) => <ProtectedRoute component={Settings} params={params} />}
+          </Route>
+          
+          <Route path="/analytics-dashboard">
+            {(params) => <ProtectedRoute component={AnalyticsDashboard} params={params} />}
           </Route>
           
           <Route path="/compliance-dashboard">

@@ -1,6 +1,7 @@
-import React from "react";
+import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
-import { Home, Users, Calendar, Menu } from "lucide-react";
+import { Home, Users, Calendar, Menu, BarChart2, Settings, ClipboardList, MessageCircle } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 export function MobileNavigation() {
   const [location] = useLocation();
