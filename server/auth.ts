@@ -83,6 +83,7 @@ class Auth {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
       },
+      store: storage.sessionStore, // Use database session store
     });
 
     return [sessionMiddleware, passport.initialize(), passport.session()];

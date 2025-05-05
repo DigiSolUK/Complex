@@ -902,4 +902,406 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import connectPg from "connect-pg-simple";
+import session from "express-session";
+import { eq } from "drizzle-orm";
+import { db } from "./db";
+
+const PostgresSessionStore = connectPg(session);
+
+// Database storage implementation
+export class DatabaseStorage implements IStorage {
+  sessionStore: session.Store;
+  
+  constructor() {
+    this.sessionStore = new PostgresSessionStore({ 
+      pool: db.client, 
+      createTableIfMissing: true 
+    });
+  }
+  
+  // User methods
+  async getUserById(id: number): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.id, id));
+    return user || undefined;
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    const [user] = await db.select().from(users).where(eq(users.username, username));
+    return user || undefined;
+  }
+
+  async createUser(insertUser: InsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(insertUser)
+      .returning();
+    return user;
+  }
+  
+  async updateUserPassword(id: number, password: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ password })
+      .where(eq(users.id, id))
+      .returning();
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+    
+    return user;
+  }
+  
+  // Patient methods
+  async getAllPatients(): Promise<Patient[]> {
+    return db.select().from(patients);
+  }
+
+  async getPatient(id: number): Promise<Patient | undefined> {
+    const [patient] = await db.select().from(patients).where(eq(patients.id, id));
+    return patient || undefined;
+  }
+
+  async createPatient(insertPatient: InsertPatient): Promise<Patient> {
+    const [patient] = await db
+      .insert(patients)
+      .values(insertPatient)
+      .returning();
+    return patient;
+  }
+
+  async updatePatient(id: number, patientData: InsertPatient): Promise<Patient> {
+    const [patient] = await db
+      .update(patients)
+      .set(patientData)
+      .where(eq(patients.id, id))
+      .returning();
+    
+    if (!patient) {
+      throw new Error("Patient not found");
+    }
+    
+    return patient;
+  }
+  
+  async getPatientCount(): Promise<number> {
+    const result = await db.select({ count: db.fn.count() }).from(patients);
+    return Number(result[0].count) || 0;
+  }
+  
+  async getRecentPatients(limit: number): Promise<Patient[]> {
+    return db.select()
+      .from(patients)
+      .orderBy(patients.createdAt)
+      .limit(limit);
+  }
+  
+  // Care staff methods
+  async getAllStaff(): Promise<CareStaff[]> {
+    return db.select().from(careStaff);
+  }
+
+  async getStaff(id: number): Promise<CareStaff | undefined> {
+    const [staff] = await db.select().from(careStaff).where(eq(careStaff.id, id));
+    return staff || undefined;
+  }
+
+  async createStaff(insertStaff: InsertCareStaff): Promise<CareStaff> {
+    const [staff] = await db
+      .insert(careStaff)
+      .values(insertStaff)
+      .returning();
+    return staff;
+  }
+
+  async updateStaff(id: number, staffData: InsertCareStaff): Promise<CareStaff> {
+    const [staff] = await db
+      .update(careStaff)
+      .set(staffData)
+      .where(eq(careStaff.id, id))
+      .returning();
+    
+    if (!staff) {
+      throw new Error("Staff member not found");
+    }
+    
+    return staff;
+  }
+  
+  async updateStaffStatus(id: number, status: string): Promise<CareStaff> {
+    const [staff] = await db
+      .update(careStaff)
+      .set({ status })
+      .where(eq(careStaff.id, id))
+      .returning();
+    
+    if (!staff) {
+      throw new Error("Staff member not found");
+    }
+    
+    return staff;
+  }
+  
+  async getActiveStaffCount(): Promise<number> {
+    const result = await db
+      .select({ count: db.fn.count() })
+      .from(careStaff)
+      .where(eq(careStaff.status, "Active"));
+    return Number(result[0].count) || 0;
+  }
+  
+  // Appointment methods
+  async getAllAppointments(): Promise<Appointment[]> {
+    return db.select().from(appointments);
+  }
+
+  async getAppointment(id: number): Promise<Appointment | undefined> {
+    const [appointment] = await db.select().from(appointments).where(eq(appointments.id, id));
+    return appointment || undefined;
+  }
+
+  async createAppointment(insertAppointment: InsertAppointment): Promise<Appointment> {
+    const [appointment] = await db
+      .insert(appointments)
+      .values(insertAppointment)
+      .returning();
+    return appointment;
+  }
+
+  async updateAppointment(id: number, appointmentData: InsertAppointment): Promise<Appointment> {
+    const [appointment] = await db
+      .update(appointments)
+      .set(appointmentData)
+      .where(eq(appointments.id, id))
+      .returning();
+    
+    if (!appointment) {
+      throw new Error("Appointment not found");
+    }
+    
+    return appointment;
+  }
+  
+  async updateAppointmentStatus(id: number, status: string): Promise<Appointment> {
+    const [appointment] = await db
+      .update(appointments)
+      .set({ status })
+      .where(eq(appointments.id, id))
+      .returning();
+    
+    if (!appointment) {
+      throw new Error("Appointment not found");
+    }
+    
+    return appointment;
+  }
+  
+  async getPatientAppointments(patientId: number): Promise<Appointment[]> {
+    return db
+      .select()
+      .from(appointments)
+      .where(eq(appointments.patientId, patientId));
+  }
+  
+  async getTodayAppointments(): Promise<Appointment[]> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    // This is a simplification; for production, you would need more precise date filtering
+    return db
+      .select()
+      .from(appointments)
+      .where(appointments.dateTime >= today && appointments.dateTime < tomorrow);
+  }
+  
+  async getTodayAppointmentsCount(): Promise<number> {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    
+    const result = await db
+      .select({ count: db.fn.count() })
+      .from(appointments)
+      .where(appointments.dateTime >= today && appointments.dateTime < tomorrow);
+    return Number(result[0].count) || 0;
+  }
+  
+  // Care plan methods
+  async getAllCarePlans(): Promise<CarePlan[]> {
+    return db.select().from(carePlans);
+  }
+
+  async getCarePlan(id: number): Promise<CarePlan | undefined> {
+    const [carePlan] = await db.select().from(carePlans).where(eq(carePlans.id, id));
+    return carePlan || undefined;
+  }
+
+  async createCarePlan(insertCarePlan: InsertCarePlan): Promise<CarePlan> {
+    const [carePlan] = await db
+      .insert(carePlans)
+      .values(insertCarePlan)
+      .returning();
+    return carePlan;
+  }
+
+  async updateCarePlan(id: number, carePlanData: InsertCarePlan): Promise<CarePlan> {
+    const [carePlan] = await db
+      .update(carePlans)
+      .set(carePlanData)
+      .where(eq(carePlans.id, id))
+      .returning();
+    
+    if (!carePlan) {
+      throw new Error("Care plan not found");
+    }
+    
+    return carePlan;
+  }
+  
+  async getPatientCarePlans(patientId: number): Promise<CarePlan[]> {
+    return db
+      .select()
+      .from(carePlans)
+      .where(eq(carePlans.patientId, patientId));
+  }
+  
+  async getActiveCarePlansCount(): Promise<number> {
+    const result = await db
+      .select({ count: db.fn.count() })
+      .from(carePlans)
+      .where(eq(carePlans.status, "Active"));
+    return Number(result[0].count) || 0;
+  }
+  
+  // Activity log methods
+  async createActivityLog(insertLog: InsertActivityLog): Promise<ActivityLog> {
+    const [log] = await db
+      .insert(activityLogs)
+      .values(insertLog)
+      .returning();
+    return log;
+  }
+  
+  async getRecentActivities(limit: number): Promise<ActivityLog[]> {
+    return db
+      .select()
+      .from(activityLogs)
+      .orderBy(activityLogs.timestamp)
+      .limit(limit);
+  }
+  
+  // Report methods - These would be more complex in a real implementation
+  async getPatientSummaryReport(startDate: string, endDate: string): Promise<any> {
+    // Simplified implementation
+    return {
+      totalPatients: await this.getPatientCount(),
+      activePatients: await db
+        .select({ count: db.fn.count() })
+        .from(patients)
+        .where(eq(patients.status, "Active"))
+        .then(result => Number(result[0].count) || 0)
+    };
+  }
+  
+  async getAppointmentAnalysisReport(startDate: string, endDate: string): Promise<any> {
+    // Simplified implementation
+    return {
+      totalAppointments: await db
+        .select({ count: db.fn.count() })
+        .from(appointments)
+        .then(result => Number(result[0].count) || 0),
+      cancelledAppointments: await db
+        .select({ count: db.fn.count() })
+        .from(appointments)
+        .where(eq(appointments.status, "Cancelled"))
+        .then(result => Number(result[0].count) || 0)
+    };
+  }
+  
+  async getCarePlanMetricsReport(startDate: string, endDate: string): Promise<any> {
+    // Simplified implementation
+    return {
+      totalCarePlans: await db
+        .select({ count: db.fn.count() })
+        .from(carePlans)
+        .then(result => Number(result[0].count) || 0),
+      activeCarePlans: await this.getActiveCarePlansCount()
+    };
+  }
+  
+  async getStaffActivityReport(startDate: string, endDate: string): Promise<any> {
+    // Simplified implementation
+    return {
+      totalStaff: await db
+        .select({ count: db.fn.count() })
+        .from(careStaff)
+        .then(result => Number(result[0].count) || 0),
+      activeStaff: await this.getActiveStaffCount()
+    };
+  }
+  
+  // NHS Digital Integration methods
+  async getNhsIntegrationByTenantId(tenantId: number): Promise<NhsDigitalIntegration | undefined> {
+    const [integration] = await db
+      .select()
+      .from(nhsDigitalIntegrations)
+      .where(eq(nhsDigitalIntegrations.tenantId, tenantId));
+    return integration || undefined;
+  }
+  
+  async createNhsIntegration(insertIntegration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration> {
+    const [integration] = await db
+      .insert(nhsDigitalIntegrations)
+      .values(insertIntegration)
+      .returning();
+    return integration;
+  }
+  
+  async updateNhsIntegration(id: number, integrationData: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration> {
+    const [integration] = await db
+      .update(nhsDigitalIntegrations)
+      .set(integrationData)
+      .where(eq(nhsDigitalIntegrations.id, id))
+      .returning();
+    
+    if (!integration) {
+      throw new Error("NHS integration not found");
+    }
+    
+    return integration;
+  }
+  
+  async updateNhsIntegrationLastVerified(id: number): Promise<NhsDigitalIntegration> {
+    const [integration] = await db
+      .update(nhsDigitalIntegrations)
+      .set({ lastVerified: new Date() })
+      .where(eq(nhsDigitalIntegrations.id, id))
+      .returning();
+    
+    if (!integration) {
+      throw new Error("NHS integration not found");
+    }
+    
+    return integration;
+  }
+  
+  async updateTenantNhsIntegration(tenantId: number, enabled: boolean): Promise<Tenant> {
+    const [tenant] = await db
+      .update(tenants)
+      .set({ nhsIntegrationEnabled: enabled })
+      .where(eq(tenants.id, tenantId))
+      .returning();
+    
+    if (!tenant) {
+      throw new Error("Tenant not found");
+    }
+    
+    return tenant;
+  }
+}
+
+export const storage = new DatabaseStorage();
