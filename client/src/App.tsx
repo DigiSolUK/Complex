@@ -28,6 +28,7 @@ import PricingPage from "@/pages/landing/pricing-page";
 import AboutPage from "@/pages/landing/about-page";
 import ContactPage from "@/pages/landing/contact-page";
 import { useAuth, AuthProvider } from "./context/auth-context";
+import { ThemeProvider } from "./context/theme-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
@@ -194,8 +195,10 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <AuthProvider>
-          <Toaster />
-          <Router />
+          <ThemeProvider>
+            <Toaster />
+            <Router />
+          </ThemeProvider>
         </AuthProvider>
       </TooltipProvider>
     </QueryClientProvider>

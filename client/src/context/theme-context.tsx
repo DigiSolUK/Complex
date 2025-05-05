@@ -173,10 +173,16 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   };
 
   const setThemeColors = (colors: Partial<ThemeColors>) => {
-    setThemeColorsState(prevColors => ({
-      ...prevColors,
-      ...colors,
-    }));
+    setThemeColorsState((prevColors) => {
+      const newColors = { ...prevColors };
+      // Ensure we properly handle each color explicitly to maintain type safety
+      Object.keys(colors).forEach((key) => {
+        if (key in prevColors && colors[key] !== undefined) {
+          newColors[key] = colors[key]!;
+        }
+      });
+      return newColors;
+    });
   };
 
   const toggleDarkMode = () => {

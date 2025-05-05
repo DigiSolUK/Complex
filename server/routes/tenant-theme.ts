@@ -56,7 +56,7 @@ router.put("/api/tenants/:id/theme", auth.hasRole(["superadmin", "admin"]), asyn
     
     // Log activity
     await storage.createActivityLog({
-      userId: req.user!.id,
+      userId: req.user ? req.user.id : 0,
       action: "update",
       entityType: "tenant",
       entityId: tenantId,
