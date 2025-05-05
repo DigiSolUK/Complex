@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { useAuth } from './auth-context';
 import { apiRequest } from '@/lib/queryClient';
 
@@ -100,21 +100,16 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [customCss, setCustomCss] = useState<string | null>(null);
   const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch tenant theme on mount if user is authenticated
-  useEffect(() => {
-    if (user && tenantId && !isInitialized) {
-      fetchTenantTheme();
-    }
-  }, [user, tenantId]);
-
-  // Apply theme colors to CSS variables whenever they change
-  useEffect(() => {
-    applyThemeToDOM();
-  }, [themeColors, isDarkMode, customCss]);
-
-  const fetchTenantTheme = async () => {
+  // Define fetchTenantTheme with useCallback to prevent dependency loop
+  const fetchTenantTheme = useCallback(async () => {
     try {
-      const response = await apiRequest('GET', `/api/tenants/${tenantId}/theme`);
+      // If we have a tenantId, fetch that specific tenant's theme
+      // Otherwise fetch the current user's tenant theme
+      const endpoint = tenantId ? 
+        `/api/tenants/${tenantId}/theme` : 
+        '/api/tenants/current/theme';
+      
+      const response = await apiRequest('GET', endpoint);
       const data = await response.json();
       
       if (data.themeName) setThemeName(data.themeName);
@@ -131,7 +126,19 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCustomCss(null);
       setIsInitialized(true);
     }
-  };
+  }, [tenantId]);
+
+  // Fetch tenant theme on mount if user is authenticated
+  useEffect(() => {
+    if (!isInitialized) {
+      fetchTenantTheme();
+    }
+  }, [isInitialized, fetchTenantTheme]);
+
+  // Apply theme colors to CSS variables whenever they change
+  useEffect(() => {
+    applyThemeToDOM();
+  }, [themeColors, isDarkMode, customCss]);
 
   const applyThemeToDOM = () => {
     const root = document.documentElement;

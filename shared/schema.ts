@@ -44,6 +44,7 @@ export const users = pgTable("users", {
   role: text("role", { enum: ["superadmin", "admin", "care_staff", "patient"] }).notNull().default("care_staff"),
   name: text("name").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
 });
 
 export const insertUserSchema = createInsertSchema(users).omit({
