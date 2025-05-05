@@ -10,6 +10,7 @@ import complianceRoutes from "./routes/compliance";
 import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
 import tenantRoutes from "./routes/superadmin/tenants";
 import tenantThemeRoutes from "./routes/tenant-theme";
+import patientChatbotRoutes from "./routes/patient-chatbot";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
