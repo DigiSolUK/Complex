@@ -8,7 +8,8 @@ import {
   tenants, type Tenant, type InsertTenant,
   nhsDigitalIntegrations, type NhsDigitalIntegration, type InsertNhsDigitalIntegration,
   complianceAnalyses, type ComplianceAnalysis, type InsertComplianceAnalysis,
-  chatHistory, type ChatHistory, type InsertChatHistory
+  chatHistory, type ChatHistory, type InsertChatHistory,
+  documents, type Document, type InsertDocument
 } from "@shared/schema";
 import { cryptoService } from "./crypto";
 
@@ -110,6 +111,12 @@ export interface IStorage {
   saveChatInteraction(data: { patientId: number, patientMessage: string, aiResponse: string, metadata?: any }): Promise<ChatHistory>;
   getActiveCarePlansForPatient(patientId: number): Promise<CarePlan[]>;
   getUpcomingAppointmentsForPatient(patientId: number): Promise<Appointment[]>;
+
+  // Document methods
+  createDocument(document: InsertDocument): Promise<Document>;
+  getDocumentById(id: string | number): Promise<Document | undefined>;
+  getDocumentsByPatient(patientId: number): Promise<Document[]>;
+  deleteDocument(id: number): Promise<void>;
 }
 
 // In-memory storage implementation
@@ -123,6 +130,7 @@ export class MemStorage implements IStorage {
   private tenants: Map<number, Tenant>;
   private nhsIntegrations: Map<number, NhsDigitalIntegration>;
   private chatHistory: Map<number, ChatHistory>;
+  private documents: Map<number, Document>;
   private complianceAnalyses: ComplianceResult[] = [];
   
   currentId: {
@@ -135,6 +143,7 @@ export class MemStorage implements IStorage {
     tenants: number;
     nhsIntegrations: number;
     chatHistory: number;
+    documents: number;
   };
 
   // Create memory store for session data
@@ -150,6 +159,7 @@ export class MemStorage implements IStorage {
     this.tenants = new Map();
     this.nhsIntegrations = new Map();
     this.chatHistory = new Map();
+    this.documents = new Map();
     
     this.currentId = {
       users: 1,
@@ -161,6 +171,7 @@ export class MemStorage implements IStorage {
       tenants: 1,
       nhsIntegrations: 1,
       chatHistory: 1,
+      documents: 1,
     };
     
     // Initialize session store
