@@ -1,8 +1,8 @@
 import { Router, Request, Response } from "express";
 import { auth } from "../../auth";
 import { storage } from "../../storage";
-import { z } from "zod";
 import { insertNhsDigitalIntegrationSchema } from "@shared/schema";
+import { z } from "zod";
 
 const router = Router();
 
@@ -21,70 +21,93 @@ router.get("/tenants/:tenantId/nhs-integration", auth.isAuthenticated, requireSu
     const integration = await storage.getNhsIntegrationByTenantId(tenantId);
     
     if (!integration) {
-      return res.json({
-        tenantId,
-        pdsApiKey: null,
-        scrApiKey: null,
-        epsApiKey: null,
-        eReferralApiKey: null,
-        gpConnectApiKey: null,
-        pdsEnabled: false,
-        scrEnabled: false,
-        epsEnabled: false,
-        eReferralEnabled: false,
-        gpConnectEnabled: false,
-      });
+      return res.status(404).json({ message: "NHS Digital integration not found for this tenant" });
     }
     
-    // Return sanitized integration data (no actual API keys)
-    const sanitizedIntegration = sanitizeIntegration(integration);
-    res.json(sanitizedIntegration);
+    // Mask API keys for security
+    const maskedIntegration = {
+      ...integration,
+      pdsApiKey: integration.pdsApiKey ? "••••••••" : "",
+      scrApiKey: integration.scrApiKey ? "••••••••" : "",
+      epsApiKey: integration.epsApiKey ? "••••••••" : "",
+      eReferralApiKey: integration.eReferralApiKey ? "••••••••" : "",
+      gpConnectApiKey: integration.gpConnectApiKey ? "••••••••" : "",
+    };
+    
+    res.json(maskedIntegration);
   } catch (error) {
     console.error("Get NHS integration error:", error);
-    res.status(500).json({ message: "An error occurred while fetching NHS integration settings" });
+    res.status(500).json({ message: "An error occurred while fetching NHS Digital integration" });
   }
 });
 
-// Update NHS Digital integration settings for a tenant
+// Create or update NHS Digital integration settings for a tenant
 router.post("/tenants/:tenantId/nhs-integration", auth.isAuthenticated, requireSuperAdmin, async (req: Request, res: Response) => {
   try {
     const tenantId = parseInt(req.params.tenantId);
-    const parseResult = insertNhsDigitalIntegrationSchema.safeParse({
+    const integrationData = insertNhsDigitalIntegrationSchema.parse({
       ...req.body,
       tenantId
     });
     
-    if (!parseResult.success) {
-      return res.status(400).json({ 
-        message: "Invalid NHS integration data", 
-        errors: parseResult.error.errors 
-      });
-    }
-    
-    const data = parseResult.data;
+    // Check if NHS integration already exists for this tenant
     const existingIntegration = await storage.getNhsIntegrationByTenantId(tenantId);
     
-    let result;
+    // Handle preserved keys (marked as __UNCHANGED__)
     if (existingIntegration) {
-      // Update existing integration
-      result = await storage.updateNhsIntegration(existingIntegration.id, data);
-      
-      // Update tenant NHS integration flag
-      await storage.updateTenantNhsIntegration(tenantId, isAnyServiceEnabled(data));
-    } else {
-      // Create new integration
-      result = await storage.createNhsIntegration(data);
-      
-      // Update tenant NHS integration flag
-      await storage.updateTenantNhsIntegration(tenantId, isAnyServiceEnabled(data));
+      if (integrationData.pdsApiKey === "__UNCHANGED__") {
+        integrationData.pdsApiKey = existingIntegration.pdsApiKey;
+      }
+      if (integrationData.scrApiKey === "__UNCHANGED__") {
+        integrationData.scrApiKey = existingIntegration.scrApiKey;
+      }
+      if (integrationData.epsApiKey === "__UNCHANGED__") {
+        integrationData.epsApiKey = existingIntegration.epsApiKey;
+      }
+      if (integrationData.eReferralApiKey === "__UNCHANGED__") {
+        integrationData.eReferralApiKey = existingIntegration.eReferralApiKey;
+      }
+      if (integrationData.gpConnectApiKey === "__UNCHANGED__") {
+        integrationData.gpConnectApiKey = existingIntegration.gpConnectApiKey;
+      }
     }
     
-    // Return sanitized result
-    const sanitizedResult = sanitizeIntegration(result);
-    res.json(sanitizedResult);
+    // Update tenant's NHS integration status based on any service being enabled
+    const anyServiceEnabled = [
+      integrationData.pdsEnabled,
+      integrationData.scrEnabled,
+      integrationData.epsEnabled,
+      integrationData.eReferralEnabled,
+      integrationData.gpConnectEnabled
+    ].some(Boolean);
+    
+    await storage.updateTenantNhsIntegration(tenantId, anyServiceEnabled);
+    
+    // Create or update the integration settings
+    let updatedIntegration;
+    if (existingIntegration) {
+      updatedIntegration = await storage.updateNhsIntegration(existingIntegration.id, integrationData);
+    } else {
+      updatedIntegration = await storage.createNhsIntegration(integrationData);
+    }
+    
+    // Mask API keys for response
+    const maskedIntegration = {
+      ...updatedIntegration,
+      pdsApiKey: updatedIntegration.pdsApiKey ? "••••••••" : "",
+      scrApiKey: updatedIntegration.scrApiKey ? "••••••••" : "",
+      epsApiKey: updatedIntegration.epsApiKey ? "••••••••" : "",
+      eReferralApiKey: updatedIntegration.eReferralApiKey ? "••••••••" : "",
+      gpConnectApiKey: updatedIntegration.gpConnectApiKey ? "••••••••" : "",
+    };
+    
+    res.json(maskedIntegration);
   } catch (error) {
-    console.error("Update NHS integration error:", error);
-    res.status(500).json({ message: "An error occurred while updating NHS integration settings" });
+    console.error("Create/Update NHS integration error:", error);
+    if (error instanceof z.ZodError) {
+      return res.status(400).json({ message: "Invalid integration data", errors: error.errors });
+    }
+    res.status(500).json({ message: "An error occurred while saving NHS Digital integration" });
   }
 });
 
@@ -94,64 +117,59 @@ router.post("/tenants/:tenantId/nhs-integration/test", auth.isAuthenticated, req
     const tenantId = parseInt(req.params.tenantId);
     const { service } = req.body;
     
-    if (!service || ![
-      "pds", 
-      "scr", 
-      "eps", 
-      "e-referral", 
-      "gp-connect"
-    ].includes(service)) {
+    if (!service || !['pds', 'scr', 'eps', 'e-referral', 'gp-connect'].includes(service)) {
       return res.status(400).json({ message: "Invalid service specified" });
     }
     
     const integration = await storage.getNhsIntegrationByTenantId(tenantId);
+    
     if (!integration) {
-      return res.status(404).json({ message: "NHS integration not configured for this tenant" });
+      return res.status(404).json({ message: "NHS Digital integration not found for this tenant" });
     }
     
-    // In a real implementation, we would test the connection to the NHS Digital service
-    // For now, we'll simulate a successful connection
+    // Verify the service is enabled and has an API key
+    let apiKey = "";
+    let isEnabled = false;
+    switch (service) {
+      case 'pds':
+        apiKey = integration.pdsApiKey;
+        isEnabled = integration.pdsEnabled;
+        break;
+      case 'scr':
+        apiKey = integration.scrApiKey;
+        isEnabled = integration.scrEnabled;
+        break;
+      case 'eps':
+        apiKey = integration.epsApiKey;
+        isEnabled = integration.epsEnabled;
+        break;
+      case 'e-referral':
+        apiKey = integration.eReferralApiKey;
+        isEnabled = integration.eReferralEnabled;
+        break;
+      case 'gp-connect':
+        apiKey = integration.gpConnectApiKey;
+        isEnabled = integration.gpConnectEnabled;
+        break;
+    }
     
-    // Update last verified timestamp
-    const updatedIntegration = await storage.updateNhsIntegrationLastVerified(integration.id);
+    if (!isEnabled) {
+      return res.status(400).json({ message: `${service.toUpperCase()} service is not enabled` });
+    }
     
-    res.json({ 
-      success: true,
-      service,
-      message: `Successfully connected to NHS Digital ${service.toUpperCase()} service.`,
-      lastVerified: updatedIntegration.lastVerified
-    });
+    if (!apiKey) {
+      return res.status(400).json({ message: `No API key provided for ${service.toUpperCase()} service` });
+    }
+    
+    // In a real implementation, we would call the NHS Digital API here
+    // For demo purposes, just update the lastVerified timestamp
+    await storage.updateNhsIntegrationLastVerified(integration.id);
+    
+    res.json({ success: true, message: `Successfully connected to NHS Digital ${service.toUpperCase()} service` });
   } catch (error) {
     console.error("Test NHS integration error:", error);
-    res.status(500).json({ 
-      success: false,
-      message: "An error occurred while testing NHS integration connection" 
-    });
+    res.status(500).json({ message: "An error occurred while testing NHS Digital integration" });
   }
 });
-
-function isAnyServiceEnabled(data: any): boolean {
-  return !!(
-    data.pdsEnabled || 
-    data.scrEnabled || 
-    data.epsEnabled || 
-    data.eReferralEnabled || 
-    data.gpConnectEnabled
-  );
-}
-
-function sanitizeIntegration(integration: any) {
-  // Create a copy of the integration object
-  const sanitized = { ...integration };
-  
-  // Mask the API keys if they exist
-  if (sanitized.pdsApiKey) sanitized.pdsApiKey = "••••••••";
-  if (sanitized.scrApiKey) sanitized.scrApiKey = "••••••••";
-  if (sanitized.epsApiKey) sanitized.epsApiKey = "••••••••";
-  if (sanitized.eReferralApiKey) sanitized.eReferralApiKey = "••••••••";
-  if (sanitized.gpConnectApiKey) sanitized.gpConnectApiKey = "••••••••";
-  
-  return sanitized;
-}
 
 export default router;

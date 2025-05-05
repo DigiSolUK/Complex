@@ -1,381 +1,206 @@
 import { useState } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { NhsDigitalIntegration } from "@/components/superadmin/nhs-digital-integration";
-import { 
-  Card, 
-  CardHeader, 
-  CardTitle, 
-  CardDescription, 
-  CardContent, 
-  CardFooter 
-} from "@/components/ui/card";
+import { useLocation, useParams } from "wouter";
+import { useQuery } from "@tanstack/react-query";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { StatusBadge } from "@/components/ui/custom-badge";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
-import { toast } from "@/hooks/use-toast";
-import {
-  Activity,
-  Users,
-  Settings,
-  Calendar,
-  CreditCard,
-  BarChart,
-  Building2,
-  ArrowLeft,
-  Edit,
-  Download,
-  RefreshCw,
-  PlayCircle,
-  PauseCircle,
-  Link as LinkIcon,
-  Mail,
-  Phone,
-} from "lucide-react";
-import { apiRequest } from "@/lib/queryClient";
-import { Link, useParams } from "wouter";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Loader2, ChevronLeft, Building2, Settings, Users, Calendar, FileText, Shield } from "lucide-react";
+import { NhsDigitalIntegration } from "@/components/superadmin/nhs-digital-integration";
+import { useToast } from "@/hooks/use-toast";
 
 export default function TenantDetail() {
+  const [, setLocation] = useLocation();
+  const { tenantId } = useParams<{ tenantId: string }>();
+  const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("overview");
-  const { id } = useParams();
-  const tenantId = parseInt(id || "0");
   
-  // Fetch tenant data
+  // Fetch tenant details
   const { data: tenant, isLoading, error } = useQuery({
     queryKey: [`/api/superadmin/tenants/${tenantId}`],
-    queryFn: () => ({
-      // Mock data until API is implemented
-      id: tenantId,
-      name: "ComplexCare Medical Group",
-      domain: "complexcare.dev",
-      status: "active", 
-      subscriptionTier: "enterprise",
-      userLimit: 150,
-      currentUsers: 128,
-      lastActivity: new Date().toISOString(),
-      createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000).toISOString(), // 6 months ago
-      contactEmail: "admin@complexcare.dev",
-      contactName: "John Smith",
-      contactPhone: "+1234567890",
-      logo: null,
-      billingInfo: "Annual enterprise plan",
-      metrics: {
-        activePatients: 528,
-        activeCareStaff: 78,
-        appointmentsThisMonth: 1245,
-        activeCarePlans: 312,
-      },
-      activity: [
-        { id: 1, action: "user_login", details: "Admin user logged in", timestamp: new Date().toISOString() },
-        { id: 2, action: "patient_added", details: "New patient registered", timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString() },
-        { id: 3, action: "appointment_scheduled", details: "New appointment scheduled", timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString() },
-      ]
-    })
-  });
-
-  // Simulate suspend/reinstate tenant mutation
-  const suspendMutation = useMutation({
-    mutationFn: async (suspend: boolean) => {
-      const action = suspend ? "suspend" : "reinstate";
-      const response = await apiRequest("POST", `/api/superadmin/tenants/${tenantId}/${action}`, {});
-      return await response.json();
-    },
-    onSuccess: (_, suspend) => {
-      const action = suspend ? "suspended" : "reinstated";
-      toast({
-        title: `Tenant ${action}`,
-        description: `The tenant has been ${action} successfully.`,
-      });
-    },
+    enabled: !!tenantId,
     onError: (error: Error, suspend) => {
-      const action = suspend ? "suspend" : "reinstate";
       toast({
-        title: `Failed to ${action} tenant`,
-        description: error.message,
+        title: "Error",
+        description: error.message || "Failed to load tenant details",
         variant: "destructive",
       });
+      suspend; // Prevent retries
     },
   });
 
-  if (isLoading) {
-    return <div className="p-8">Loading tenant details...</div>;
-  }
-  
-  if (error) {
-    return <div className="p-8">Error loading tenant details</div>;
-  }
-  
-  if (!tenant) {
-    return <div className="p-8">Tenant not found</div>;
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', { 
-      year: 'numeric', 
-      month: 'long', 
-      day: 'numeric' 
-    });
+  const handleGoBack = () => {
+    setLocation("/superadmin/tenants");
   };
 
-  const isActive = tenant.status === "active";
+  if (isLoading) {
+    return (
+      <div className="container py-10">
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <span className="ml-2 text-lg text-muted-foreground">Loading tenant details...</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !tenant) {
+    return (
+      <div className="container py-10">
+        <div className="flex flex-col items-center justify-center h-64 space-y-4">
+          <div className="text-lg text-muted-foreground">Failed to load tenant details</div>
+          <Button onClick={handleGoBack}>Go Back</Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="p-8 max-w-7xl mx-auto">
-      <div className="flex items-center mb-8 space-x-2">
-        <Link href="/superadmin/tenant-management">
-          <Button variant="ghost" size="sm">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Tenants
+    <div className="container py-6 space-y-6">
+      <div className="flex items-center space-x-4">
+        <Button variant="outline" size="icon" onClick={handleGoBack}>
+          <ChevronLeft className="h-4 w-4" />
+        </Button>
+        <div>
+          <h1 className="text-2xl font-bold">{tenant.name}</h1>
+          <p className="text-muted-foreground">{tenant.domain}</p>
+        </div>
+        <div className="ml-auto flex space-x-2">
+          <Button variant="outline" className="px-2">
+            <Users className="mr-2 h-4 w-4" /> {tenant.userCount || 0} Users
           </Button>
-        </Link>
-      </div>
-      
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center space-x-4">
-          <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-            <Building2 className="h-6 w-6 text-primary" />
-          </div>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">{tenant.name}</h1>
-            <p className="text-muted-foreground">
-              <span className="inline-flex items-center">
-                <LinkIcon className="mr-1 h-3 w-3" />
-                {tenant.domain}
-              </span>
-            </p>
+          <div className={`px-2 py-1 rounded text-xs ${tenant.status === "active" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
+            {tenant.status?.toUpperCase()}
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Link href={`/superadmin/tenants/${tenant.id}/edit`}>
-            <Button variant="outline">
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Tenant
-            </Button>
-          </Link>
-          
-          <Button 
-            variant={isActive ? "destructive" : "default"} 
-            onClick={() => suspendMutation.mutate(isActive)}
-            disabled={suspendMutation.isPending}
-          >
-            {suspendMutation.isPending ? (
-              <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
-            ) : isActive ? (
-              <PauseCircle className="mr-2 h-4 w-4" />
-            ) : (
-              <PlayCircle className="mr-2 h-4 w-4" />
-            )}
-            {isActive ? "Suspend Tenant" : "Reinstate Tenant"}
-          </Button>
-        </div>
       </div>
-      
-      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4 mb-8">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Total Users</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{tenant.currentUsers} / {tenant.userLimit}</div>
-            <div className="h-1 w-full bg-muted mt-2 rounded-full overflow-hidden">
-              <div 
-                className="h-full bg-primary" 
-                style={{ width: `${(tenant.currentUsers / tenant.userLimit) * 100}%` }}
-              />
-            </div>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Subscription</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold capitalize">{tenant.subscriptionTier}</div>
-            <p className="text-xs text-muted-foreground">{tenant.billingInfo}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Status</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold capitalize flex items-center">
-              <StatusBadge variant={tenant.status === "active" ? "success" : "destructive"} className="mr-2 capitalize">
-                {tenant.status}
-              </StatusBadge>
-            </div>
-            <p className="text-xs text-muted-foreground">Since {formatDate(tenant.createdAt)}</p>
-          </CardContent>
-        </Card>
-        
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-muted-foreground">Primary Contact</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-base font-medium">{tenant.contactName}</div>
-            <div className="flex items-center mt-1 text-xs text-muted-foreground">
-              <Mail className="h-3 w-3 mr-1" />
-              {tenant.contactEmail}
-            </div>
-            {tenant.contactPhone && (
-              <div className="flex items-center mt-1 text-xs text-muted-foreground">
-                <Phone className="h-3 w-3 mr-1" />
-                {tenant.contactPhone}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-      
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="mb-8">
-        <TabsList className="grid w-full grid-cols-5 lg:w-auto">
+
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+        <TabsList>
           <TabsTrigger value="overview">
-            <Activity className="h-4 w-4 mr-2" />
-            Overview
+            <Building2 className="h-4 w-4 mr-2" /> Overview
           </TabsTrigger>
           <TabsTrigger value="users">
-            <Users className="h-4 w-4 mr-2" />
-            Users
+            <Users className="h-4 w-4 mr-2" /> Users
+          </TabsTrigger>
+          <TabsTrigger value="subscription">
+            <Calendar className="h-4 w-4 mr-2" /> Subscription
           </TabsTrigger>
           <TabsTrigger value="usage">
-            <BarChart className="h-4 w-4 mr-2" />
-            Usage
+            <FileText className="h-4 w-4 mr-2" /> Usage
           </TabsTrigger>
-          <TabsTrigger value="billing">
-            <CreditCard className="h-4 w-4 mr-2" />
-            Billing
+          <TabsTrigger value="nhs-integration">
+            <Shield className="h-4 w-4 mr-2" /> NHS Integration
           </TabsTrigger>
           <TabsTrigger value="settings">
-            <Settings className="h-4 w-4 mr-2" />
-            Settings
+            <Settings className="h-4 w-4 mr-2" /> Settings
           </TabsTrigger>
         </TabsList>
-        
+
         <TabsContent value="overview" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Tenant Overview</CardTitle>
-              <CardDescription>
-                General metrics and recent activity for this tenant
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-8">
-              <div>
-                <h3 className="text-lg font-medium mb-4">Key Metrics</h3>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Active Patients</p>
-                    <p className="text-2xl font-bold">{tenant.metrics.activePatients}</p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tenant Information</CardTitle>
+                <CardDescription>Basic details about this tenant</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">Domain</div>
+                    <div className="text-sm font-medium">{tenant.domain}</div>
                   </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Care Staff</p>
-                    <p className="text-2xl font-bold">{tenant.metrics.activeCareStaff}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Appointments (Month)</p>
-                    <p className="text-2xl font-bold">{tenant.metrics.appointmentsThisMonth}</p>
-                  </div>
-                  <div className="space-y-1">
-                    <p className="text-sm text-muted-foreground">Active Care Plans</p>
-                    <p className="text-2xl font-bold">{tenant.metrics.activeCarePlans}</p>
-                  </div>
-                </div>
-              </div>
-              
-              <div>
-                <h3 className="text-lg font-medium mb-4">Recent Activity</h3>
-                <div className="space-y-4">
-                  {tenant.activity.map((item, index) => (
-                    <div key={item.id} className="flex">
-                      <div className="mr-4 flex flex-col items-center">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
-                          <Activity className="h-5 w-5" />
-                        </div>
-                        {index < tenant.activity.length - 1 && (
-                          <div className="h-full w-px bg-border" />
-                        )}
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-medium">{item.details}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(item.timestamp).toLocaleString()}
-                        </p>
-                      </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">Status</div>
+                    <div className="text-sm font-medium">
+                      <span className={`px-2 py-1 rounded text-xs ${tenant.status === "active" ? "bg-green-100 text-green-800" : "bg-amber-100 text-amber-800"}`}>
+                        {tenant.status?.toUpperCase()}
+                      </span>
                     </div>
-                  ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">Created</div>
+                    <div className="text-sm font-medium">{new Date(tenant.createdAt).toLocaleDateString()}</div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">Subscription Plan</div>
+                    <div className="text-sm font-medium">{tenant.plan}</div>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Integration Status</CardTitle>
+                <CardDescription>External services integration status</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="text-sm text-muted-foreground">NHS Digital</div>
+                    <div className="text-sm font-medium">
+                      <span className={`px-2 py-1 rounded text-xs ${tenant.nhsIntegrationEnabled ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}`}>
+                        {tenant.nhsIntegrationEnabled ? "ENABLED" : "DISABLED"}
+                      </span>
+                    </div>
+                  </div>
+                  {/* Additional integrations would go here */}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
-        
-        <TabsContent value="users">
+
+        <TabsContent value="users" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>User Management</CardTitle>
-              <CardDescription>
-                View and manage users for this tenant
-              </CardDescription>
+              <CardDescription>Manage users for this tenant</CardDescription>
             </CardHeader>
             <CardContent>
-              <p>User management content will go here</p>
+              <p className="text-muted-foreground">User management functionality will be implemented here.</p>
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="usage">
+
+        <TabsContent value="subscription" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Details</CardTitle>
+              <CardDescription>Manage tenant subscription and billing</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground">Subscription management functionality will be implemented here.</p>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="usage" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Usage Statistics</CardTitle>
-              <CardDescription>
-                View detailed tenant usage metrics
-              </CardDescription>
+              <CardDescription>View tenant usage metrics and analytics</CardDescription>
             </CardHeader>
             <CardContent>
-              <p>Usage statistics content will go here</p>
+              <p className="text-muted-foreground">Usage statistics functionality will be implemented here.</p>
             </CardContent>
           </Card>
         </TabsContent>
-        
-        <TabsContent value="billing">
-          <Card>
-            <CardHeader>
-              <CardTitle>Billing Information</CardTitle>
-              <CardDescription>
-                Manage billing and subscription details
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p>Billing information content will go here</p>
-            </CardContent>
-          </Card>
+
+        <TabsContent value="nhs-integration" className="space-y-4">
+          <NhsDigitalIntegration tenantId={parseInt(tenantId)} />
         </TabsContent>
-        
-        <TabsContent value="settings" className="space-y-6">
+
+        <TabsContent value="settings" className="space-y-4">
           <Card>
             <CardHeader>
               <CardTitle>Tenant Settings</CardTitle>
-              <CardDescription>
-                Configure tenant-specific settings
-              </CardDescription>
+              <CardDescription>Configure tenant-wide settings</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">General Settings</h3>
-                <p className="text-sm text-muted-foreground">
-                  General tenant configuration options will be added here.
-                </p>
-              </div>
+              <p className="text-muted-foreground">Tenant settings functionality will be implemented here.</p>
             </CardContent>
           </Card>
-          
-          {/* NHS Digital Integration */}
-          <NhsDigitalIntegration tenantId={tenant.id} />
         </TabsContent>
       </Tabs>
     </div>

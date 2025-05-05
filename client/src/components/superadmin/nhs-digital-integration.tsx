@@ -1,117 +1,132 @@
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-// NHS Digital Integration form schema
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { Loader2, Check, X, RefreshCw } from "lucide-react";
+
+// Form validation schema
 const nhsIntegrationSchema = z.object({
-  tenantId: z.number(),
-  pdsApiKey: z.string().optional(),
+  pdsApiKey: z.string().min(1, "PDS API key is required").or(z.literal("")).optional(),
+  scrApiKey: z.string().min(1, "SCR API key is required").or(z.literal("")).optional(),
+  epsApiKey: z.string().min(1, "EPS API key is required").or(z.literal("")).optional(),
+  eReferralApiKey: z.string().min(1, "e-Referral API key is required").or(z.literal("")).optional(),
+  gpConnectApiKey: z.string().min(1, "GP Connect API key is required").or(z.literal("")).optional(),
   pdsEnabled: z.boolean().default(false),
-  scrApiKey: z.string().optional(),
   scrEnabled: z.boolean().default(false),
-  epsApiKey: z.string().optional(),
   epsEnabled: z.boolean().default(false),
-  eRsApiKey: z.string().optional(),
-  eRsEnabled: z.boolean().default(false),
-  gpConnectApiKey: z.string().optional(),
+  eReferralEnabled: z.boolean().default(false),
   gpConnectEnabled: z.boolean().default(false),
-  environmentType: z.enum(["sandbox", "production"]).default("sandbox"),
 });
 
+// Form values type
 type NhsIntegrationFormValues = z.infer<typeof nhsIntegrationSchema>;
 
+// Component props
 export interface NhsDigitalIntegrationProps {
   tenantId: number;
 }
 
+// Main component
 export function NhsDigitalIntegration({ tenantId }: NhsDigitalIntegrationProps) {
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [activeService, setActiveService] = useState<string>("pds");
+  const [testingService, setTestingService] = useState<string | null>(null);
 
-  // Fetch NHS Digital integration settings
-  const { data: nhsIntegration, isLoading } = useQuery({
+  // Fetch existing integration settings
+  const { data: integration, isLoading } = useQuery({
     queryKey: [`/api/superadmin/tenants/${tenantId}/nhs-integration`],
-    queryFn: async () => {
-      try {
-        const res = await apiRequest("GET", `/api/superadmin/tenants/${tenantId}/nhs-integration`);
-        return await res.json();
-      } catch (error) {
-        // If the integration doesn't exist yet, return default values
-        return {
-          tenantId,
-          pdsEnabled: false,
-          scrEnabled: false,
-          epsEnabled: false,
-          eRsEnabled: false,
-          gpConnectEnabled: false,
-          environmentType: "sandbox",
-        };
-      }
-    },
+    enabled: !!tenantId,
   });
 
-  // Form setup
+  // Form definition
   const form = useForm<NhsIntegrationFormValues>({
     resolver: zodResolver(nhsIntegrationSchema),
     defaultValues: {
-      tenantId,
+      pdsApiKey: "",
+      scrApiKey: "",
+      epsApiKey: "",
+      eReferralApiKey: "",
+      gpConnectApiKey: "",
       pdsEnabled: false,
       scrEnabled: false,
       epsEnabled: false,
-      eRsEnabled: false,
+      eReferralEnabled: false,
       gpConnectEnabled: false,
-      environmentType: "sandbox",
     },
   });
 
-  // Update form values when data is loaded
+  // Update form when data is loaded
   useEffect(() => {
-    if (nhsIntegration) {
-      form.reset(nhsIntegration);
+    if (integration) {
+      form.reset({
+        pdsApiKey: integration.pdsApiKey === "••••••••" ? "" : integration.pdsApiKey || "", 
+        scrApiKey: integration.scrApiKey === "••••••••" ? "" : integration.scrApiKey || "",
+        epsApiKey: integration.epsApiKey === "••••••••" ? "" : integration.epsApiKey || "",
+        eReferralApiKey: integration.eReferralApiKey === "••••••••" ? "" : integration.eReferralApiKey || "",
+        gpConnectApiKey: integration.gpConnectApiKey === "••••••••" ? "" : integration.gpConnectApiKey || "",
+        pdsEnabled: integration.pdsEnabled || false,
+        scrEnabled: integration.scrEnabled || false,
+        epsEnabled: integration.epsEnabled || false,
+        eReferralEnabled: integration.eReferralEnabled || false,
+        gpConnectEnabled: integration.gpConnectEnabled || false,
+      });
     }
-  }, [nhsIntegration, form]);
+  }, [integration, form]);
 
-  // Save NHS integration settings
+  // Save mutation
   const saveMutation = useMutation({
     mutationFn: async (values: NhsIntegrationFormValues) => {
+      // Preserve existing API keys if they're masked
+      if (integration) {
+        if (!values.pdsApiKey && integration.pdsApiKey === "••••••••") {
+          values.pdsApiKey = "__UNCHANGED__";
+        }
+        if (!values.scrApiKey && integration.scrApiKey === "••••••••") {
+          values.scrApiKey = "__UNCHANGED__";
+        }
+        if (!values.epsApiKey && integration.epsApiKey === "••••••••") {
+          values.epsApiKey = "__UNCHANGED__";
+        }
+        if (!values.eReferralApiKey && integration.eReferralApiKey === "••••••••") {
+          values.eReferralApiKey = "__UNCHANGED__";
+        }
+        if (!values.gpConnectApiKey && integration.gpConnectApiKey === "••••••••") {
+          values.gpConnectApiKey = "__UNCHANGED__";
+        }
+      }
+      
       const res = await apiRequest(
         "POST",
         `/api/superadmin/tenants/${tenantId}/nhs-integration`,
         values
       );
-      return await res.json();
+      return res.json();
     },
     onSuccess: () => {
       toast({
-        title: "NHS Digital Integration Updated",
-        description: "NHS Digital Integration settings have been saved.",
+        title: "NHS Digital Integration Settings Saved",
+        description: "The integration settings have been updated successfully.",
       });
       queryClient.invalidateQueries({ queryKey: [`/api/superadmin/tenants/${tenantId}/nhs-integration`] });
     },
     onError: (error: Error) => {
       toast({
-        title: "Failed to update NHS Digital Integration",
-        description: error.message,
+        title: "Failed to Save Settings",
+        description: error.message || "An error occurred while saving the integration settings.",
         variant: "destructive",
       });
     },
   });
 
-  // Test connection to NHS Digital APIs
+  // Test connection mutation
   const testConnectionMutation = useMutation({
     mutationFn: async (service: string) => {
       const res = await apiRequest(
@@ -119,37 +134,47 @@ export function NhsDigitalIntegration({ tenantId }: NhsDigitalIntegrationProps) 
         `/api/superadmin/tenants/${tenantId}/nhs-integration/test`,
         { service }
       );
-      return await res.json();
+      return res.json();
     },
     onSuccess: (data) => {
       toast({
         title: "Connection Test Successful",
-        description: `Successfully connected to NHS Digital ${data.service.toUpperCase()} API.`,
+        description: data.message || "Successfully connected to the NHS Digital service.",
       });
+      setTestingService(null);
     },
     onError: (error: Error) => {
       toast({
         title: "Connection Test Failed",
-        description: error.message,
+        description: error.message || "Failed to connect to the NHS Digital service.",
         variant: "destructive",
       });
+      setTestingService(null);
     },
   });
 
+  // Handle form submission
   const onSubmit = (values: NhsIntegrationFormValues) => {
     saveMutation.mutate(values);
   };
 
-  const handleTestConnection = (service: string) => {
+  // Handle test connection
+  const testConnection = (service: string) => {
+    setTestingService(service);
     testConnectionMutation.mutate(service);
   };
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center p-8">
-        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-        Loading NHS Digital integration settings...
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>NHS Digital Integration</CardTitle>
+          <CardDescription>Loading integration settings...</CardDescription>
+        </CardHeader>
+        <CardContent className="flex justify-center py-10">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </CardContent>
+      </Card>
     );
   }
 
@@ -158,402 +183,377 @@ export function NhsDigitalIntegration({ tenantId }: NhsDigitalIntegrationProps) 
       <CardHeader>
         <CardTitle>NHS Digital Integration</CardTitle>
         <CardDescription>
-          Connect this tenant to NHS Digital services. These settings will allow the tenant to access patient information, prescriptions, and other NHS services.
+          Configure connections to NHS Digital services. Enable or disable individual services and provide API keys.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <FormField
-              control={form.control}
-              name="environmentType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Environment</FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select environment" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="sandbox">
-                        Sandbox (Testing)
-                      </SelectItem>
-                      <SelectItem value="production">
-                        Production (Live)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <FormDescription>
-                    Select the NHS Digital environment to connect to. Use Sandbox for testing and Production for live deployments.
-                  </FormDescription>
-                </FormItem>
-              )}
-            />
-
-            <div className="pt-4">
-              <Tabs value={activeService} onValueChange={setActiveService}>
-                <TabsList className="grid grid-cols-5 w-full">
-                  <TabsTrigger value="pds">
-                    PDS
-                    {form.watch("pdsEnabled") && (
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700">Enabled</Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="scr">
-                    SCR
-                    {form.watch("scrEnabled") && (
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700">Enabled</Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="eps">
-                    EPS
-                    {form.watch("epsEnabled") && (
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700">Enabled</Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="ers">
-                    e-RS
-                    {form.watch("eRsEnabled") && (
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700">Enabled</Badge>
-                    )}
-                  </TabsTrigger>
-                  <TabsTrigger value="gpconnect">
-                    GP Connect
-                    {form.watch("gpConnectEnabled") && (
-                      <Badge variant="outline" className="ml-2 bg-green-50 text-green-700 hover:bg-green-50 hover:text-green-700">Enabled</Badge>
-                    )}
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="pds" className="space-y-4 p-4 border rounded-md mt-4">
+            <div className="grid gap-6">
+              {/* PDS - Personal Demographics Service */}
+              <div className="grid gap-3 border p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium">Personal Demographics Service (PDS)</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      National database of NHS patient details such as name, address, date of birth, related people and NHS number.
+                    <p className="text-sm text-muted-foreground">
+                      Access patient demographic information such as name, address, and NHS number.
                     </p>
                   </div>
-
                   <FormField
                     control={form.control}
                     name="pdsEnabled"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Enable PDS Integration</FormLabel>
-                          <FormDescription>
-                            Allow this tenant to access NHS patient demographics.
-                          </FormDescription>
-                        </div>
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                        <FormLabel className="!mt-0">
+                          {field.value ? "Enabled" : "Disabled"}
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="pdsApiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>PDS API Key</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter PDS API key" {...field} value={field.value || ""} type="password" />
-                        </FormControl>
-                        <FormDescription>
-                          This is the NHS Digital issued API key for accessing the PDS service.
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => handleTestConnection("pds")}
-                    disabled={!form.watch("pdsApiKey") || testConnectionMutation.isPending}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="pdsApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder={integration?.pdsApiKey === "••••••••" ? "••••••••" : "Enter PDS API key"}
+                          disabled={!form.watch("pdsEnabled")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!form.watch("pdsEnabled") || !integration?.pdsApiKey || testingService !== null}
+                    onClick={() => testConnection("pds")}
                   >
-                    {testConnectionMutation.isPending && testConnectionMutation.variables === "pds" ? (
+                    {testingService === "pds" ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Testing Connection
+                        Testing...
                       </>
                     ) : (
-                      "Test Connection"
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Test Connection
+                      </>
                     )}
                   </Button>
-                </TabsContent>
+                </div>
+              </div>
 
-                <TabsContent value="scr" className="space-y-4 p-4 border rounded-md mt-4">
+              {/* SCR - Summary Care Record */}
+              <div className="grid gap-3 border p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium">Summary Care Record (SCR)</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      National database of summary-level care information such as medications and allergies.
+                    <p className="text-sm text-muted-foreground">
+                      Access patient's clinical summary including allergies, medications, and adverse reactions.
                     </p>
                   </div>
-
                   <FormField
                     control={form.control}
                     name="scrEnabled"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Enable SCR Integration</FormLabel>
-                          <FormDescription>
-                            Allow this tenant to access Summary Care Records.
-                          </FormDescription>
-                        </div>
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                        <FormLabel className="!mt-0">
+                          {field.value ? "Enabled" : "Disabled"}
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="scrApiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>SCR API Key</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter SCR API key" {...field} value={field.value || ""} type="password" />
-                        </FormControl>
-                        <FormDescription>
-                          This is the NHS Digital issued API key for accessing the SCR service.
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => handleTestConnection("scr")}
-                    disabled={!form.watch("scrApiKey") || testConnectionMutation.isPending}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="scrApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder={integration?.scrApiKey === "••••••••" ? "••••••••" : "Enter SCR API key"}
+                          disabled={!form.watch("scrEnabled")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!form.watch("scrEnabled") || !integration?.scrApiKey || testingService !== null}
+                    onClick={() => testConnection("scr")}
                   >
-                    {testConnectionMutation.isPending && testConnectionMutation.variables === "scr" ? (
+                    {testingService === "scr" ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Testing Connection
+                        Testing...
                       </>
                     ) : (
-                      "Test Connection"
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Test Connection
+                      </>
                     )}
                   </Button>
-                </TabsContent>
+                </div>
+              </div>
 
-                <TabsContent value="eps" className="space-y-4 p-4 border rounded-md mt-4">
+              {/* EPS - Electronic Prescription Service */}
+              <div className="grid gap-3 border p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium">Electronic Prescription Service (EPS)</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Sends prescriptions from prescribers such as GP practices to dispensers such as pharmacies.
+                    <p className="text-sm text-muted-foreground">
+                      Send electronic prescriptions directly to pharmacies and manage medication dispensing.
                     </p>
                   </div>
-
                   <FormField
                     control={form.control}
                     name="epsEnabled"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Enable EPS Integration</FormLabel>
-                          <FormDescription>
-                            Allow this tenant to create and manage electronic prescriptions.
-                          </FormDescription>
-                        </div>
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                        <FormLabel className="!mt-0">
+                          {field.value ? "Enabled" : "Disabled"}
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="epsApiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>EPS API Key</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter EPS API key" {...field} value={field.value || ""} type="password" />
-                        </FormControl>
-                        <FormDescription>
-                          This is the NHS Digital issued API key for accessing the EPS service.
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => handleTestConnection("eps")}
-                    disabled={!form.watch("epsApiKey") || testConnectionMutation.isPending}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="epsApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder={integration?.epsApiKey === "••••••••" ? "••••••••" : "Enter EPS API key"}
+                          disabled={!form.watch("epsEnabled")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!form.watch("epsEnabled") || !integration?.epsApiKey || testingService !== null}
+                    onClick={() => testConnection("eps")}
                   >
-                    {testConnectionMutation.isPending && testConnectionMutation.variables === "eps" ? (
+                    {testingService === "eps" ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Testing Connection
+                        Testing...
                       </>
                     ) : (
-                      "Test Connection"
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Test Connection
+                      </>
                     )}
                   </Button>
-                </TabsContent>
+                </div>
+              </div>
 
-                <TabsContent value="ers" className="space-y-4 p-4 border rounded-md mt-4">
+              {/* e-Referral Service */}
+              <div className="grid gap-3 border p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium">e-Referral Service (e-RS)</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Provides an easy way for patients to choose their first hospital or clinic appointment with a specialist.
+                    <p className="text-sm text-muted-foreground">
+                      Make and manage patient referrals to other healthcare providers within the NHS network.
                     </p>
                   </div>
-
                   <FormField
                     control={form.control}
-                    name="eRsEnabled"
+                    name="eReferralEnabled"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Enable e-RS Integration</FormLabel>
-                          <FormDescription>
-                            Allow this tenant to create and manage electronic referrals.
-                          </FormDescription>
-                        </div>
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                        <FormLabel className="!mt-0">
+                          {field.value ? "Enabled" : "Disabled"}
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="eRsApiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>e-RS API Key</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter e-RS API key" {...field} value={field.value || ""} type="password" />
-                        </FormControl>
-                        <FormDescription>
-                          This is the NHS Digital issued API key for accessing the e-RS service.
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => handleTestConnection("ers")}
-                    disabled={!form.watch("eRsApiKey") || testConnectionMutation.isPending}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="eReferralApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder={integration?.eReferralApiKey === "••••••••" ? "••••••••" : "Enter e-Referral API key"}
+                          disabled={!form.watch("eReferralEnabled")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!form.watch("eReferralEnabled") || !integration?.eReferralApiKey || testingService !== null}
+                    onClick={() => testConnection("e-referral")}
                   >
-                    {testConnectionMutation.isPending && testConnectionMutation.variables === "ers" ? (
+                    {testingService === "e-referral" ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Testing Connection
+                        Testing...
                       </>
                     ) : (
-                      "Test Connection"
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Test Connection
+                      </>
                     )}
                   </Button>
-                </TabsContent>
+                </div>
+              </div>
 
-                <TabsContent value="gpconnect" className="space-y-4 p-4 border rounded-md mt-4">
+              {/* GP Connect */}
+              <div className="grid gap-3 border p-4 rounded-lg">
+                <div className="flex items-center justify-between">
                   <div>
                     <h3 className="text-lg font-medium">GP Connect</h3>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      Allows applications to access detailed medical records from a patient's GP system.
+                    <p className="text-sm text-muted-foreground">
+                      Access GP practice data including appointments, patient records, and structured medical data.
                     </p>
                   </div>
-
                   <FormField
                     control={form.control}
                     name="gpConnectEnabled"
                     render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
-                        <div className="space-y-0.5">
-                          <FormLabel>Enable GP Connect Integration</FormLabel>
-                          <FormDescription>
-                            Allow this tenant to access detailed GP records.
-                          </FormDescription>
-                        </div>
+                      <FormItem className="flex items-center space-x-2">
                         <FormControl>
                           <Switch
                             checked={field.value}
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                        <FormLabel className="!mt-0">
+                          {field.value ? "Enabled" : "Disabled"}
+                        </FormLabel>
                       </FormItem>
                     )}
                   />
-
-                  <FormField
-                    control={form.control}
-                    name="gpConnectApiKey"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>GP Connect API Key</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Enter GP Connect API key" {...field} value={field.value || ""} type="password" />
-                        </FormControl>
-                        <FormDescription>
-                          This is the NHS Digital issued API key for accessing the GP Connect service.
-                        </FormDescription>
-                      </FormItem>
-                    )}
-                  />
-
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    onClick={() => handleTestConnection("gpconnect")}
-                    disabled={!form.watch("gpConnectApiKey") || testConnectionMutation.isPending}
+                </div>
+                <FormField
+                  control={form.control}
+                  name="gpConnectApiKey"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>API Key</FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="password"
+                          placeholder={integration?.gpConnectApiKey === "••••••••" ? "••••••••" : "Enter GP Connect API key"}
+                          disabled={!form.watch("gpConnectEnabled")}
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    disabled={!form.watch("gpConnectEnabled") || !integration?.gpConnectApiKey || testingService !== null}
+                    onClick={() => testConnection("gp-connect")}
                   >
-                    {testConnectionMutation.isPending && testConnectionMutation.variables === "gpconnect" ? (
+                    {testingService === "gp-connect" ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Testing Connection
+                        Testing...
                       </>
                     ) : (
-                      "Test Connection"
+                      <>
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Test Connection
+                      </>
                     )}
                   </Button>
-                </TabsContent>
-              </Tabs>
+                </div>
+              </div>
             </div>
 
-            <div className="pt-4 flex justify-end space-x-2">
-              <Button type="submit" disabled={saveMutation.isPending}>
+            <CardFooter className="flex justify-between px-0">
+              <div>
+                {integration && integration.lastVerified && (
+                  <p className="text-sm text-muted-foreground">
+                    <span className="font-medium">Last verified:</span> {new Date(integration.lastVerified).toLocaleString()}
+                  </p>
+                )}
+              </div>
+              <Button 
+                type="submit" 
+                disabled={saveMutation.isPending}
+                className="ml-auto"
+              >
                 {saveMutation.isPending ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Saving
+                    Saving...
                   </>
                 ) : (
-                  "Save NHS Digital Settings"
+                  <>Save Settings</>
                 )}
               </Button>
-            </div>
+            </CardFooter>
           </form>
         </Form>
       </CardContent>

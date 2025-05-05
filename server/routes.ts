@@ -7,6 +7,7 @@ import { z } from "zod";
 import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema, insertNhsDigitalIntegrationSchema } from "@shared/schema";
 import aiRoutes from "./routes/ai";
 import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
+import tenantRoutes from "./routes/superadmin/tenants";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -561,8 +562,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // AI route handler
   app.use('/api/ai', aiRoutes);
 
-  // NHS Digital Integration routes (SuperAdmin only)
+  // SuperAdmin routes
   app.use('/api/superadmin', nhsDigitalRoutes);
+  app.use('/api/superadmin', tenantRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);
