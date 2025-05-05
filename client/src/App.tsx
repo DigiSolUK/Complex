@@ -37,31 +37,35 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
   const { isAuthenticated, isDemoMode, isLoading, isAdmin, isSuperAdmin } = useAuth();
   const [, navigate] = useLocation();
   
-  useEffect(() => {
-    if (!isLoading) {
-      // Check authentication
-      if (!isAuthenticated && !isDemoMode) {
-        navigate('/auth'); // Navigate to auth page instead of login
-      } 
-      // Check admin access for protected routes
-      else if (requireAdmin && !isAdmin && !isSuperAdmin) {
-        navigate('/dashboard'); // Redirect non-admin users
-      }
-    }
-  }, [isAuthenticated, isDemoMode, isLoading, isAdmin, isSuperAdmin, requireAdmin, navigate]);
+  // Don't use useEffect for redirects as it can cause race conditions
+  // Instead, check conditions and return redirect immediately
   
   if (isLoading) {
-    return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
   }
   
+  // Handle authentication check
   if (!isAuthenticated && !isDemoMode) {
+    // Immediately redirect to auth page
+    navigate('/auth');
     return null;
   }
   
+  // Handle admin check for protected routes
   if (requireAdmin && !isAdmin && !isSuperAdmin) {
+    // Redirect non-admin users to dashboard
+    navigate('/dashboard');
     return null;
   }
   
+  // User is authenticated and has proper permissions
   return <Component params={params} />;
 }
 
@@ -87,7 +91,7 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
-  const { isAuthenticated, isDemoMode } = useAuth();
+  const { isAuthenticated, isDemoMode, isLoading } = useAuth();
   const [, navigate] = useLocation();
 
   // Get the current route
@@ -107,7 +111,7 @@ function Router() {
       <Route path="/login">
         {() => {
           // Redirect /login to /auth
-          window.location.href = '/auth';
+          navigate('/auth');
           return null;
         }}
       </Route>
@@ -120,74 +124,107 @@ function Router() {
     </>
   );
 
-  // For landing pages and auth page when not authenticated, don't use AppLayout
-  if (!isAuthenticated && !isDemoMode) {
+  // If still loading authentication state, show loading
+  if (isLoading) {
     return (
-      <Switch>
-        {commonRoutes}
-        <Route>  
-          {() => {
-            // Redirect to auth if accessing a protected route
-            navigate('/auth');
-            return null;
-          }}
-        </Route>
-      </Switch>
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading application...</p>
+        </div>
+      </div>
     );
   }
 
-  // For authenticated or dashboard pages, use the AppLayout
-  return (
-    <AppLayout>
+  // For landing pages and auth page when not authenticated, don't use AppLayout
+  if (!isAuthenticated && !isDemoMode) {
+    if (isLandingPage || location === '/auth' || location === '/login') {
+      // For landing pages and auth, render without app layout
+      return (
+        <Switch>
+          {commonRoutes}
+          <Route component={NotFound} />
+        </Switch>
+      );
+    } else {
+      // For protected routes when not authenticated, redirect to auth
+      return (
+        <Switch>
+          {commonRoutes}
+          <Route>
+            {() => {
+              navigate('/auth');
+              return null;
+            }}
+          </Route>
+        </Switch>
+      );
+    }
+  }
+
+  // For authenticated users or demo mode, use the AppLayout for non-landing pages
+  if (isLandingPage) {
+    // Keep landing pages with landing layout even when authenticated
+    return (
       <Switch>
         {commonRoutes}
-        <Route path="/dashboard">
-          {(params) => <ProtectedRoute component={Dashboard} params={params} />}
-        </Route>
-        <Route path="/patients">
-          {(params) => <ProtectedRoute component={Patients} params={params} />}
-        </Route>
-        <Route path="/patients/:id">
-          {(params) => <ProtectedRoute component={PatientProfile} params={params} />}
-        </Route>
-        <Route path="/appointments">
-          {(params) => <ProtectedRoute component={Appointments} params={params} />}
-        </Route>
-        <Route path="/care-plans">
-          {(params) => <ProtectedRoute component={CarePlans} params={params} />}
-        </Route>
-        <Route path="/care-plans/:id">
-          {(params) => <ProtectedRoute component={CarePlanDetail} params={params} />}
-        </Route>
-        <Route path="/staff">
-          {(params) => <ProtectedRoute component={Staff} params={params} />}
-        </Route>
-        <Route path="/reports">
-          {(params) => <ProtectedRoute component={Reports} params={params} />}
-        </Route>
-        <Route path="/settings">
-          {(params) => <ProtectedRoute component={Settings} params={params} />}
-        </Route>
-        
-        <Route path="/compliance-dashboard">
-          {(params) => <ProtectedRoute component={ComplianceDashboard} params={params} requireAdmin={true} />}
-        </Route>
-        
-        {/* Superadmin Routes */}
-        <Route path="/superadmin/dashboard">
-          {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} requireAdmin={true} />}
-        </Route>
-        <Route path="/superadmin/tenant-management">
-          {(params) => <ProtectedRoute component={TenantManagement} params={params} requireAdmin={true} />}
-        </Route>
-        <Route path="/superadmin/tenants/:id">
-          {(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />}
-        </Route>
-        
         <Route component={NotFound} />
       </Switch>
-    </AppLayout>
-  );
+    );
+  } else {
+    // For authenticated/demo users accessing app pages, use AppLayout
+    return (
+      <AppLayout>
+        <Switch>
+          {commonRoutes}
+          <Route path="/dashboard">
+            {(params) => <ProtectedRoute component={Dashboard} params={params} />}
+          </Route>
+          <Route path="/patients">
+            {(params) => <ProtectedRoute component={Patients} params={params} />}
+          </Route>
+          <Route path="/patients/:id">
+            {(params) => <ProtectedRoute component={PatientProfile} params={params} />}
+          </Route>
+          <Route path="/appointments">
+            {(params) => <ProtectedRoute component={Appointments} params={params} />}
+          </Route>
+          <Route path="/care-plans">
+            {(params) => <ProtectedRoute component={CarePlans} params={params} />}
+          </Route>
+          <Route path="/care-plans/:id">
+            {(params) => <ProtectedRoute component={CarePlanDetail} params={params} />}
+          </Route>
+          <Route path="/staff">
+            {(params) => <ProtectedRoute component={Staff} params={params} />}
+          </Route>
+          <Route path="/reports">
+            {(params) => <ProtectedRoute component={Reports} params={params} />}
+          </Route>
+          <Route path="/settings">
+            {(params) => <ProtectedRoute component={Settings} params={params} />}
+          </Route>
+          
+          <Route path="/compliance-dashboard">
+            {(params) => <ProtectedRoute component={ComplianceDashboard} params={params} requireAdmin={true} />}
+          </Route>
+          
+          {/* Superadmin Routes */}
+          <Route path="/superadmin/dashboard">
+            {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} requireAdmin={true} />}
+          </Route>
+          <Route path="/superadmin/tenant-management">
+            {(params) => <ProtectedRoute component={TenantManagement} params={params} requireAdmin={true} />}
+          </Route>
+          <Route path="/superadmin/tenants/:id">
+            {(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />}
+          </Route>
+          
+          <Route component={NotFound} />
+        </Switch>
+      </AppLayout>
+    );
+  }
 }
 
 function App() {
