@@ -16,6 +16,7 @@ import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
+import ComplianceDashboard from "@/pages/compliance-dashboard";
 // Import superadmin pages
 import SuperadminDashboard from "@/pages/superadmin/dashboard";
 import TenantManagement from "@/pages/superadmin/tenant-management";

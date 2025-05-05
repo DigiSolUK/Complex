@@ -165,6 +165,19 @@ export function Sidebar() {
                     </div>
                   </Link>
                   
+                  <Link href="/compliance-dashboard">
+                    <div
+                      className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                        isActive("/compliance-dashboard")
+                          ? "bg-primary-50 text-primary-700"
+                          : "text-neutral-700 hover:bg-neutral-100"
+                      }`}
+                    >
+                      <Layers className="h-5 w-5 mr-3" />
+                      Compliance Dashboard
+                    </div>
+                  </Link>
+                  
                   <Link href="/superadmin/tenant-management">
                     <div
                       className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
