@@ -1,234 +1,186 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Send, Loader2 } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
-import { apiRequest } from '@/lib/queryClient';
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { useToast } from "@/hooks/use-toast";
+import { apiRequest, queryClient } from "@/lib/queryClient";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { MessageCircle, SendHorizontal } from "lucide-react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
-interface Message {
-  id?: number;
+type Message = {
+  type: "patient" | "assistant";
   content: string;
-  sender: 'user' | 'bot';
   timestamp: Date;
-}
+};
 
 interface ChatbotProps {
   patientId: number;
-  patientName?: string;
 }
 
-export function PatientChatbot({ patientId, patientName = 'Patient' }: ChatbotProps) {
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [inputMessage, setInputMessage] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+export function Chatbot({ patientId }: ChatbotProps) {
   const { toast } = useToast();
+  const [message, setMessage] = useState("");
+  const [messages, setMessages] = useState<Message[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Load chat history on component mount
-  useEffect(() => {
-    const fetchChatHistory = async () => {
-      try {
-        const response = await apiRequest('GET', `/api/patient-chatbot/history/${patientId}`);
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch chat history');
-        }
-        
-        const data = await response.json();
-        
-        // Transform the history data into our message format
-        if (data.success && Array.isArray(data.history)) {
-          const formattedMessages = data.history.map((entry: any) => ([
-            {
-              id: entry.id,
-              content: entry.patientMessage,
-              sender: 'user',
-              timestamp: new Date(entry.timestamp)
-            },
-            {
-              id: entry.id,
-              content: entry.aiResponse,
-              sender: 'bot',
-              timestamp: new Date(entry.timestamp)
-            }
-          ])).flat();
-          
-          setMessages(formattedMessages);
-        }
-      } catch (error) {
-        console.error('Error fetching chat history:', error);
-        toast({
-          title: 'Error',
-          description: 'Failed to load chat history',
-          variant: 'destructive',
-        });
-      } finally {
-        setIsLoadingHistory(false);
-      }
-    };
+  // Fetch chat history on component mount
+  const { data: chatHistory, isLoading: isLoadingHistory } = useQuery({
+    queryKey: [`/api/patient-chatbot/history/${patientId}`],
+    enabled: !!patientId, 
+  });
 
-    fetchChatHistory();
-  }, [patientId, toast]);
-
-  // Scroll to bottom of messages when they change
+  // Scroll to bottom of messages when a new message is added
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
   }, [messages]);
 
-  // Add initial bot welcome message if no messages exist
+  // Load chat history when available
   useEffect(() => {
-    if (messages.length === 0 && !isLoadingHistory) {
-      setMessages([
+    if (chatHistory?.success && chatHistory.history?.length > 0) {
+      const formattedMessages = chatHistory.history.map((msg: any) => ([
         {
-          content: `Hello ${patientName}, I'm your healthcare assistant. How can I help you today?`,
-          sender: 'bot',
-          timestamp: new Date()
+          type: "patient",
+          content: msg.patientMessage,
+          timestamp: new Date(msg.timestamp),
+        },
+        {
+          type: "assistant",
+          content: msg.aiResponse,
+          timestamp: new Date(msg.timestamp),
         }
-      ]);
+      ])).flat();
+      
+      setMessages(formattedMessages);
     }
-  }, [messages.length, isLoadingHistory, patientName]);
+  }, [chatHistory]);
 
-  const handleSendMessage = async () => {
-    if (!inputMessage.trim() || isLoading) return;
-
-    const userMessage = {
-      content: inputMessage,
-      sender: 'user' as const,
-      timestamp: new Date()
-    };
-
-    // Add user message to chat
-    setMessages(prev => [...prev, userMessage]);
-    setInputMessage('');
-    setIsLoading(true);
-
-    try {
-      // Send message to API
-      const response = await apiRequest('POST', '/api/patient-chatbot/chat', {
+  // Send message mutation
+  const chatMutation = useMutation({
+    mutationFn: async (newMessage: string) => {
+      const response = await apiRequest("POST", "/api/patient-chatbot/chat", {
         patientId,
-        message: inputMessage
+        message: newMessage,
       });
-
-      if (!response.ok) {
-        throw new Error('Failed to get AI response');
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      if (data.success) {
+        setMessages([...messages, {
+          type: "assistant",
+          content: data.response,
+          timestamp: new Date(),
+        }]);
+      } else {
+        toast({
+          title: "Error",
+          description: "Failed to get a response from the healthcare assistant",
+          variant: "destructive",
+        });
       }
-
-      const data = await response.json();
-
-      // Add bot response to chat
-      setMessages(prev => [
-        ...prev, 
-        {
-          content: data.response || "I'm sorry, I couldn't process your request right now.",
-          sender: 'bot' as const,
-          timestamp: new Date()
-        }
-      ]);
-    } catch (error) {
-      console.error('Error getting AI response:', error);
+    },
+    onError: (error) => {
       toast({
-        title: 'Error',
-        description: 'Failed to get a response',
-        variant: 'destructive',
+        title: "Error",
+        description: "Something went wrong. Please try again later.",
+        variant: "destructive",
       });
+      console.error("Chat error:", error);
+    },
+  });
 
-      // Add error message
-      setMessages(prev => [
-        ...prev, 
-        {
-          content: "I'm sorry, I'm having trouble responding right now. Please try again later.",
-          sender: 'bot' as const,
-          timestamp: new Date()
-        }
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+  // Handle form submission
+  const handleSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    if (!message.trim()) return;
+
+    // Add user message to the messages list
+    const newMessages = [...messages, {
+      type: "patient",
+      content: message,
+      timestamp: new Date(),
+    }];
+    
+    setMessages(newMessages);
+    chatMutation.mutate(message);
+    setMessage(""); // Clear the input field
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
+  // Render loading state if history is loading
+  if (isLoadingHistory) {
+    return (
+      <Card className="w-full h-[600px] flex flex-col">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <MessageCircle className="mr-2 h-5 w-5" />
+            Healthcare Assistant
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex-1 overflow-y-auto p-4">
+          <div className="flex justify-center items-center h-full">
+            <p className="text-muted-foreground">Loading conversation history...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <Card className="flex flex-col h-[600px] w-full">
-      <CardHeader className="pb-3">
-        <CardTitle className="text-2xl font-bold text-primary">Healthcare Assistant</CardTitle>
+    <Card className="w-full h-[600px] flex flex-col">
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <MessageCircle className="mr-2 h-5 w-5" />
+          Healthcare Assistant
+        </CardTitle>
       </CardHeader>
-      <CardContent className="flex-grow overflow-hidden p-4">
-        {isLoadingHistory ? (
-          <div className="h-full flex items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-            <span className="ml-2 text-muted-foreground">Loading conversation history...</span>
+      <CardContent className="flex-1 overflow-y-auto p-4">
+        {messages.length === 0 ? (
+          <div className="flex flex-col justify-center items-center h-full space-y-3">
+            <p className="text-muted-foreground text-center">
+              Welcome to your personal healthcare assistant. <br />
+              How can I help you today?
+            </p>
           </div>
         ) : (
-          <ScrollArea className="h-full pr-4">
-            <div className="space-y-4 pb-4">
-              {messages.map((message, index) => (
+          <div className="space-y-4">
+            {messages.map((msg, index) => (
+              <div key={index} className={`flex ${msg.type === "patient" ? "justify-end" : "justify-start"}`}>
                 <div
-                  key={index}
-                  className={`flex items-start gap-3 ${message.sender === 'user' ? 'justify-end' : ''}`}
+                  className={`max-w-[80%] rounded-lg px-4 py-2 ${msg.type === "patient" 
+                    ? "bg-primary text-primary-foreground" 
+                    : "bg-muted"}`}
                 >
-                  {message.sender === 'bot' && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/assets/healthcare-assistant.png" alt="Healthcare Assistant" />
-                      <AvatarFallback className="bg-primary text-white">HA</AvatarFallback>
-                    </Avatar>
-                  )}
-                  <div
-                    className={`rounded-lg px-4 py-2 max-w-[80%] ${message.sender === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-                  >
-                    <div className="whitespace-pre-wrap">{message.content}</div>
-                    <div className={`text-xs mt-1 ${message.sender === 'user' ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>
-                      {formatDistanceToNow(message.timestamp, { addSuffix: true })}
-                    </div>
-                  </div>
-                  {message.sender === 'user' && (
-                    <Avatar className="h-8 w-8">
-                      <AvatarImage src="/assets/patient-avatar.png" alt="Patient" />
-                      <AvatarFallback className="bg-secondary text-secondary-foreground">PT</AvatarFallback>
-                    </Avatar>
-                  )}
+                  <p>{msg.content}</p>
+                  <p className="text-xs opacity-70 mt-1">
+                    {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                  </p>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
         )}
       </CardContent>
-      <CardFooter className="pt-0">
-        <div className="flex w-full items-center space-x-2">
-          <Textarea
+      <CardFooter className="border-t p-4">
+        <form onSubmit={handleSubmit} className="flex w-full space-x-2">
+          <Input
+            value={message}
+            onChange={(e) => setMessage(e.target.value)}
             placeholder="Type your message here..."
-            value={inputMessage}
-            onChange={(e) => setInputMessage(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="flex-1 min-h-[60px] max-h-[120px] resize-none"
-            disabled={isLoading || isLoadingHistory}
+            className="flex-1"
+            disabled={chatMutation.isPending}
           />
-          <Button
-            onClick={handleSendMessage}
-            disabled={!inputMessage.trim() || isLoading || isLoadingHistory}
-            size="icon"
-            className="h-10 w-10 rounded-full"
-          >
-            {isLoading ? (
-              <Loader2 className="h-4 w-4 animate-spin" />
+          <Button type="submit" disabled={!message.trim() || chatMutation.isPending}>
+            {chatMutation.isPending ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
             ) : (
-              <Send className="h-4 w-4" />
+              <SendHorizontal className="h-4 w-4" />
             )}
+            <span className="sr-only">Send</span>
           </Button>
-        </div>
+        </form>
       </CardFooter>
     </Card>
   );

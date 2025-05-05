@@ -1,25 +1,23 @@
-import React from 'react';
+import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface PageHeaderProps {
-  heading: string;
-  subheading?: string;
-  children?: React.ReactNode;
+  title: string;
+  description?: string;
+  children?: ReactNode;
+  className?: string;
 }
 
-export function PageHeader({ heading, subheading, children }: PageHeaderProps) {
+export function PageHeader({ title, description, children, className }: PageHeaderProps) {
   return (
-    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 py-4">
-      <div className="space-y-1.5">
-        <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
-        {subheading && (
-          <p className="text-muted-foreground">{subheading}</p>
+    <div className={cn("flex flex-col space-y-2 sm:flex-row sm:items-center sm:justify-between sm:space-y-0 mb-6", className)}>
+      <div>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
+        {description && (
+          <p className="text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      {children && (
-        <div className="flex items-center gap-2">
-          {children}
-        </div>
-      )}
+      {children && <div className="flex items-center space-x-2">{children}</div>}
     </div>
   );
 }

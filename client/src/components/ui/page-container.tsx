@@ -1,13 +1,14 @@
-import React from 'react';
+import { cn } from "@/lib/utils";
+import { ReactNode } from "react";
 
 interface PageContainerProps {
-  children: React.ReactNode;
+  children: ReactNode;
   className?: string;
 }
 
-export function PageContainer({ children, className = '' }: PageContainerProps) {
+export function PageContainer({ children, className }: PageContainerProps) {
   return (
-    <div className={`container mx-auto px-4 py-6 ${className}`}>
+    <div className={cn("p-6 md:p-8 w-full max-w-6xl mx-auto", className)}>
       {children}
     </div>
   );
