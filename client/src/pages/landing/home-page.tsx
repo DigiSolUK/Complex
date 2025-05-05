@@ -23,8 +23,8 @@ export default function HomePage() {
                 Streamline patient care, ensure compliance, and improve outcomes.
               </p>
               <div className="flex space-x-4">
-                <Link href="/dashboard">
-                  <Button className="px-6" size="lg">Explore Demo</Button>
+                <Link href="/auth">
+                  <Button className="px-6" size="lg">Login / Sign Up</Button>
                 </Link>
                 <Link href="/features">
                   <Button variant="outline" className="px-6" size="lg">Learn More</Button>
@@ -201,8 +201,8 @@ export default function HomePage() {
             Experience how ComplexCare CRM can help you provide better care, ensure compliance, and improve operational efficiency.
           </p>
           <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link href="/dashboard">
-              <Button variant="secondary" size="lg" className="px-8">Explore Demo</Button>
+            <Link href="/auth">
+              <Button variant="secondary" size="lg" className="px-8">Get Started</Button>
             </Link>
             <Link href="/contact">
               <Button variant="outline" size="lg" className="px-8 bg-transparent border-white text-white hover:bg-white hover:text-primary">
