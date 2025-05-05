@@ -76,12 +76,12 @@ class Auth {
     // Create session middleware
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
-      resave: true,
-      saveUninitialized: true,
+      resave: false,
+      saveUninitialized: false,
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: false, // Set to false for development, true for production
         path: "/",
         sameSite: "lax"
       },
