@@ -16,6 +16,7 @@ import Staff from "@/pages/staff";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
+import TestLogin from "@/pages/test-login";
 import ComplianceDashboard from "@/pages/compliance-dashboard";
 // Import superadmin pages
 import SuperadminDashboard from "@/pages/superadmin/dashboard";
@@ -115,6 +116,7 @@ function Router() {
           return null;
         }}
       </Route>
+      <Route path="/test-login" component={TestLogin} />
       {/* Landing Pages */}
       <Route path="/" component={HomePage} />
       <Route path="/features" component={FeaturesPage} />

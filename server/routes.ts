@@ -31,7 +31,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       // This is only called if authentication was successful
-      console.log("Login successful, sending user data");
+      console.log("Login successful, sending user data", req.user);
+      
+      // Augment user data with role and tenant info for compatibility with frontend
+      if (req.user) {
+        const userData = req.user as any;
+        // Default to care_staff role if not set
+        userData.role = userData.role || "care_staff";
+        // Set tenantId to 1 for existing users if not set
+        userData.tenantId = userData.tenantId || 1;
+      }
+      
       res.json(req.user);
     });
   });
