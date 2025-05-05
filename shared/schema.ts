@@ -18,6 +18,8 @@ export const tenants = pgTable("tenants", {
   contactPhone: text("contact_phone"),
   billingInfo: text("billing_info"),
   metadata: json("metadata"),
+  // NHS Digital API integration settings
+  nhsIntegrationEnabled: boolean("nhs_integration_enabled").default(false),
 });
 
 export const users = pgTable("users", {
@@ -193,3 +195,36 @@ export type Tenant = typeof tenants.$inferSelect;
 
 export type InsertSubscription = z.infer<typeof insertSubscriptionSchema>;
 export type Subscription = typeof subscriptions.$inferSelect;
+
+// NHS Digital API integration
+export const nhsDigitalIntegrations = pgTable("nhs_digital_integrations", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  // Service-specific API keys and configurations
+  pdsApiKey: text("pds_api_key"),
+  pdsEnabled: boolean("pds_enabled").default(false),
+  scrApiKey: text("scr_api_key"),
+  scrEnabled: boolean("scr_enabled").default(false),
+  epsApiKey: text("eps_api_key"),
+  epsEnabled: boolean("eps_enabled").default(false),
+  eRsApiKey: text("e_rs_api_key"),
+  eRsEnabled: boolean("e_rs_enabled").default(false),
+  gpConnectApiKey: text("gp_connect_api_key"),
+  gpConnectEnabled: boolean("gp_connect_enabled").default(false),
+  // Configuration and metadata
+  environmentType: text("environment_type", { enum: ["sandbox", "production"] }).default("sandbox"),
+  lastVerified: timestamp("last_verified"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+  metadata: json("metadata"),
+});
+
+export const insertNhsDigitalIntegrationSchema = createInsertSchema(nhsDigitalIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  lastVerified: true,
+});
+
+export type InsertNhsDigitalIntegration = z.infer<typeof insertNhsDigitalIntegrationSchema>;
+export type NhsDigitalIntegration = typeof nhsDigitalIntegrations.$inferSelect;
