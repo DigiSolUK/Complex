@@ -118,15 +118,62 @@ export async function registerRoutes(app: Express): Promise<Server> {
           }
           // Remove password from response
           const { password: _, ...userWithoutPassword } = user;
-          return res.json(userWithoutPassword);
+          
+          // Reconnect passport session for this user
+          req.login(userWithoutPassword, (err) => {
+            if (err) {
+              console.error("Error reconnecting passport session:", err);
+              // Continue without passport session
+            } else {
+              console.log("Successfully reconnected passport session");
+            }
+            
+            return res.json(userWithoutPassword);
+          });
         })
         .catch(err => {
           console.error("Error fetching user by ID:", err);
           return res.status(500).json({ message: "Error fetching user data" });
         });
     }
+
+    // Case 3: Try to authenticate via user_id cookie if present
+    if (req.cookies.user_id) {
+      const userId = parseInt(req.cookies.user_id, 10);
+      console.log('Attempting authentication via user_id cookie:', userId);
+      
+      return storage.getUserById(userId)
+        .then(user => {
+          if (!user) {
+            return res.status(401).json({ message: "User not found" });
+          }
+          
+          // Remove password from response
+          const { password: _, ...userWithoutPassword } = user;
+          
+          // Set session data
+          req.session.isAuthenticated = true;
+          req.session.userId = userId;
+          
+          // Reconnect passport session
+          req.login(userWithoutPassword, (err) => {
+            if (err) {
+              console.error("Error reconnecting passport session:", err);
+              // Continue without passport session but with our custom session data
+            } else {
+              console.log("Successfully reconnected passport session from cookie");
+            }
+            
+            return res.json(userWithoutPassword);
+          });
+        })
+        .catch(err => {
+          console.error("Error fetching user by cookie ID:", err);
+          return res.status(401).json({ message: "Unauthorized" });
+        });
+    }
     
-    // Case 3: User is not authenticated
+    // Case 4: User is not authenticated
     return res.status(401).json({ message: "Unauthorized" });
   });
   

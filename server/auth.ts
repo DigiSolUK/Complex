@@ -79,7 +79,7 @@ class Auth {
       }
     });
 
-    // Create session middleware with dynamic settings based on protocol
+    // Create session middleware with settings optimized for Replit environment
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
       resave: true,            // Force session to save on each request to ensure nothing is lost
@@ -90,27 +90,23 @@ class Auth {
         httpOnly: true,
         // Cookie settings will be set dynamically per request
         path: "/",
+        sameSite: 'none',      // Allows cookies in cross-site requests
+        secure: true,          // Cookies only sent over HTTPS
       },
       store: storage.sessionStore, // Use database session store
-      name: "connect.sid",     // Use standard name for better compatibility
+      name: "complexcare.sid", // Unique name to avoid conflicts
     });
     
-    // Create a middleware function to dynamically set cookie security based on protocol
+    // Create a middleware function to ensure consistent cookie settings for Replit environment
     const dynamicCookieMiddleware = (req: Request, res: Response, next: NextFunction) => {
-      // If request is detected as secure (HTTPS) through our custom property
-      const isSecure = (req as any).isSecureConnection;
-      console.log(`dynamicCookieMiddleware: isSecureConnection = ${isSecure}`);
+      // In Replit environment, always treat as secure HTTPS
+      console.log(`dynamicCookieMiddleware: enforcing secure cookie settings`);
       
-      if (isSecure) {
-        req.session.cookie.secure = true;
-        req.session.cookie.sameSite = 'none';
-        console.log('Setting cookie: secure=true, sameSite=none');
-      } else {
-        // For HTTP, use more permissive settings
-        req.session.cookie.secure = false;
-        req.session.cookie.sameSite = 'lax';
-        console.log('Setting cookie: secure=false, sameSite=lax');
-      }
+      // Always set cookie as secure and SameSite=None for Replit
+      req.session.cookie.secure = true;
+      req.session.cookie.sameSite = 'none';
+      console.log('Setting cookie: secure=true, sameSite=none');
+      
       next();
     };
 
@@ -208,26 +204,25 @@ class Auth {
           req.session.userId = user.id;
           req.session.lastLogin = new Date().toISOString();
           
-          // Get secure connection status from our custom property
-          const isSecure = (req as any).isSecureConnection;
+          // In Replit environment, always use secure cookie settings
           
-          // Set user ID cookie with settings appropriate for the request protocol
+          // Set user ID cookie with settings for secure environment
           res.cookie('user_id', user.id, {
             maxAge: 24 * 60 * 60 * 1000,
             httpOnly: true,
-            secure: isSecure,
-            sameSite: isSecure ? 'none' : 'lax'
+            secure: true,
+            sameSite: 'none'
           });
           
           // Log cookie settings for debugging
-          console.log(`Setting user_id cookie with secure=${isSecure}, sameSite=${isSecure ? 'none' : 'lax'}`);
+          console.log(`Setting user_id cookie with secure=true, sameSite=none`);
           
-          // Explicitly set session cookie parameters based on request protocol
-          req.session.cookie.secure = isSecure;
-          req.session.cookie.sameSite = isSecure ? 'none' : 'lax';
+          // Explicitly set session cookie parameters for secure environment
+          req.session.cookie.secure = true;
+          req.session.cookie.sameSite = 'none';
           
           // Log session cookie settings
-          console.log(`Setting session cookie with secure=${isSecure}, sameSite=${isSecure ? 'none' : 'lax'}`);
+          console.log(`Setting session cookie with secure=true, sameSite=none`);
           
           console.log("Login successful for user ID:", user.id);
           console.log("Response headers being sent:", res.getHeaders());
