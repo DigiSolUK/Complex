@@ -845,6 +845,45 @@ export class MemStorage implements IStorage {
     };
   }
 
+  // Tenant methods
+  async createTenant(tenant: InsertTenant): Promise<Tenant> {
+    const id = this.currentId.tenants++;
+    const newTenant: Tenant = {
+      ...tenant,
+      id,
+      createdAt: new Date().toISOString(),
+      lastActivity: new Date().toISOString(),
+      logo: null,
+      userCount: 0,
+      apiKey: null,
+      customizations: null,
+    };
+    this.tenants.set(id, newTenant);
+    return newTenant;
+  }
+  
+  async updateTenant(id: number, tenant: InsertTenant): Promise<Tenant> {
+    const existingTenant = this.tenants.get(id);
+    if (!existingTenant) {
+      throw new Error("Tenant not found");
+    }
+    
+    const updatedTenant: Tenant = {
+      ...existingTenant,
+      ...tenant,
+    };
+    this.tenants.set(id, updatedTenant);
+    return updatedTenant;
+  }
+  
+  async getTenantById(id: number): Promise<Tenant | undefined> {
+    return this.tenants.get(id);
+  }
+  
+  async getAllTenants(): Promise<Tenant[]> {
+    return Array.from(this.tenants.values());
+  }
+
   // NHS Digital Integration methods
   async getNhsIntegrationByTenantId(tenantId: number): Promise<NhsDigitalIntegration | undefined> {
     return Array.from(this.nhsIntegrations.values()).find(integration => integration.tenantId === tenantId);
@@ -1248,6 +1287,41 @@ export class DatabaseStorage implements IStorage {
         .then(result => Number(result[0].count) || 0),
       activeStaff: await this.getActiveStaffCount()
     };
+  }
+  
+  // Tenant methods
+  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
+    const [tenant] = await db
+      .insert(tenants)
+      .values(insertTenant)
+      .returning();
+    return tenant;
+  }
+
+  async updateTenant(id: number, tenantData: InsertTenant): Promise<Tenant> {
+    const [tenant] = await db
+      .update(tenants)
+      .set(tenantData)
+      .where(eq(tenants.id, id))
+      .returning();
+    
+    if (!tenant) {
+      throw new Error("Tenant not found");
+    }
+    
+    return tenant;
+  }
+
+  async getTenantById(id: number): Promise<Tenant | undefined> {
+    const [tenant] = await db
+      .select()
+      .from(tenants)
+      .where(eq(tenants.id, id));
+    return tenant || undefined;
+  }
+
+  async getAllTenants(): Promise<Tenant[]> {
+    return db.select().from(tenants);
   }
   
   // NHS Digital Integration methods
