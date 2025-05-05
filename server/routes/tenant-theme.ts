@@ -39,7 +39,9 @@ router.get("/api/tenants/:id/theme", auth.isAuthenticated, async (req, res) => {
 router.get("/api/tenants/current/theme", auth.isAuthenticated, async (req, res) => {
   try {
     // Get the tenant associated with the user
-    if (!req.user?.tenantId) {
+    const userTenantId = req.user?.tenantId !== undefined ? req.user.tenantId : null;
+    
+    if (userTenantId === null || userTenantId === undefined) {
       // For demo purposes or superadmin users without a specific tenant, return default tenant
       const [defaultTenant] = await db.select().from(tenants).limit(1);
       
@@ -59,10 +61,22 @@ router.get("/api/tenants/current/theme", auth.isAuthenticated, async (req, res) 
     const [tenant] = await db
       .select()
       .from(tenants)
-      .where(eq(tenants.id, req.user.tenantId));
+      .where(eq(tenants.id, userTenantId));
     
     if (!tenant) {
-      return res.status(404).json({ message: "Tenant not found" });
+      // Fallback to default tenant if the user's tenant doesn't exist
+      const [defaultTenant] = await db.select().from(tenants).limit(1);
+      
+      if (!defaultTenant) {
+        return res.status(404).json({ message: "No tenants available" });
+      }
+      
+      return res.json({
+        themeName: defaultTenant.themeName,
+        themeColors: defaultTenant.themeColors,
+        themeDarkMode: defaultTenant.themeDarkMode,
+        themeCustomCss: defaultTenant.themeCustomCss,
+      });
     }
     
     // Return theme settings
@@ -101,8 +115,10 @@ router.put("/api/tenants/:id/theme", auth.hasRole(["superadmin", "admin"]), asyn
     }
     
     // Log activity
+    const userId = req.user?.id !== undefined ? req.user.id : 0;
+    
     await storage.createActivityLog({
-      userId: req.user ? req.user.id : 0,
+      userId,
       action: "update",
       entityType: "tenant",
       entityId: tenantId,

@@ -103,19 +103,28 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Define fetchTenantTheme with useCallback to prevent dependency loop
   const fetchTenantTheme = useCallback(async () => {
     try {
-      // If we have a tenantId, fetch that specific tenant's theme
-      // Otherwise fetch the current user's tenant theme
-      const endpoint = tenantId ? 
-        `/api/tenants/${tenantId}/theme` : 
-        '/api/tenants/current/theme';
-      
-      const response = await apiRequest('GET', endpoint);
-      const data = await response.json();
-      
-      if (data.themeName) setThemeName(data.themeName);
-      if (data.themeColors) setThemeColors(data.themeColors);
-      if (data.themeDarkMode !== undefined) setIsDarkMode(data.themeDarkMode);
-      setCustomCss(data.themeCustomCss || null);
+      // Only fetch theme if user is authenticated and has a tenantId
+      if (user) {
+        // If we have a tenantId, fetch that specific tenant's theme
+        // Otherwise fetch the current user's tenant theme
+        const endpoint = tenantId ? 
+          `/api/tenants/${tenantId}/theme` : 
+          '/api/tenants/current/theme';
+        
+        const response = await apiRequest('GET', endpoint);
+        const data = await response.json();
+        
+        if (data.themeName) setThemeName(data.themeName);
+        if (data.themeColors) setThemeColors(data.themeColors);
+        if (data.themeDarkMode !== undefined) setIsDarkMode(data.themeDarkMode);
+        setCustomCss(data.themeCustomCss || null);
+      } else {
+        // For unauthenticated users, use defaults
+        setThemeName('default');
+        setThemeColors(lightThemeColors);
+        setIsDarkMode(false);
+        setCustomCss(null);
+      }
       setIsInitialized(true);
     } catch (error) {
       console.error('Failed to fetch tenant theme:', error);
@@ -126,14 +135,15 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setCustomCss(null);
       setIsInitialized(true);
     }
-  }, [tenantId, setThemeName, setThemeColors, setIsDarkMode, setCustomCss, setIsInitialized]);
+  }, [user, tenantId, setThemeName, setThemeColors, setIsDarkMode, setCustomCss, setIsInitialized]);
 
-  // Fetch tenant theme on mount if user is authenticated
+  // Fetch tenant theme when component mounts or auth state changes
   useEffect(() => {
-    if (!isInitialized) {
+    // Reinitialize theme when auth state changes
+    if (!isInitialized || user) {
       fetchTenantTheme();
     }
-  }, [isInitialized, fetchTenantTheme]);
+  }, [isInitialized, fetchTenantTheme, user]);
 
   // Memoize applyThemeToDOM to prevent unnecessary rerenders
   const applyThemeToDOM = useCallback(() => {
