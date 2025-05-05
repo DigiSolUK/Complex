@@ -1040,6 +1040,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Tenant theme routes
   app.use(tenantThemeRoutes);
+  
+  // Patient chatbot routes
+  app.use('/api/patient-chatbot', patientChatbotRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);
