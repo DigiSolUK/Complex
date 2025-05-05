@@ -562,205 +562,293 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add seed data endpoint (only for development)
   app.post("/api/seed", async (req, res) => {
     try {
-      // Create super admin user
-      const adminPassword = await cryptoService.hashPassword("admin123");
-      const adminUser = await storage.createUser({
-        username: "admin",
-        password: adminPassword,
-        email: "admin@complexcare.dev",
-        role: "superadmin",
-        name: "Admin User",
-      });
+      // Store created entities
+      const created = {
+        users: {},
+        patients: [],
+        staff: [],
+        appointments: [],
+        carePlans: [],
+        tenant: null,
+      };
 
-      // Create demo tenant
-      const tenant = await storage.createTenant({
-        name: "City Health Partners",
-        domain: "cityhealthpartners.com",
-        status: "active",
-        subscriptionTier: "professional",
-        userLimit: 10,
-        contactEmail: "contact@cityhealthpartners.com",
-        contactName: "John Smith",
-        nhsIntegrationEnabled: false,
-      });
+      // Check if admin user exists
+      let adminUser = await storage.getUserByUsername("admin");
+      if (!adminUser) {
+        const adminPassword = await cryptoService.hashPassword("admin123");
+        adminUser = await storage.createUser({
+          username: "admin",
+          password: adminPassword,
+          email: "admin@complexcare.dev",
+          role: "superadmin",
+          name: "Admin User",
+        });
+      }
+      created.users.admin = adminUser;
 
-      // Create demo users
+      // Check for existing tenant
+      const existingTenants = await storage.getAllTenants();
+      let tenant;
+      if (existingTenants.length === 0) {
+        tenant = await storage.createTenant({
+          name: "City Health Partners",
+          domain: "cityhealthpartners.com",
+          status: "active",
+          subscriptionTier: "professional",
+          userLimit: 10,
+          contactEmail: "contact@cityhealthpartners.com",
+          contactName: "John Smith",
+          nhsIntegrationEnabled: false,
+        });
+      } else {
+        tenant = existingTenants[0];
+      }
+      created.tenant = tenant;
+
+      // Create or get demo users
       const demoPassword = await cryptoService.hashPassword("demo123");
-      const drJohnson = await storage.createUser({
-        username: "drjohnson",
-        password: demoPassword,
-        email: "sarah.johnson@complexcare.dev",
-        role: "admin",
-        name: "Dr. Sarah Johnson",
-      });
+      let drJohnson = await storage.getUserByUsername("drjohnson");
+      if (!drJohnson) {
+        drJohnson = await storage.createUser({
+          username: "drjohnson",
+          password: demoPassword,
+          email: "sarah.johnson@complexcare.dev",
+          role: "admin",
+          name: "Dr. Sarah Johnson",
+        });
+      }
+      created.users.doctor = drJohnson;
       
-      const nurseUser = await storage.createUser({
-        username: "nurse",
-        password: demoPassword,
-        email: "lisa.chen@complexcare.dev",
-        role: "care_staff",
-        name: "Nurse Lisa Chen",
-      });
+      let nurseUser = await storage.getUserByUsername("nurse");
+      if (!nurseUser) {
+        nurseUser = await storage.createUser({
+          username: "nurse",
+          password: demoPassword,
+          email: "lisa.chen@complexcare.dev",
+          role: "care_staff",
+          name: "Nurse Lisa Chen",
+        });
+      }
+      created.users.nurse = nurseUser;
       
-      const patientUser = await storage.createUser({
-        username: "patient",
-        password: demoPassword,
-        email: "emma.wilson@example.com",
-        role: "patient",
-        name: "Emma Wilson",
-      });
+      let patientUser = await storage.getUserByUsername("patient");
+      if (!patientUser) {
+        patientUser = await storage.createUser({
+          username: "patient",
+          password: demoPassword,
+          email: "emma.wilson@example.com",
+          role: "patient",
+          name: "Emma Wilson",
+        });
+      }
+      created.users.patient = patientUser;
 
-      // Create demo patients
-      const patient1 = await storage.createPatient({
-        patientId: "PAT-2023-001",
-        userId: patientUser.id,
-        name: "Emma Wilson",
-        dateOfBirth: "1981-05-12",
-        gender: "Female",
-        address: "123 Main St, Anytown, UK",
-        phone: "07700 900123",
-        email: "emma.wilson@example.com",
-        emergencyContact: "John Wilson (Husband) - 07700 900124",
-        careType: "Home Care",
-        status: "Active",
-        notes: "Regular check-ups every 3 months. Prefers morning appointments.",
-        medicalHistory: "History of hypertension. On medication since 2018.",
-      });
-      
-      const patient2 = await storage.createPatient({
-        patientId: "PAT-2023-042",
-        userId: null,
-        name: "James Davis",
-        dateOfBirth: "1956-11-28",
-        gender: "Male",
-        address: "45 Oak Avenue, Othertown, UK",
-        phone: "07700 900125",
-        email: "james.davis@example.com",
-        emergencyContact: "Mary Davis (Daughter) - 07700 900126",
-        careType: "Residential",
-        status: "Review",
-        notes: "Needs assistance with daily activities. Weekly physiotherapy.",
-        medicalHistory: "Type 2 diabetes, diagnosed in 2015. Hip replacement in 2020.",
-      });
+      // Get all existing patients
+      const existingPatients = await storage.getAllPatients();
+      const existingPatientIds = new Map(existingPatients.map(p => [p.patientId, p.id]));
 
-      // Create demo staff
-      const staff1 = await storage.createStaff({
-        userId: drJohnson.id,
-        staffId: "STAFF-2023-001",
-        name: "Dr. Sarah Johnson",
-        position: "Lead Physician",
-        department: "General Practice",
-        phone: "07700 900001",
-        email: "sarah.johnson@complexcare.dev",
-        qualifications: "MD, MRCGP",
-        status: "Active",
-      });
+      // Create demo patients if they don't exist
+      let patient1;
+      if (!existingPatientIds.has("PAT-2023-001")) {
+        patient1 = await storage.createPatient({
+          patientId: "PAT-2023-001",
+          userId: patientUser.id,
+          name: "Emma Wilson",
+          dateOfBirth: "1981-05-12",
+          gender: "Female",
+          address: "123 Main St, Anytown, UK",
+          phone: "07700 900123",
+          email: "emma.wilson@example.com",
+          emergencyContact: "John Wilson (Husband) - 07700 900124",
+          careType: "Home Care",
+          status: "Active",
+          notes: "Regular check-ups every 3 months. Prefers morning appointments.",
+          medicalHistory: "History of hypertension. On medication since 2018.",
+        });
+        created.patients.push(patient1);
+      } else {
+        patient1 = existingPatients.find(p => p.patientId === "PAT-2023-001");
+      }
       
-      const staff2 = await storage.createStaff({
-        userId: nurseUser.id,
-        staffId: "STAFF-2023-002",
-        name: "Nurse Lisa Chen",
-        position: "Senior Nurse",
-        department: "Community Nursing",
-        phone: "07700 900002",
-        email: "lisa.chen@complexcare.dev",
-        qualifications: "RN, BSN",
-        status: "Active",
-      });
+      let patient2;
+      if (!existingPatientIds.has("PAT-2023-042")) {
+        patient2 = await storage.createPatient({
+          patientId: "PAT-2023-042",
+          userId: null,
+          name: "James Davis",
+          dateOfBirth: "1956-11-28",
+          gender: "Male",
+          address: "45 Oak Avenue, Othertown, UK",
+          phone: "07700 900125",
+          email: "james.davis@example.com",
+          emergencyContact: "Mary Davis (Daughter) - 07700 900126",
+          careType: "Residential",
+          status: "Review",
+          notes: "Needs assistance with daily activities. Weekly physiotherapy.",
+          medicalHistory: "Type 2 diabetes, diagnosed in 2015. Hip replacement in 2020.",
+        });
+        created.patients.push(patient2);
+      } else {
+        patient2 = existingPatients.find(p => p.patientId === "PAT-2023-042");
+      }
 
-      // Create demo appointments
-      const today = new Date();
-      
-      const appointment1 = await storage.createAppointment({
-        patientId: patient1.id,
-        staffId: staff1.id,
-        title: "Annual check-up",
-        description: "Regular health assessment",
-        dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0, 0),
-        duration: 60,
-        status: "Confirmed",
-        location: "Main Clinic, Room 3",
-        notes: "Patient should bring medication list and recent test results.",
-      });
-      
-      const appointment2 = await storage.createAppointment({
-        patientId: patient2.id,
-        staffId: staff2.id,
-        title: "Medication review",
-        description: "Review current medications and adjust as needed",
-        dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30, 0),
-        duration: 30,
-        status: "Pending",
-        location: "East Wing, Room 12",
-        notes: "",
-      });
+      // Get all existing staff
+      const existingStaff = await storage.getAllStaff();
+      const existingStaffIds = new Map(existingStaff.map(s => [s.staffId, s.id]));
 
-      // Create demo care plans
-      const carePlan1 = await storage.createCarePlan({
-        patientId: patient1.id,
-        title: "Comprehensive Care Plan",
-        description: "Holistic care plan addressing all current health needs and preventive measures.",
-        startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
-        endDate: new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()),
-        status: "Active",
-        assessments: [
-          { title: "Initial Health Assessment", description: "Complete health evaluation including physical and cognitive assessment." }
-        ],
-        goals: [
-          { title: "Improved Mobility", description: "Increase walking distance to 500m without assistance", targetDate: "2023-09-30" }
-        ],
-        interventions: [
-          { title: "Physical Therapy", description: "Twice weekly sessions focusing on lower body strength", frequency: "Twice weekly" }
-        ],
-        medications: [
-          { name: "Paracetamol", dosage: "500mg", frequency: "As needed for pain", instructions: "Take with food" }
-        ],
-        reviewSchedule: "Monthly",
-        createdBy: drJohnson.id,
-        lastUpdatedBy: drJohnson.id,
-      });
+      // Create demo staff if they don't exist
+      let staff1;
+      if (!existingStaffIds.has("STAFF-2023-001")) {
+        staff1 = await storage.createStaff({
+          userId: drJohnson.id,
+          staffId: "STAFF-2023-001",
+          name: "Dr. Sarah Johnson",
+          position: "Lead Physician",
+          department: "General Practice",
+          phone: "07700 900001",
+          email: "sarah.johnson@complexcare.dev",
+          qualifications: "MD, MRCGP",
+          status: "Active",
+        });
+        created.staff.push(staff1);
+      } else {
+        staff1 = existingStaff.find(s => s.staffId === "STAFF-2023-001");
+      }
+      
+      let staff2;
+      if (!existingStaffIds.has("STAFF-2023-002")) {
+        staff2 = await storage.createStaff({
+          userId: nurseUser.id,
+          staffId: "STAFF-2023-002",
+          name: "Nurse Lisa Chen",
+          position: "Senior Nurse",
+          department: "Community Nursing",
+          phone: "07700 900002",
+          email: "lisa.chen@complexcare.dev",
+          qualifications: "RN, BSN",
+          status: "Active",
+        });
+        created.staff.push(staff2);
+      } else {
+        staff2 = existingStaff.find(s => s.staffId === "STAFF-2023-002");
+      }
 
-      // Create demo activity logs
-      await storage.createActivityLog({
-        userId: drJohnson.id,
-        action: "create",
-        entityType: "patient",
-        entityId: patient1.id,
-        details: "Created new patient: Emma Wilson",
-      });
-      
-      await storage.createActivityLog({
-        userId: drJohnson.id,
-        action: "create",
-        entityType: "appointment",
-        entityId: appointment1.id,
-        details: "Scheduled new appointment for Emma Wilson: Annual check-up",
-      });
-      
-      await storage.createActivityLog({
-        userId: drJohnson.id,
-        action: "create",
-        entityType: "care_plan",
-        entityId: carePlan1.id,
-        details: "Created new care plan for Emma Wilson: Comprehensive Care Plan",
-      });
+      // Check for existing appointments
+      const existingAppointments = await storage.getAllAppointments();
+
+      // Create demo appointments if needed
+      if (existingAppointments.length === 0 && patient1 && patient2 && staff1 && staff2) {
+        const today = new Date();
+        
+        const appointment1 = await storage.createAppointment({
+          patientId: patient1.id,
+          staffId: staff1.id,
+          title: "Annual check-up",
+          description: "Regular health assessment",
+          dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0, 0),
+          duration: 60,
+          status: "Confirmed",
+          location: "Main Clinic, Room 3",
+          notes: "Patient should bring medication list and recent test results.",
+        });
+        created.appointments.push(appointment1);
+        
+        const appointment2 = await storage.createAppointment({
+          patientId: patient2.id,
+          staffId: staff2.id,
+          title: "Medication review",
+          description: "Review current medications and adjust as needed",
+          dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30, 0),
+          duration: 30,
+          status: "Pending",
+          location: "East Wing, Room 12",
+          notes: "",
+        });
+        created.appointments.push(appointment2);
+
+        // Check for existing care plans
+        const existingCarePlans = await storage.getAllCarePlans();
+
+        // Create demo care plan if needed
+        if (existingCarePlans.length === 0 && patient1) {
+          const carePlan1 = await storage.createCarePlan({
+            patientId: patient1.id,
+            title: "Comprehensive Care Plan",
+            description: "Holistic care plan addressing all current health needs and preventive measures.",
+            startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+            endDate: new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()),
+            status: "Active",
+            assessments: [
+              { title: "Initial Health Assessment", description: "Complete health evaluation including physical and cognitive assessment." }
+            ],
+            goals: [
+              { title: "Improved Mobility", description: "Increase walking distance to 500m without assistance", targetDate: "2023-09-30" }
+            ],
+            interventions: [
+              { title: "Physical Therapy", description: "Twice weekly sessions focusing on lower body strength", frequency: "Twice weekly" }
+            ],
+            medications: [
+              { name: "Paracetamol", dosage: "500mg", frequency: "As needed for pain", instructions: "Take with food" }
+            ],
+            reviewSchedule: "Monthly",
+            createdBy: drJohnson.id,
+            lastUpdatedBy: drJohnson.id,
+          });
+          created.carePlans.push(carePlan1);
+
+          // Create some activity logs
+          if (created.appointments.length > 0 && created.patients.length > 0) {
+            await storage.createActivityLog({
+              userId: drJohnson.id,
+              action: "create",
+              entityType: "patient",
+              entityId: patient1.id,
+              details: "Created new patient: Emma Wilson",
+            });
+            
+            await storage.createActivityLog({
+              userId: drJohnson.id,
+              action: "create",
+              entityType: "appointment",
+              entityId: created.appointments[0].id,
+              details: `Scheduled new appointment for ${patient1.name}: ${created.appointments[0].title}`,
+            });
+            
+            await storage.createActivityLog({
+              userId: drJohnson.id,
+              action: "create",
+              entityType: "care_plan",
+              entityId: carePlan1.id,
+              details: `Created new care plan for ${patient1.name}: ${carePlan1.title}`,
+            });
+          }
+        }
+      }
+
+      // Prepare response
+      const responseData = {
+        users: created.users,
+        patients: created.patients.length > 0 ? created.patients : [patient1, patient2].filter(Boolean),
+        staff: created.staff.length > 0 ? created.staff : [staff1, staff2].filter(Boolean),
+        appointments: created.appointments,
+        carePlans: created.carePlans,
+        tenant: created.tenant,
+      };
 
       res.json({ 
         success: true, 
         message: "Database seeded successfully",
-        data: {
-          users: {
-            admin: adminUser,
-            doctor: drJohnson,
-            nurse: nurseUser,
-            patient: patientUser
-          },
-          patients: [patient1, patient2],
-          staff: [staff1, staff2],
-          appointments: [appointment1, appointment2],
-          carePlans: [carePlan1],
-          tenant: tenant
-        }
+        created: Object.entries(responseData).reduce((acc, [key, value]) => {
+          if (Array.isArray(value)) {
+            acc[key] = value.length;
+          } else if (typeof value === 'object' && value !== null) {
+            acc[key] = Object.keys(value).length;
+          } else {
+            acc[key] = value ? 1 : 0;
+          }
+          return acc;
+        }, {}),
+        data: responseData
       });
     } catch (error) {
       console.error("Seed error:", error);
