@@ -4,7 +4,7 @@ import { LandingLayout } from "@/components/landing/landing-layout";
 import { FeatureCard } from "@/components/landing/feature-card";
 import { TestimonialCard } from "@/components/landing/testimonial-card";
 import { StatCard } from "@/components/landing/stat-card";
-import { Buildings, Shield, Clock, Users } from "lucide-react";
+import { Building, Shield, Clock, Users } from "lucide-react";
 
 export default function HomePage() {
   return (
@@ -35,7 +35,7 @@ export default function HomePage() {
               <div className="bg-white p-6 rounded-lg shadow-lg">
                 <div className="space-y-6">
                   <FeatureCard
-                    icon={<Buildings className="h-5 w-5" />}
+                    icon={<Building className="h-5 w-5" />}
                     title="Multi-Tenant Architecture"
                     description="Secure data isolation for healthcare organizations"
                   />

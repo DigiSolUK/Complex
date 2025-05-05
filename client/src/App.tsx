@@ -19,6 +19,12 @@ import Login from "@/pages/login";
 import SuperadminDashboard from "@/pages/superadmin/dashboard";
 import TenantManagement from "@/pages/superadmin/tenant-management";
 import TenantDetail from "@/pages/superadmin/tenant-detail";
+// Import landing pages
+import HomePage from "@/pages/landing/home-page";
+import FeaturesPage from "@/pages/landing/features-page";
+import PricingPage from "@/pages/landing/pricing-page";
+import AboutPage from "@/pages/landing/about-page";
+import ContactPage from "@/pages/landing/contact-page";
 import { useAuth, AuthProvider } from "./context/auth-context";
 import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
@@ -78,6 +84,32 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 }
 
 function Router() {
+  const { isAuthenticated, isDemoMode } = useAuth();
+
+  // Check if the current route is a landing page
+  const location = useLocation()[0];
+  const isLandingPage = [
+    '/', 
+    '/features', 
+    '/pricing', 
+    '/about', 
+    '/contact'
+  ].includes(location);
+
+  // For landing pages, don't use the AppLayout
+  if (isLandingPage && !isAuthenticated && !isDemoMode) {
+    return (
+      <Switch>
+        <Route path="/" component={HomePage} />
+        <Route path="/features" component={FeaturesPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/contact" component={ContactPage} />
+      </Switch>
+    );
+  }
+
+  // For authenticated or dashboard pages, use the AppLayout
   return (
     <AppLayout>
       <Switch>
@@ -123,6 +155,12 @@ function Router() {
         <Route path="/superadmin/tenants/:id">
           {(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />}
         </Route>
+        
+        {/* Landing pages for authenticated users */}
+        <Route path="/features" component={FeaturesPage} />
+        <Route path="/pricing" component={PricingPage} />
+        <Route path="/about" component={AboutPage} />
+        <Route path="/contact" component={ContactPage} />
         
         <Route component={NotFound} />
       </Switch>
