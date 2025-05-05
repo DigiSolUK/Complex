@@ -5,9 +5,9 @@ class GroqService {
   private baseUrl: string = 'https://api.groq.com/openai/v1';
 
   constructor() {
-    this.apiKey = process.env.XAI_API_KEY || '';
+    this.apiKey = process.env.GROQ_API_KEY || '';
     if (!this.apiKey) {
-      console.warn('GroqService: XAI_API_KEY environment variable is not set');
+      console.warn('GroqService: GROQ_API_KEY environment variable is not set');
     }
   }
 

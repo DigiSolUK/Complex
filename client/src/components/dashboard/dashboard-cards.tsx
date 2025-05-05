@@ -48,9 +48,9 @@ function MetricCard({
       <CardFooter className="bg-neutral-50 px-5 py-3">
         <div className="text-sm">
           <Link href={linkHref}>
-            <a className="font-medium text-primary-600 hover:text-primary-800">
+            <div className="font-medium text-primary-600 hover:text-primary-800 cursor-pointer">
               {linkText}
-            </a>
+            </div>
           </Link>
         </div>
       </CardFooter>
