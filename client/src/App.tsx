@@ -18,6 +18,7 @@ import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
 import TestLogin from "@/pages/test-login";
+import DemoLogin from "@/pages/demo-login";
 import ComplianceDashboard from "@/pages/compliance-dashboard";
 // Import superadmin pages
 import SuperadminDashboard from "@/pages/superadmin/dashboard";
@@ -118,6 +119,7 @@ function Router() {
         }}
       </Route>
       <Route path="/test-login" component={TestLogin} />
+      <Route path="/demo-login" component={DemoLogin} />
       {/* Landing Pages */}
       <Route path="/" component={HomePage} />
       <Route path="/features" component={FeaturesPage} />
@@ -141,7 +143,7 @@ function Router() {
 
   // For landing pages and auth page when not authenticated, don't use AppLayout
   if (!isAuthenticated && !isDemoMode) {
-    if (isLandingPage || location === '/auth' || location === '/login') {
+    if (isLandingPage || location === '/auth' || location === '/login' || location === '/demo-login') {
       // For landing pages and auth, render without app layout
       return (
         <Switch>

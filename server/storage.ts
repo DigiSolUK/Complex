@@ -7,7 +7,8 @@ import {
   activityLogs, type ActivityLog, type InsertActivityLog,
   tenants, type Tenant, type InsertTenant,
   nhsDigitalIntegrations, type NhsDigitalIntegration, type InsertNhsDigitalIntegration,
-  complianceAnalyses, type ComplianceAnalysis, type InsertComplianceAnalysis
+  complianceAnalyses, type ComplianceAnalysis, type InsertComplianceAnalysis,
+  chatHistory, type ChatHistory, type InsertChatHistory
 } from "@shared/schema";
 import { cryptoService } from "./crypto";
 
