@@ -11,6 +11,14 @@ app.use(cookieParser(process.env.SESSION_SECRET || "complex-care-secret"));
 // Set trust proxy - important for session cookies to work properly
 app.set("trust proxy", 1);
 
+// Log all requests for better debugging
+app.use((req, res, next) => {
+  console.log(`\n[REQUEST] ${req.method} ${req.url}`);
+  console.log(`Cookie Headers: ${req.headers.cookie}`);
+  // Session data will be logged after it's set by the authentication middleware
+  next();
+});
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;
