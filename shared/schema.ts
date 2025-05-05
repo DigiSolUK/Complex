@@ -302,3 +302,43 @@ export const insertChatHistorySchema = createInsertSchema(chatHistory).omit({
 
 export type InsertChatHistory = z.infer<typeof insertChatHistorySchema>;
 export type ChatHistory = typeof chatHistory.$inferSelect;
+
+// Patient Documents
+export const documents = pgTable("documents", {
+  id: serial("id").primaryKey(),
+  documentId: text("document_id").notNull().unique(), // UUID for the document
+  patientId: integer("patient_id").references(() => patients.id),
+  originalName: text("original_name").notNull(),
+  mimeType: text("mime_type").notNull(),
+  size: integer("size").notNull(),
+  documentType: text("document_type", { 
+    enum: [
+      "medical_record",
+      "prescription",
+      "consent_form",
+      "care_plan",
+      "lab_result",
+      "referral_letter",
+      "hospital_discharge",
+      "patient_id",
+      "insurance",
+      "other"
+    ] 
+  }).notNull(),
+  uploadedBy: integer("uploaded_by").references(() => users.id).notNull(),
+  uploadedAt: timestamp("uploaded_at").defaultNow().notNull(),
+  storageLocation: text("storage_location").notNull(), // Path or URL to the document
+  description: text("description"),
+  tags: text("tags").array(),
+  relatedEntityType: text("related_entity_type"),
+  relatedEntityId: integer("related_entity_id"),
+  metadata: json("metadata"),
+});
+
+export const insertDocumentSchema = createInsertSchema(documents).omit({
+  id: true,
+  uploadedAt: true,
+});
+
+export type InsertDocument = z.infer<typeof insertDocumentSchema>;
+export type Document = typeof documents.$inferSelect;
