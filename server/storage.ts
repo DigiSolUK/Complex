@@ -62,6 +62,12 @@ export interface IStorage {
   getCarePlanMetricsReport(startDate: string, endDate: string): Promise<any>;
   getStaffActivityReport(startDate: string, endDate: string): Promise<any>;
   
+  // Tenant methods
+  createTenant(tenant: InsertTenant): Promise<Tenant>;
+  updateTenant(id: number, tenant: InsertTenant): Promise<Tenant>;
+  getTenantById(id: number): Promise<Tenant | undefined>;
+  getAllTenants(): Promise<Tenant[]>;
+
   // NHS Digital Integration methods
   getNhsIntegrationByTenantId(tenantId: number): Promise<NhsDigitalIntegration | undefined>;
   createNhsIntegration(integration: InsertNhsDigitalIntegration): Promise<NhsDigitalIntegration>;

@@ -4,7 +4,7 @@ import { storage } from "./storage";
 import { auth } from "./auth";
 import { cryptoService } from "./crypto";
 import { z } from "zod";
-import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema, insertNhsDigitalIntegrationSchema } from "@shared/schema";
+import { insertUserSchema, insertPatientSchema, insertCareStaffSchema, insertAppointmentSchema, insertCarePlanSchema, insertActivityLogSchema, insertNhsDigitalIntegrationSchema, insertTenantSchema } from "@shared/schema";
 import aiRoutes from "./routes/ai";
 import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
 import tenantRoutes from "./routes/superadmin/tenants";
@@ -556,6 +556,215 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Settings update error:", error);
       res.status(500).json({ message: "An error occurred while updating settings" });
+    }
+  });
+
+  // Add seed data endpoint (only for development)
+  app.post("/api/seed", async (req, res) => {
+    try {
+      // Create super admin user
+      const adminPassword = await cryptoService.hashPassword("admin123");
+      const adminUser = await storage.createUser({
+        username: "admin",
+        password: adminPassword,
+        email: "admin@complexcare.dev",
+        role: "superadmin",
+        name: "Admin User",
+      });
+
+      // Create demo tenant
+      const tenant = await storage.createTenant({
+        name: "City Health Partners",
+        domain: "cityhealthpartners.com",
+        status: "active",
+        subscriptionTier: "professional",
+        userLimit: 10,
+        contactEmail: "contact@cityhealthpartners.com",
+        contactName: "John Smith",
+        nhsIntegrationEnabled: false,
+      });
+
+      // Create demo users
+      const demoPassword = await cryptoService.hashPassword("demo123");
+      const drJohnson = await storage.createUser({
+        username: "drjohnson",
+        password: demoPassword,
+        email: "sarah.johnson@complexcare.dev",
+        role: "admin",
+        name: "Dr. Sarah Johnson",
+      });
+      
+      const nurseUser = await storage.createUser({
+        username: "nurse",
+        password: demoPassword,
+        email: "lisa.chen@complexcare.dev",
+        role: "care_staff",
+        name: "Nurse Lisa Chen",
+      });
+      
+      const patientUser = await storage.createUser({
+        username: "patient",
+        password: demoPassword,
+        email: "emma.wilson@example.com",
+        role: "patient",
+        name: "Emma Wilson",
+      });
+
+      // Create demo patients
+      const patient1 = await storage.createPatient({
+        patientId: "PAT-2023-001",
+        userId: patientUser.id,
+        name: "Emma Wilson",
+        dateOfBirth: "1981-05-12",
+        gender: "Female",
+        address: "123 Main St, Anytown, UK",
+        phone: "07700 900123",
+        email: "emma.wilson@example.com",
+        emergencyContact: "John Wilson (Husband) - 07700 900124",
+        careType: "Home Care",
+        status: "Active",
+        notes: "Regular check-ups every 3 months. Prefers morning appointments.",
+        medicalHistory: "History of hypertension. On medication since 2018.",
+      });
+      
+      const patient2 = await storage.createPatient({
+        patientId: "PAT-2023-042",
+        userId: null,
+        name: "James Davis",
+        dateOfBirth: "1956-11-28",
+        gender: "Male",
+        address: "45 Oak Avenue, Othertown, UK",
+        phone: "07700 900125",
+        email: "james.davis@example.com",
+        emergencyContact: "Mary Davis (Daughter) - 07700 900126",
+        careType: "Residential",
+        status: "Review",
+        notes: "Needs assistance with daily activities. Weekly physiotherapy.",
+        medicalHistory: "Type 2 diabetes, diagnosed in 2015. Hip replacement in 2020.",
+      });
+
+      // Create demo staff
+      const staff1 = await storage.createStaff({
+        userId: drJohnson.id,
+        staffId: "STAFF-2023-001",
+        name: "Dr. Sarah Johnson",
+        position: "Lead Physician",
+        department: "General Practice",
+        phone: "07700 900001",
+        email: "sarah.johnson@complexcare.dev",
+        qualifications: "MD, MRCGP",
+        status: "Active",
+      });
+      
+      const staff2 = await storage.createStaff({
+        userId: nurseUser.id,
+        staffId: "STAFF-2023-002",
+        name: "Nurse Lisa Chen",
+        position: "Senior Nurse",
+        department: "Community Nursing",
+        phone: "07700 900002",
+        email: "lisa.chen@complexcare.dev",
+        qualifications: "RN, BSN",
+        status: "Active",
+      });
+
+      // Create demo appointments
+      const today = new Date();
+      
+      const appointment1 = await storage.createAppointment({
+        patientId: patient1.id,
+        staffId: staff1.id,
+        title: "Annual check-up",
+        description: "Regular health assessment",
+        dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0, 0),
+        duration: 60,
+        status: "Confirmed",
+        location: "Main Clinic, Room 3",
+        notes: "Patient should bring medication list and recent test results.",
+      });
+      
+      const appointment2 = await storage.createAppointment({
+        patientId: patient2.id,
+        staffId: staff2.id,
+        title: "Medication review",
+        description: "Review current medications and adjust as needed",
+        dateTime: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30, 0),
+        duration: 30,
+        status: "Pending",
+        location: "East Wing, Room 12",
+        notes: "",
+      });
+
+      // Create demo care plans
+      const carePlan1 = await storage.createCarePlan({
+        patientId: patient1.id,
+        title: "Comprehensive Care Plan",
+        description: "Holistic care plan addressing all current health needs and preventive measures.",
+        startDate: new Date(today.getFullYear(), today.getMonth(), today.getDate()),
+        endDate: new Date(today.getFullYear(), today.getMonth() + 6, today.getDate()),
+        status: "Active",
+        assessments: [
+          { title: "Initial Health Assessment", description: "Complete health evaluation including physical and cognitive assessment." }
+        ],
+        goals: [
+          { title: "Improved Mobility", description: "Increase walking distance to 500m without assistance", targetDate: "2023-09-30" }
+        ],
+        interventions: [
+          { title: "Physical Therapy", description: "Twice weekly sessions focusing on lower body strength", frequency: "Twice weekly" }
+        ],
+        medications: [
+          { name: "Paracetamol", dosage: "500mg", frequency: "As needed for pain", instructions: "Take with food" }
+        ],
+        reviewSchedule: "Monthly",
+        createdBy: drJohnson.id,
+        lastUpdatedBy: drJohnson.id,
+      });
+
+      // Create demo activity logs
+      await storage.createActivityLog({
+        userId: drJohnson.id,
+        action: "create",
+        entityType: "patient",
+        entityId: patient1.id,
+        details: "Created new patient: Emma Wilson",
+      });
+      
+      await storage.createActivityLog({
+        userId: drJohnson.id,
+        action: "create",
+        entityType: "appointment",
+        entityId: appointment1.id,
+        details: "Scheduled new appointment for Emma Wilson: Annual check-up",
+      });
+      
+      await storage.createActivityLog({
+        userId: drJohnson.id,
+        action: "create",
+        entityType: "care_plan",
+        entityId: carePlan1.id,
+        details: "Created new care plan for Emma Wilson: Comprehensive Care Plan",
+      });
+
+      res.json({ 
+        success: true, 
+        message: "Database seeded successfully",
+        data: {
+          users: {
+            admin: adminUser,
+            doctor: drJohnson,
+            nurse: nurseUser,
+            patient: patientUser
+          },
+          patients: [patient1, patient2],
+          staff: [staff1, staff2],
+          appointments: [appointment1, appointment2],
+          carePlans: [carePlan1],
+          tenant: tenant
+        }
+      });
+    } catch (error) {
+      console.error("Seed error:", error);
+      res.status(500).json({ message: "An error occurred while seeding the database" });
     }
   });
 
