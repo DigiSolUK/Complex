@@ -38,7 +38,7 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
     if (!isLoading) {
       // Check authentication
       if (!isAuthenticated && !isDemoMode) {
-        navigate('/login');
+        navigate('/auth'); // Navigate to auth page instead of login
       } 
       // Check admin access for protected routes
       else if (requireAdmin && !isAdmin && !isSuperAdmin) {
@@ -85,8 +85,9 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 
 function Router() {
   const { isAuthenticated, isDemoMode } = useAuth();
+  const [, navigate] = useLocation();
 
-  // Check if the current route is a landing page
+  // Get the current route
   const location = useLocation()[0];
   const isLandingPage = [
     '/', 
@@ -96,15 +97,38 @@ function Router() {
     '/contact'
   ].includes(location);
 
-  // For landing pages, don't use the AppLayout
-  if (isLandingPage && !isAuthenticated && !isDemoMode) {
+  // Common routes that should be accessible regardless of authentication
+  const commonRoutes = (
+    <>
+      <Route path="/auth" component={Login} />
+      <Route path="/login">
+        {() => {
+          // Redirect /login to /auth
+          window.location.href = '/auth';
+          return null;
+        }}
+      </Route>
+      {/* Landing Pages */}
+      <Route path="/" component={HomePage} />
+      <Route path="/features" component={FeaturesPage} />
+      <Route path="/pricing" component={PricingPage} />
+      <Route path="/about" component={AboutPage} />
+      <Route path="/contact" component={ContactPage} />
+    </>
+  );
+
+  // For landing pages and auth page when not authenticated, don't use AppLayout
+  if (!isAuthenticated && !isDemoMode) {
     return (
       <Switch>
-        <Route path="/" component={HomePage} />
-        <Route path="/features" component={FeaturesPage} />
-        <Route path="/pricing" component={PricingPage} />
-        <Route path="/about" component={AboutPage} />
-        <Route path="/contact" component={ContactPage} />
+        {commonRoutes}
+        <Route>  
+          {() => {
+            // Redirect to auth if accessing a protected route
+            navigate('/auth');
+            return null;
+          }}
+        </Route>
       </Switch>
     );
   }
@@ -113,10 +137,7 @@ function Router() {
   return (
     <AppLayout>
       <Switch>
-        <Route path="/login" component={Login} />
-        <Route path="/">
-          {(params) => <ProtectedRoute component={Dashboard} params={params} />}
-        </Route>
+        {commonRoutes}
         <Route path="/dashboard">
           {(params) => <ProtectedRoute component={Dashboard} params={params} />}
         </Route>
@@ -155,12 +176,6 @@ function Router() {
         <Route path="/superadmin/tenants/:id">
           {(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />}
         </Route>
-        
-        {/* Landing pages for authenticated users */}
-        <Route path="/features" component={FeaturesPage} />
-        <Route path="/pricing" component={PricingPage} />
-        <Route path="/about" component={AboutPage} />
-        <Route path="/contact" component={ContactPage} />
         
         <Route component={NotFound} />
       </Switch>
