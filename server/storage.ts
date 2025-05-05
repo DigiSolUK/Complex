@@ -1074,6 +1074,43 @@ export class MemStorage implements IStorage {
       })
       .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
   }
+
+  // Document methods
+  async createDocument(insertDocument: InsertDocument): Promise<Document> {
+    const id = this.currentId.documents++;
+    const document: Document = {
+      ...insertDocument,
+      id,
+      uploadedAt: new Date().toISOString()
+    };
+    this.documents.set(id, document);
+    return document;
+  }
+
+  async getDocumentById(id: string | number): Promise<Document | undefined> {
+    if (typeof id === 'string') {
+      // If string id, search by documentId field
+      return Array.from(this.documents.values()).find(
+        (doc) => doc.documentId === id
+      );
+    } else {
+      // If numeric id, use the Map's get method
+      return this.documents.get(id);
+    }
+  }
+
+  async getDocumentsByPatient(patientId: number): Promise<Document[]> {
+    return Array.from(this.documents.values())
+      .filter(doc => doc.patientId === patientId)
+      .sort((a, b) => new Date(b.uploadedAt).getTime() - new Date(a.uploadedAt).getTime());
+  }
+
+  async deleteDocument(id: number): Promise<void> {
+    if (!this.documents.has(id)) {
+      throw new Error(`Document with ID ${id} not found`);
+    }
+    this.documents.delete(id);
+  }
 }
 
 import connectPg from "connect-pg-simple";
@@ -1658,6 +1695,71 @@ export class DatabaseStorage implements IStorage {
     } catch (error) {
       console.error('Error getting upcoming appointments:', error);
       return [];
+    }
+  }
+  
+  // Document methods
+  async createDocument(document: InsertDocument): Promise<Document> {
+    try {
+      const [result] = await db
+        .insert(documents)
+        .values(document)
+        .returning();
+      return result;
+    } catch (error) {
+      console.error('Error creating document:', error);
+      throw new Error('Failed to create document');
+    }
+  }
+
+  async getDocumentById(id: string | number): Promise<Document | undefined> {
+    try {
+      if (typeof id === 'string') {
+        // Search by documentId (string)
+        const [document] = await db
+          .select()
+          .from(documents)
+          .where(eq(documents.documentId, id));
+        return document;
+      } else {
+        // Search by database id (number)
+        const [document] = await db
+          .select()
+          .from(documents)
+          .where(eq(documents.id, id));
+        return document;
+      }
+    } catch (error) {
+      console.error('Error getting document by ID:', error);
+      return undefined;
+    }
+  }
+
+  async getDocumentsByPatient(patientId: number): Promise<Document[]> {
+    try {
+      return db
+        .select()
+        .from(documents)
+        .where(eq(documents.patientId, patientId))
+        .orderBy(documents.uploadedAt, 'desc');
+    } catch (error) {
+      console.error('Error getting documents by patient:', error);
+      return [];
+    }
+  }
+
+  async deleteDocument(id: number): Promise<void> {
+    try {
+      const result = await db
+        .delete(documents)
+        .where(eq(documents.id, id));
+      
+      if (!result) {
+        throw new Error(`Document with ID ${id} not found`);
+      }
+    } catch (error) {
+      console.error('Error deleting document:', error);
+      throw new Error('Failed to delete document');
     }
   }
 }
