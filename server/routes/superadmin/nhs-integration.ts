@@ -30,7 +30,7 @@ router.get("/tenants/:tenantId/nhs-integration", auth.isAuthenticated, requireSu
       pdsApiKey: integration.pdsApiKey ? "••••••••" : "",
       scrApiKey: integration.scrApiKey ? "••••••••" : "",
       epsApiKey: integration.epsApiKey ? "••••••••" : "",
-      eReferralApiKey: integration.eReferralApiKey ? "••••••••" : "",
+      eReferralApiKey: integration.eRsApiKey ? "••••••••" : "",
       gpConnectApiKey: integration.gpConnectApiKey ? "••••••••" : "",
     };
     
@@ -64,8 +64,8 @@ router.post("/tenants/:tenantId/nhs-integration", auth.isAuthenticated, requireS
       if (integrationData.epsApiKey === "__UNCHANGED__") {
         integrationData.epsApiKey = existingIntegration.epsApiKey;
       }
-      if (integrationData.eReferralApiKey === "__UNCHANGED__") {
-        integrationData.eReferralApiKey = existingIntegration.eReferralApiKey;
+      if (integrationData.eRsApiKey === "__UNCHANGED__") {
+        integrationData.eRsApiKey = existingIntegration.eRsApiKey;
       }
       if (integrationData.gpConnectApiKey === "__UNCHANGED__") {
         integrationData.gpConnectApiKey = existingIntegration.gpConnectApiKey;
@@ -77,7 +77,7 @@ router.post("/tenants/:tenantId/nhs-integration", auth.isAuthenticated, requireS
       integrationData.pdsEnabled,
       integrationData.scrEnabled,
       integrationData.epsEnabled,
-      integrationData.eReferralEnabled,
+      integrationData.eRsEnabled,
       integrationData.gpConnectEnabled
     ].some(Boolean);
     
@@ -97,7 +97,7 @@ router.post("/tenants/:tenantId/nhs-integration", auth.isAuthenticated, requireS
       pdsApiKey: updatedIntegration.pdsApiKey ? "••••••••" : "",
       scrApiKey: updatedIntegration.scrApiKey ? "••••••••" : "",
       epsApiKey: updatedIntegration.epsApiKey ? "••••••••" : "",
-      eReferralApiKey: updatedIntegration.eReferralApiKey ? "••••••••" : "",
+      eReferralApiKey: updatedIntegration.eRsApiKey ? "••••••••" : "",
       gpConnectApiKey: updatedIntegration.gpConnectApiKey ? "••••••••" : "",
     };
     
@@ -144,8 +144,8 @@ router.post("/tenants/:tenantId/nhs-integration/test", auth.isAuthenticated, req
         isEnabled = integration.epsEnabled;
         break;
       case 'e-referral':
-        apiKey = integration.eReferralApiKey;
-        isEnabled = integration.eReferralEnabled;
+        apiKey = integration.eRsApiKey;
+        isEnabled = integration.eRsEnabled;
         break;
       case 'gp-connect':
         apiKey = integration.gpConnectApiKey;

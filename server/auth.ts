@@ -17,7 +17,9 @@ declare module "express-session" {
 
 declare global {
   namespace Express {
-    interface User extends Omit<User, "password"> {}
+    interface User extends Omit<User, "password"> {
+      role: "superadmin" | "admin" | "care_staff" | "patient";
+    }
   }
 }
 
