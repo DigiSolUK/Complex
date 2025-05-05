@@ -6,12 +6,14 @@ import {
   carePlans, type CarePlan, type InsertCarePlan,
   activityLogs, type ActivityLog, type InsertActivityLog,
   tenants, type Tenant, type InsertTenant,
-  nhsDigitalIntegrations, type NhsDigitalIntegration, type InsertNhsDigitalIntegration
+  nhsDigitalIntegrations, type NhsDigitalIntegration, type InsertNhsDigitalIntegration,
+  complianceAnalyses, type ComplianceAnalysis, type InsertComplianceAnalysis
 } from "@shared/schema";
 import { cryptoService } from "./crypto";
 
 import session from 'express-session';
 import MemoryStore from 'memorystore';
+import connectPg from 'connect-pg-simple';
 
 // Define storage interface with all required methods
 export interface ComplianceArea {
@@ -1454,9 +1456,21 @@ export class DatabaseStorage implements IStorage {
   // Compliance methods
   async getLatestComplianceAnalysis(): Promise<ComplianceResult | null> {
     try {
-      // In a real implementation, we would query the database for the latest compliance analysis
-      // For now, we'll return null to indicate no analysis is available
-      return null;
+      const [analysis] = await db
+        .select()
+        .from(complianceAnalyses)
+        .orderBy(complianceAnalyses.lastUpdated, 'desc')
+        .limit(1);
+      
+      if (!analysis) return null;
+      
+      return {
+        score: Number(analysis.score),
+        areas: analysis.areas as unknown as ComplianceArea[],
+        recommendations: analysis.recommendations as string[],
+        overallStatus: analysis.overallStatus as 'compliant' | 'at-risk' | 'non-compliant',
+        lastUpdated: analysis.lastUpdated
+      };
     } catch (error) {
       console.error('Error getting latest compliance analysis:', error);
       return null;
@@ -1465,9 +1479,30 @@ export class DatabaseStorage implements IStorage {
   
   async saveComplianceAnalysis(analysis: ComplianceResult): Promise<ComplianceResult> {
     try {
-      // In a real implementation, we would store the analysis in the database
-      // For now, we'll just return the analysis as is
-      return analysis;
+      const tenant = await db.select().from(tenants).limit(1).then(rows => rows[0]);
+      const tenantId = tenant ? tenant.id : null;
+      
+      const [savedAnalysis] = await db
+        .insert(complianceAnalyses)
+        .values({
+          tenantId: tenantId,
+          score: analysis.score,
+          overallStatus: analysis.overallStatus,
+          areas: analysis.areas as any,
+          recommendations: analysis.recommendations as any,
+          findings: [] as any,
+          lastUpdated: new Date(),
+          conductedBy: 1, // Default to admin user
+        })
+        .returning();
+      
+      return {
+        score: Number(savedAnalysis.score),
+        areas: savedAnalysis.areas as unknown as ComplianceArea[],
+        recommendations: savedAnalysis.recommendations as string[],
+        overallStatus: savedAnalysis.overallStatus as 'compliant' | 'at-risk' | 'non-compliant',
+        lastUpdated: savedAnalysis.lastUpdated
+      };
     } catch (error) {
       console.error('Error saving compliance analysis:', error);
       throw new Error('Failed to save compliance analysis');
@@ -1476,9 +1511,19 @@ export class DatabaseStorage implements IStorage {
   
   async getComplianceHistory(limit: number = 10): Promise<ComplianceResult[]> {
     try {
-      // In a real implementation, we would query the database for the compliance history
-      // For now, we'll return an empty array to indicate no history is available
-      return [];
+      const analyses = await db
+        .select()
+        .from(complianceAnalyses)
+        .orderBy(complianceAnalyses.lastUpdated, 'desc')
+        .limit(limit);
+      
+      return analyses.map(analysis => ({
+        score: Number(analysis.score),
+        areas: analysis.areas as unknown as ComplianceArea[],
+        recommendations: analysis.recommendations as string[],
+        overallStatus: analysis.overallStatus as 'compliant' | 'at-risk' | 'non-compliant',
+        lastUpdated: analysis.lastUpdated
+      }));
     } catch (error) {
       console.error('Error getting compliance history:', error);
       return [];
