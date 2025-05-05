@@ -96,9 +96,14 @@ class Auth {
   // Authentication middleware
   isAuthenticated(req: Request, res: Response, next: NextFunction) {
     // Debug the session state
+    console.log('Request cookies:', req.headers.cookie);
     console.log('Session ID:', req.sessionID);
     console.log('Is authenticated:', req.isAuthenticated());
     console.log('User in session:', req.user ? `User ID: ${req.user.id}` : 'No user');
+    console.log('Session data:', req.session);
+    
+    // Check for the test cookie
+    console.log('User ID cookie:', req.cookies.user_id);
     
     if (req.isAuthenticated()) {
       return next();
@@ -124,6 +129,8 @@ class Auth {
 
   // Local authentication middleware
   authenticateLocal(req: Request, res: Response, next: NextFunction) {
+    console.log("Incoming login request cookies:", req.headers.cookie);
+    
     passport.authenticate("local", (err, user, info) => {
       if (err) {
         console.error("Authentication error:", err);
@@ -133,12 +140,17 @@ class Auth {
         return res.status(401).json({ message: info?.message || "Authentication failed" });
       }
       
+      console.log("Authentication successful, logging in user...");
+      
       // Enhanced login with explicit session saving
       req.logIn(user, (err) => {
         if (err) {
           console.error("Login error:", err);
           return next(err);
         }
+        
+        console.log("Session before save:", req.session);
+        console.log("Cookie settings:", req.session.cookie);
         
         // Explicitly save the session to ensure it is stored
         req.session.save(err => {
@@ -147,7 +159,17 @@ class Auth {
             return next(err);
           }
           
+          // Set a custom cookie as a test
+          res.cookie('user_id', user.id, {
+            maxAge: 24 * 60 * 60 * 1000,
+            httpOnly: true,
+            secure: false,
+            sameSite: 'none'
+          });
+          
           console.log("Login successful for user ID:", user.id);
+          console.log("Response headers being sent:", res.getHeaders());
+          
           return res.json(user);
         });
       });

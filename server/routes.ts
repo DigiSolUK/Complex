@@ -72,6 +72,35 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.get("/api/auth/me", auth.isAuthenticated, (req, res) => {
     res.json(req.user);
   });
+  
+  // Test session route - not protected for testing purposes
+  app.get("/api/test-session", (req, res) => {
+    // Set a test value in session if it doesn't exist
+    if (!req.session.testValue) {
+      req.session.testValue = Date.now();
+      req.session.save((err) => {
+        if (err) {
+          console.error("Session save error:", err);
+          return res.status(500).json({ message: "Session save error" });
+        }
+        console.log("Session test value set:", req.session.testValue);
+        return res.json({ 
+          message: 'Session test value set', 
+          sessionID: req.sessionID,
+          testValue: req.session.testValue,
+          cookies: req.headers.cookie
+        });
+      });
+    } else {
+      console.log("Session test value exists:", req.session.testValue);
+      return res.json({ 
+        message: 'Session test value exists', 
+        sessionID: req.sessionID,
+        testValue: req.session.testValue,
+        cookies: req.headers.cookie
+      });
+    }
+  });
 
   app.post("/api/auth/change-password", auth.isAuthenticated, async (req, res) => {
     try {
