@@ -34,6 +34,7 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/context/auth-context";
 import { useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
+import { ThemeSettings } from "@/components/settings/theme-settings";
 
 const generalSettingsSchema = z.object({
   organizationName: z.string().min(2, {
@@ -219,6 +220,7 @@ export default function Settings() {
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="security">Security</TabsTrigger>
           <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="theme">Theme</TabsTrigger>
           <TabsTrigger value="account">Account</TabsTrigger>
         </TabsList>
 
@@ -626,6 +628,11 @@ export default function Settings() {
         </TabsContent>
 
         {/* Account Settings */}
+        {/* Theme Settings */}
+        <TabsContent value="theme" className="space-y-6 pt-4">
+          <ThemeSettings />
+        </TabsContent>
+
         <TabsContent value="account" className="space-y-6 pt-4">
           <Card>
             <CardHeader>

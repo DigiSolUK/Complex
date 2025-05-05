@@ -1,5 +1,6 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useAuth } from './auth-context';
+import { apiRequest } from '@/lib/queryClient';
 
 interface ThemeColors {
   primary: string;
@@ -10,7 +11,7 @@ interface ThemeColors {
   success: string;
   warning: string;
   error: string;
-  [key: string]: string;
+  // Add other color variables as needed
 }
 
 interface ThemeContextType {
@@ -19,185 +20,162 @@ interface ThemeContextType {
   isDarkMode: boolean;
   customCss: string | null;
   setTheme: (themeName: string) => void;
-  setThemeColors: (colors: Partial<ThemeColors>) => void;
+  setThemeColors: (colors: ThemeColors) => void;
   toggleDarkMode: () => void;
   setCustomCss: (css: string | null) => void;
   resetTheme: () => void;
 }
 
-const defaultThemeColors: ThemeColors = {
-  primary: '#0070f3',
-  secondary: '#6c757d',
-  accent: '#f59e0b',
+// Default theme colors
+const lightThemeColors: ThemeColors = {
+  primary: '#2563eb', // Blue
+  secondary: '#6366F1', // Indigo
+  accent: '#3B82F6', // Lighter blue
   background: '#ffffff',
-  text: '#000000',
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
+  text: '#121212',
+  success: '#16a34a', // Green
+  warning: '#facc15', // Yellow
+  error: '#e11d48', // Red
 };
 
 const darkThemeColors: ThemeColors = {
-  primary: '#3b82f6',
-  secondary: '#6b7280',
-  accent: '#f59e0b',
-  background: '#171717',
-  text: '#ffffff',
-  success: '#10b981',
-  warning: '#f59e0b',
-  error: '#ef4444',
+  primary: '#3482F6', // Lighter blue
+  secondary: '#818CF8', // Lighter indigo
+  accent: '#60a5fa', // Even lighter blue
+  background: '#121212',
+  text: '#f9fafb',
+  success: '#22c55e', // Lighter green
+  warning: '#fbbf24', // Lighter yellow
+  error: '#f43f5e', // Lighter red
 };
 
-const predefinedThemes: Record<string, ThemeColors> = {
-  default: defaultThemeColors,
+// Theme variations
+const themeVariations: Record<string, ThemeColors> = {
+  default: lightThemeColors,
   dark: darkThemeColors,
   blue: {
-    ...defaultThemeColors,
-    primary: '#2563eb',
-    accent: '#60a5fa',
+    ...lightThemeColors,
+    primary: '#1e40af',
+    secondary: '#3b82f6',
+    accent: '#93c5fd',
   },
   green: {
-    ...defaultThemeColors,
-    primary: '#059669',
-    accent: '#34d399',
+    ...lightThemeColors,
+    primary: '#166534',
+    secondary: '#22c55e',
+    accent: '#86efac',
   },
   purple: {
-    ...defaultThemeColors,
-    primary: '#7c3aed',
-    accent: '#a78bfa',
+    ...lightThemeColors,
+    primary: '#7e22ce',
+    secondary: '#a855f7',
+    accent: '#d8b4fe',
   },
   red: {
-    ...defaultThemeColors,
-    primary: '#dc2626',
-    accent: '#f87171',
+    ...lightThemeColors,
+    primary: '#b91c1c',
+    secondary: '#ef4444',
+    accent: '#fca5a5',
   },
+  // NHS theme aligned with NHS identity guidelines
   nhs: {
-    ...defaultThemeColors,
-    primary: '#005EB8',
-    secondary: '#41B6E6',
-    accent: '#00A9CE',
-    success: '#009639',
-    error: '#DA291C'
-  }
+    ...lightThemeColors,
+    primary: '#005eb8', // NHS Blue
+    secondary: '#41b6e6', // NHS Light Blue
+    accent: '#0072CE', // NHS Mid Blue
+    background: '#f0f4f5', // NHS Pale Grey
+    success: '#007f3b', // NHS Green
+    warning: '#ffb81c', // NHS Yellow
+    error: '#da291c', // NHS Red
+  },
 };
 
-const ThemeContext = createContext<ThemeContextType>({
-  themeName: 'default',
-  themeColors: defaultThemeColors,
-  isDarkMode: false,
-  customCss: null,
-  setTheme: () => {},
-  setThemeColors: () => {},
-  toggleDarkMode: () => {},
-  setCustomCss: () => {},
-  resetTheme: () => {},
-});
+const ThemeContext = createContext<ThemeContextType | null>(null);
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [themeName, setThemeName] = useState('default');
-  const [themeColors, setThemeColorsState] = useState<ThemeColors>(defaultThemeColors);
-  const [isDarkMode, setIsDarkMode] = useState(false);
-  const [customCss, setCustomCssState] = useState<string | null>(null);
-  const { user } = useAuth();
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user, tenantId } = useAuth();
+  const [themeName, setThemeName] = useState<string>('default');
+  const [themeColors, setThemeColors] = useState<ThemeColors>(lightThemeColors);
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+  const [customCss, setCustomCss] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
-  // Fetch theme settings based on the tenant
+  // Fetch tenant theme on mount if user is authenticated
   useEffect(() => {
-    const fetchTenantTheme = async () => {
-      try {
-        // Only fetch tenant theme if user is authenticated
-        if (user) {
-          const res = await fetch('/api/tenants/current/theme', {
-            credentials: 'include',
-          });
-          
-          if (res.ok) {
-            const theme = await res.json();
-            
-            if (theme.themeName) {
-              setThemeName(theme.themeName);
-            }
-            
-            if (theme.themeColors) {
-              setThemeColorsState(theme.themeColors);
-            }
-            
-            if (theme.themeDarkMode !== undefined) {
-              setIsDarkMode(theme.themeDarkMode);
-            }
-            
-            if (theme.themeCustomCss) {
-              setCustomCssState(theme.themeCustomCss);
-            }
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching tenant theme:', error);
-      }
-    };
-    
-    fetchTenantTheme();
-  }, [user]);
+    if (user && tenantId && !isInitialized) {
+      fetchTenantTheme();
+    }
+  }, [user, tenantId]);
 
-  // Apply theme changes to CSS variables
+  // Apply theme colors to CSS variables whenever they change
   useEffect(() => {
-    const root = document.documentElement;
-    Object.entries(themeColors).forEach(([key, value]) => {
-      root.style.setProperty(`--color-${key}`, value);
-    });
-    
-    // Apply dark mode
-    if (isDarkMode) {
-      document.body.classList.add('dark-mode');
-    } else {
-      document.body.classList.remove('dark-mode');
-    }
-    
-    // Apply custom CSS if provided
-    let customStyleElement = document.getElementById('tenant-custom-css');
-    
-    if (!customStyleElement && customCss) {
-      customStyleElement = document.createElement('style');
-      customStyleElement.id = 'tenant-custom-css';
-      document.head.appendChild(customStyleElement);
-    }
-    
-    if (customStyleElement) {
-      customStyleElement.textContent = customCss || '';
-    }
+    applyThemeToDOM();
   }, [themeColors, isDarkMode, customCss]);
 
-  const setTheme = (name: string) => {
-    if (predefinedThemes[name]) {
-      setThemeName(name);
-      setThemeColorsState(predefinedThemes[name]);
+  const fetchTenantTheme = async () => {
+    try {
+      const response = await apiRequest('GET', `/api/tenants/${tenantId}/theme`);
+      const data = await response.json();
+      
+      if (data.themeName) setThemeName(data.themeName);
+      if (data.themeColors) setThemeColors(data.themeColors);
+      if (data.themeDarkMode !== undefined) setIsDarkMode(data.themeDarkMode);
+      setCustomCss(data.themeCustomCss || null);
+      setIsInitialized(true);
+    } catch (error) {
+      console.error('Failed to fetch tenant theme:', error);
+      // Fall back to defaults
+      setThemeName('default');
+      setThemeColors(lightThemeColors);
+      setIsDarkMode(false);
+      setCustomCss(null);
+      setIsInitialized(true);
     }
   };
 
-  const setThemeColors = (colors: Partial<ThemeColors>) => {
-    setThemeColorsState((prevColors) => {
-      const newColors = { ...prevColors };
-      // Ensure we properly handle each color explicitly to maintain type safety
-      Object.keys(colors).forEach((key) => {
-        if (key in prevColors && colors[key] !== undefined) {
-          newColors[key] = colors[key]!;
-        }
-      });
-      return newColors;
+  const applyThemeToDOM = () => {
+    const root = document.documentElement;
+    const colors = isDarkMode && themeName === 'default' ? darkThemeColors : themeColors;
+
+    // Set color theme variables
+    Object.entries(colors).forEach(([key, value]) => {
+      root.style.setProperty(`--color-${key}`, value);
     });
+
+    // Set dark mode class
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    // Apply custom CSS if any
+    let styleTag = document.getElementById('custom-theme-css');
+    if (!styleTag && customCss) {
+      styleTag = document.createElement('style');
+      styleTag.id = 'custom-theme-css';
+      document.head.appendChild(styleTag);
+    }
+
+    if (styleTag) {
+      styleTag.textContent = customCss || '';
+    }
+  };
+
+  const setTheme = (name: string) => {
+    setThemeName(name);
+    setThemeColors(themeVariations[name] || lightThemeColors);
   };
 
   const toggleDarkMode = () => {
-    setIsDarkMode(prev => !prev);
-  };
-
-  const setCustomCss = (css: string | null) => {
-    setCustomCssState(css);
+    setIsDarkMode(!isDarkMode);
   };
 
   const resetTheme = () => {
     setThemeName('default');
-    setThemeColorsState(defaultThemeColors);
+    setThemeColors(lightThemeColors);
     setIsDarkMode(false);
-    setCustomCssState(null);
+    setCustomCss(null);
   };
 
   return (
@@ -217,6 +195,12 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       {children}
     </ThemeContext.Provider>
   );
-}
+};
 
-export const useTheme = () => useContext(ThemeContext);
+export const useTheme = (): ThemeContextType => {
+  const context = useContext(ThemeContext);
+  if (context === null) {
+    throw new Error('useTheme must be used within a ThemeProvider');
+  }
+  return context;
+};
