@@ -23,8 +23,8 @@ async function main() {
     }
 
     // Check if we have a tenant
-    const tenantCount = await db.select().from(tenants).count();
-    if (parseInt(tenantCount[0].count as string, 10) === 0) {
+    const tenantResult = await db.select().from(tenants);
+    if (tenantResult.length === 0) {
       console.log('Creating default tenant...');
       await db.insert(tenants).values({
         name: 'City Health Partners',
