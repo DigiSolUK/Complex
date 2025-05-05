@@ -8,8 +8,8 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.SESSION_SECRET || "complex-care-secret"));
 
-// Set trust proxy - important for session cookies to work properly
-app.set("trust proxy", 1);
+// Set trust proxy - essential for secure cookies to work in Replit environment 
+app.set("trust proxy", true);
 
 // Log all requests for better debugging
 app.use((req, res, next) => {

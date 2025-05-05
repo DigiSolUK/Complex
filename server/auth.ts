@@ -79,7 +79,7 @@ class Auth {
       }
     });
 
-    // Create session middleware with optimal settings for development environment
+    // Create session middleware with optimal settings for Replit environment
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
       resave: true,            // Force session to save on each request to ensure nothing is lost
@@ -88,9 +88,9 @@ class Auth {
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,
-        secure: false,         // Don't require HTTPS in development
+        secure: true,          // Required for SameSite=None
         path: "/",
-        sameSite: 'lax'        // Relaxed same-site policy for testing
+        sameSite: 'none'       // Required for cross-site requests in Replit environment
       },
       store: storage.sessionStore, // Use database session store
       name: "connect.sid",     // Use standard name for better compatibility
@@ -189,13 +189,18 @@ class Auth {
           req.session.userId = user.id;
           req.session.lastLogin = new Date().toISOString();
           
-          // Set a custom cookie as a test - with development-friendly settings
+          // Set SameSite to none for cross-site requests in a Replit environment
+          // but still require secure for security
           res.cookie('user_id', user.id, {
             maxAge: 24 * 60 * 60 * 1000,
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+            secure: true,
+            sameSite: 'none'
           });
+          
+          // Explicitly set session cookie parameters to match
+          req.session.cookie.secure = true;
+          req.session.cookie.sameSite = 'none';
           
           console.log("Login successful for user ID:", user.id);
           console.log("Response headers being sent:", res.getHeaders());
