@@ -228,3 +228,44 @@ export const insertNhsDigitalIntegrationSchema = createInsertSchema(nhsDigitalIn
 
 export type InsertNhsDigitalIntegration = z.infer<typeof insertNhsDigitalIntegrationSchema>;
 export type NhsDigitalIntegration = typeof nhsDigitalIntegrations.$inferSelect;
+
+// Compliance Analysis and Reports
+export const complianceAnalyses = pgTable("compliance_analyses", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  score: numeric("score").notNull(),
+  overallStatus: text("overall_status", { enum: ["compliant", "at-risk", "non-compliant"] }).notNull(),
+  areas: jsonb("areas").notNull(),
+  recommendations: jsonb("recommendations").notNull(),
+  findings: jsonb("findings"),
+  reportUrl: text("report_url"),
+  conductedBy: integer("conducted_by").references(() => users.id),
+  lastUpdated: timestamp("last_updated").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: json("metadata"),
+});
+
+export const insertComplianceAnalysisSchema = createInsertSchema(complianceAnalyses).omit({
+  id: true,
+  createdAt: true,
+});
+
+export type InsertComplianceAnalysis = z.infer<typeof insertComplianceAnalysisSchema>;
+export type ComplianceAnalysis = typeof complianceAnalyses.$inferSelect;
+
+// Types for compliance data
+export interface ComplianceArea {
+  name: string;
+  score: number;
+  findings: string[];
+  status: 'compliant' | 'at-risk' | 'non-compliant';
+  regulation: string;
+}
+
+export interface ComplianceResult {
+  score: number;
+  areas: ComplianceArea[];
+  recommendations: string[];
+  overallStatus: 'compliant' | 'at-risk' | 'non-compliant';
+  lastUpdated: Date;
+}
