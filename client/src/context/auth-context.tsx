@@ -42,7 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is already logged in
     const checkAuth = async () => {
       try {
-        // Use API request to get current user
+        // Use API request to get current user - with explicit logging
+        console.log("Auth check - sending request to /api/auth/me");
         const res = await fetch("/api/auth/me", {
           credentials: "include",
           headers: {
@@ -50,6 +51,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             "Pragma": "no-cache"
           }
         });
+        console.log("Auth check response status:", res.status);
 
         if (res.ok) {
           const userData = await res.json();
@@ -81,18 +83,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiRequest("POST", "/api/auth/login", {
-        username,
-        password,
+      console.log("Login - attempting to authenticate with", { username });
+      
+      // Use fetch directly with more control instead of apiRequest
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Cache-Control": "no-cache",
+          "Pragma": "no-cache"
+        },
+        body: JSON.stringify({ username, password }),
+        credentials: "include"
       });
+      
+      console.log("Login response status:", res.status);
+      
+      if (!res.ok) {
+        const errorText = await res.text();
+        console.error("Login failed:", errorText);
+        throw new Error(errorText || "Login failed");
+      }
+      
       const userData = await res.json();
+      console.log("Login successful, user data received", userData);
       setUser(userData);
+      
       // Clear demo mode if it was active
       if (isDemoMode) {
         setIsDemoMode(false);
         localStorage.removeItem("demoMode");
       }
     } catch (err) {
+      console.error("Login error:", err);
       setError("Login failed. Please check your credentials and try again.");
       throw err;
     } finally {

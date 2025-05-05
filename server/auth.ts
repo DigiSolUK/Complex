@@ -79,11 +79,12 @@ class Auth {
       }
     });
 
-    // Create session middleware
+    // Create session middleware with optimal settings
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
-      resave: true,
-      saveUninitialized: true,
+      resave: false,            // Don't save session if unmodified
+      saveUninitialized: false, // Don't create session until something stored
+      rolling: true,           // Force cookie set on every response
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,

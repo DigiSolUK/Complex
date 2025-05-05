@@ -20,8 +20,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
   
   // Auth Routes
-  app.post("/api/auth/login", auth.authenticateLocal, (req, res) => {
-    res.json(req.user);
+  app.post("/api/auth/login", (req, res, next) => {
+    console.log("Login request received:", { username: req.body.username });
+    console.log("Request headers:", req.headers);
+    
+    auth.authenticateLocal(req, res, (err) => {
+      if (err) {
+        console.error("Login error in route:", err);
+        return next(err);
+      }
+      
+      // This is only called if authentication was successful
+      console.log("Login successful, sending user data");
+      res.json(req.user);
+    });
   });
 
   app.post("/api/auth/register", async (req, res) => {
@@ -69,8 +81,42 @@ export async function registerRoutes(app: Express): Promise<Server> {
     });
   });
 
-  app.get("/api/auth/me", auth.isAuthenticated, (req, res) => {
-    res.json(req.user);
+  app.get("/api/auth/me", (req, res) => {
+    // Debug the session state
+    console.log('Request cookies:', req.headers.cookie);
+    console.log('Session ID:', req.sessionID);
+    console.log('Passport isAuthenticated:', req.isAuthenticated());
+    console.log('User in session:', req.user ? `User ID: ${req.user.id}` : 'No user');
+    console.log('Session data:', req.session);
+    console.log('User ID cookie:', req.cookies.user_id);
+    
+    // Case 1: User is authenticated through Passport
+    if (req.isAuthenticated()) {
+      console.log('User is authenticated via Passport');
+      return res.json(req.user);
+    }
+    
+    // Case 2: User is authenticated via our custom session mechanism
+    if (req.session.isAuthenticated && req.session.userId) {
+      console.log('User is authenticated via custom session, userId:', req.session.userId);
+      // Fetch user data from storage and return it
+      return storage.getUserById(req.session.userId)
+        .then(user => {
+          if (!user) {
+            return res.status(401).json({ message: "User not found" });
+          }
+          // Remove password from response
+          const { password: _, ...userWithoutPassword } = user;
+          return res.json(userWithoutPassword);
+        })
+        .catch(err => {
+          console.error("Error fetching user by ID:", err);
+          return res.status(500).json({ message: "Error fetching user data" });
+        });
+    }
+    
+    // Case 3: User is not authenticated
+    return res.status(401).json({ message: "Unauthorized" });
   });
   
   // Test session route - not protected for testing purposes
