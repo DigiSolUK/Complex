@@ -1026,11 +1026,48 @@ export class MemStorage implements IStorage {
       .sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime())
       .slice(0, limit);
   }
+
+  // Chat history methods
+  async getChatHistoryForPatient(patientId: number): Promise<ChatHistory[]> {
+    return Array.from(this.chatHistory.values())
+      .filter(entry => entry.patientId === patientId)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+  }
+
+  async saveChatInteraction(data: { patientId: number, patientMessage: string, aiResponse: string, metadata?: any }): Promise<ChatHistory> {
+    const id = this.currentId.chatHistory++;
+    const chatEntry: ChatHistory = {
+      id,
+      patientId: data.patientId,
+      patientMessage: data.patientMessage,
+      aiResponse: data.aiResponse,
+      timestamp: new Date().toISOString(),
+      metadata: data.metadata || {}
+    };
+    this.chatHistory.set(id, chatEntry);
+    return chatEntry;
+  }
+
+  async getActiveCarePlansForPatient(patientId: number): Promise<CarePlan[]> {
+    return Array.from(this.carePlans.values())
+      .filter(plan => plan.patientId === patientId && plan.status === 'Active');
+  }
+
+  async getUpcomingAppointmentsForPatient(patientId: number): Promise<Appointment[]> {
+    const today = new Date();
+    return Array.from(this.appointments.values())
+      .filter(appointment => {
+        if (appointment.patientId !== patientId) return false;
+        const appointmentDate = new Date(appointment.dateTime);
+        return appointmentDate >= today;
+      })
+      .sort((a, b) => new Date(a.dateTime).getTime() - new Date(b.dateTime).getTime());
+  }
 }
 
 import connectPg from "connect-pg-simple";
 import session from "express-session";
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 
 const PostgresSessionStore = connectPg(session);
@@ -1537,6 +1574,78 @@ export class DatabaseStorage implements IStorage {
       }));
     } catch (error) {
       console.error('Error getting compliance history:', error);
+      return [];
+    }
+  }
+
+  // Chat history methods
+  async getChatHistoryForPatient(patientId: number): Promise<ChatHistory[]> {
+    try {
+      const history = await db
+        .select()
+        .from(chatHistory)
+        .where(eq(chatHistory.patientId, patientId))
+        .orderBy(chatHistory.timestamp, 'desc');
+      
+      return history;
+    } catch (error) {
+      console.error('Error getting chat history:', error);
+      return [];
+    }
+  }
+
+  async saveChatInteraction(data: { patientId: number, patientMessage: string, aiResponse: string, metadata?: any }): Promise<ChatHistory> {
+    try {
+      const [entry] = await db
+        .insert(chatHistory)
+        .values({
+          patientId: data.patientId,
+          patientMessage: data.patientMessage,
+          aiResponse: data.aiResponse,
+          timestamp: new Date(),
+          metadata: data.metadata || {}
+        })
+        .returning();
+      
+      return entry;
+    } catch (error) {
+      console.error('Error saving chat interaction:', error);
+      throw new Error('Failed to save chat interaction');
+    }
+  }
+
+  async getActiveCarePlansForPatient(patientId: number): Promise<CarePlan[]> {
+    try {
+      return db
+        .select()
+        .from(carePlans)
+        .where(
+          and(
+            eq(carePlans.patientId, patientId),
+            eq(carePlans.status, 'Active')
+          )
+        );
+    } catch (error) {
+      console.error('Error getting active care plans:', error);
+      return [];
+    }
+  }
+
+  async getUpcomingAppointmentsForPatient(patientId: number): Promise<Appointment[]> {
+    try {
+      const today = new Date();
+      return db
+        .select()
+        .from(appointments)
+        .where(
+          and(
+            eq(appointments.patientId, patientId),
+            appointments.dateTime >= today
+          )
+        )
+        .orderBy(appointments.dateTime);
+    } catch (error) {
+      console.error('Error getting upcoming appointments:', error);
       return [];
     }
   }
