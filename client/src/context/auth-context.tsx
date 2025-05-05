@@ -40,16 +40,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check if user is already logged in
     const checkAuth = async () => {
       try {
+        // Use API request to get current user
         const res = await fetch("/api/auth/me", {
           credentials: "include",
+          headers: {
+            "Cache-Control": "no-cache",
+            "Pragma": "no-cache"
+          }
         });
 
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
+          console.log("User authenticated:", userData);
+        } else {
+          console.log("Not authenticated, status:", res.status);
+          setUser(null);
         }
       } catch (err) {
         console.error("Authentication check failed:", err);
+        setUser(null);
       } finally {
         setIsLoading(false);
       }
