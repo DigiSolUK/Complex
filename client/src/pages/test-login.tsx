@@ -208,6 +208,42 @@ export default function TestLogin() {
               <Button onClick={logout} disabled={loading} variant="outline" className="w-full">
                 Logout
               </Button>
+              <Button 
+                onClick={async () => {
+                  setLoading(true);
+                  setStatus('Creating test user...');
+                  try {
+                    const response = await fetch('/api/test/create-user', {
+                      credentials: 'include'
+                    });
+                    const data = await response.json();
+                    setStatus(`Test user ${data.message}`);
+                    if (data.credentials) {
+                      setUsername(data.credentials.username);
+                      setPassword(data.credentials.password);
+                    }
+                    toast({
+                      title: 'Test User',
+                      description: data.message,
+                    });
+                  } catch (error) {
+                    console.error('Error creating test user:', error);
+                    setStatus(`Error creating test user: ${error.message}`);
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to create test user',
+                      variant: 'destructive',
+                    });
+                  } finally {
+                    setLoading(false);
+                  }
+                }} 
+                disabled={loading} 
+                variant="secondary" 
+                className="w-full"
+              >
+                Create Test User
+              </Button>
             </div>
           </CardContent>
         </Card>

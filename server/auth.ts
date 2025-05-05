@@ -79,21 +79,21 @@ class Auth {
       }
     });
 
-    // Create session middleware with optimal settings
+    // Create session middleware with optimal settings for development environment
     const sessionMiddleware = session({
       secret: process.env.SESSION_SECRET || "complex-care-secret",
-      resave: false,            // Don't save session if unmodified
-      saveUninitialized: false, // Don't create session until something stored
+      resave: true,            // Force session to save on each request to ensure nothing is lost
+      saveUninitialized: true, // Create session before anything is stored for testing
       rolling: true,           // Force cookie set on every response
       cookie: {
         maxAge: 24 * 60 * 60 * 1000, // 24 hours
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production', // Only set secure in production
+        secure: false,         // Don't require HTTPS in development
         path: "/",
-        sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax'
+        sameSite: 'lax'        // Relaxed same-site policy for testing
       },
       store: storage.sessionStore, // Use database session store
-      name: "connect.sid", // Use standard name for better compatibility
+      name: "connect.sid",     // Use standard name for better compatibility
     });
 
     return [sessionMiddleware, passport.initialize(), passport.session()];

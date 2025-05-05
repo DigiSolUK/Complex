@@ -158,6 +158,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add test user route - creates a test user account
+  app.get("/api/test/create-user", async (req, res) => {
+    try {
+      // Check if test user already exists
+      const existingUser = await storage.getUserByUsername("testuser");
+      
+      if (existingUser) {
+        return res.json({
+          message: "Test user already exists",
+          username: "testuser",
+          password: "password123"
+        });
+      }
+      
+      // Create a test user
+      const hashedPassword = await cryptoService.hashPassword("password123");
+      const user = await storage.createUser({
+        username: "testuser",
+        password: hashedPassword,
+        email: "test@example.com",
+        name: "Test User",
+        role: "admin",
+        tenantId: 1
+      });
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      return res.json({
+        message: "Test user created successfully",
+        user: userWithoutPassword,
+        credentials: {
+          username: "testuser",
+          password: "password123"
+        }
+      });
+    } catch (error) {
+      console.error("Error creating test user:", error);
+      return res.status(500).json({ message: "Error creating test user" });
+    }
+  });
+
   app.post("/api/auth/change-password", auth.isAuthenticated, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;

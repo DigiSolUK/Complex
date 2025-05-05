@@ -98,6 +98,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       });
       
       console.log("Login response status:", res.status);
+      console.log("Response headers:", [...res.headers.entries()]);
       
       if (!res.ok) {
         const errorText = await res.text();
@@ -108,6 +109,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const userData = await res.json();
       console.log("Login successful, user data received", userData);
       setUser(userData);
+      
+      // Immediately verify authentication after login
+      setTimeout(async () => {
+        try {
+          console.log("Verifying authentication after login...");
+          const verifyRes = await fetch("/api/auth/me", {
+            credentials: "include",
+            headers: {
+              "Cache-Control": "no-cache",
+              "Pragma": "no-cache"
+            }
+          });
+          
+          if (verifyRes.ok) {
+            console.log("Authentication verified successfully");
+          } else {
+            console.error("Authentication verification failed:", verifyRes.status);
+          }
+        } catch (error) {
+          console.error("Authentication verification error:", error);
+        }
+      }, 500);
       
       // Clear demo mode if it was active
       if (isDemoMode) {
