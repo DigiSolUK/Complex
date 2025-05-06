@@ -13,4 +13,7 @@ export {
   ProgressIndicator
 } from './animations';
 export { AnimatedButton } from './animated-button';
+export { AnimatedCard } from './animated-card';
+export { ComfortMessage } from './comfort-message';
+export { PatientInfoTransition, PatientInfoItem } from './patient-info-transition';
 // Add other components as needed

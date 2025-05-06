@@ -15,6 +15,7 @@ import ClinicalSupport from "@/pages/tools/clinical-support";
 import PatientSupportTool from "@/pages/tools/patient-support";
 import AnalyticsTool from "@/pages/tools/analytics";
 import ComplianceTool from "@/pages/tools/compliance";
+import AnimationsDemo from "@/pages/demo-animations";
 import Appointments from "@/pages/appointments";
 import CarePlans from "@/pages/care-plans";
 import CarePlanDetail from "@/pages/care-plan-detail";
@@ -254,6 +255,11 @@ function Router() {
           </Route>
           <Route path="/tools/compliance">
             {(params) => <ProtectedRoute component={ComplianceTool} params={params} />}
+          </Route>
+          
+          {/* Animation Demo Route */}
+          <Route path="/demo-animations">
+            {(params) => <ProtectedRoute component={AnimationsDemo} params={params} />}
           </Route>
           
           {/* Legacy routes - will eventually be redirected to new tools section */}
