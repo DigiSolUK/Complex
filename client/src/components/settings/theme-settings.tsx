@@ -102,15 +102,29 @@ export function ThemeSettings() {
   // Save theme to server (admin only)
   const saveMutation = useMutation({
     mutationFn: async () => {
-      // We'll need the tenant ID when implementing the save functionality
-      // For now, we'll assume we're saving for tenant ID 1
-      const tenantId = 1;
+      // Get tenant ID from user context or default to 1
+      const tenantId = user?.tenantId || 1;
+      
+      console.log('Saving theme settings:', {
+        themeName,
+        themeColors,
+        themeDarkMode: isDarkMode,
+        themeCustomCss: customCss,
+      });
+      
+      // Create proper payload with all required fields
       const response = await apiRequest('PUT', `/api/tenants/${tenantId}/theme`, {
         themeName,
         themeColors,
         themeDarkMode: isDarkMode,
         themeCustomCss: customCss,
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to save theme settings');
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
@@ -119,10 +133,11 @@ export function ThemeSettings() {
         description: 'Theme settings have been saved to the server.',
       });
     },
-    onError: (error) => {
+    onError: (error: Error) => {
+      console.error('Theme save error:', error);
       toast({
         title: 'Error saving theme',
-        description: error.message,
+        description: error.message || 'An unknown error occurred',
         variant: 'destructive',
       });
     },

@@ -148,7 +148,10 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Memoize applyThemeToDOM to prevent unnecessary rerenders
   const applyThemeToDOM = useCallback(() => {
     const root = document.documentElement;
-    const colors = isDarkMode && themeName === 'default' ? darkThemeColors : themeColors;
+    
+    // When dark mode is enabled, always use dark theme colors
+    // Otherwise use the selected theme colors
+    const colors = isDarkMode ? darkThemeColors : themeColors;
 
     // Set dark mode class first (ensures CSS variables are correctly applied)
     if (isDarkMode) {
@@ -159,27 +162,88 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Map our theme colors to the CSS variables in Tailwind/shadcn
     // This ensures theme colors override the default shadcn theme
-    root.style.setProperty('--primary', colors.primary.replace('#', '')); 
-    root.style.setProperty('--primary-foreground', '#ffffff');
     
-    root.style.setProperty('--secondary', colors.secondary.replace('#', ''));
-    root.style.setProperty('--secondary-foreground', '#ffffff');
+    // Convert hex to hsl values for shadcn compatibility
+    const convertHexToHsl = (hex: string): string => {
+      // Remove the hash if present
+      hex = hex.replace('#', '');
+      
+      // Parse the hex values to RGB
+      const r = parseInt(hex.substring(0, 2), 16) / 255;
+      const g = parseInt(hex.substring(2, 4), 16) / 255;
+      const b = parseInt(hex.substring(4, 6), 16) / 255;
+      
+      // Find the min and max values to calculate saturation
+      const max = Math.max(r, g, b);
+      const min = Math.min(r, g, b);
+      
+      // Calculate the luminance
+      let l = (max + min) / 2;
+      
+      // Initialize saturation
+      let s = 0;
+      
+      // Initialize hue
+      let h = 0;
+      
+      // If max and min are the same, we have a shade of gray (no saturation)
+      if (max !== min) {
+        // Calculate saturation
+        s = l > 0.5 ? (max - min) / (2 - max - min) : (max - min) / (max + min);
+        
+        // Calculate hue
+        if (max === r) {
+          h = (g - b) / (max - min) + (g < b ? 6 : 0);
+        } else if (max === g) {
+          h = (b - r) / (max - min) + 2;
+        } else {
+          h = (r - g) / (max - min) + 4;
+        }
+        
+        h = h * 60; // Convert to degrees
+      }
+      
+      // Convert to percentage values for CSS
+      s = Math.round(s * 100);
+      l = Math.round(l * 100);
+      h = Math.round(h);
+      
+      return `${h} ${s}% ${l}%`;
+    };
     
-    root.style.setProperty('--accent', colors.accent.replace('#', ''));
-    root.style.setProperty('--accent-foreground', '#ffffff');
+    // Apply colors as HSL values
+    root.style.setProperty('--primary', convertHexToHsl(colors.primary));
+    root.style.setProperty('--primary-foreground', '0 0% 100%'); // White
     
-    root.style.setProperty('--background', colors.background.replace('#', ''));
-    root.style.setProperty('--foreground', colors.text.replace('#', ''));
+    root.style.setProperty('--secondary', convertHexToHsl(colors.secondary));
+    root.style.setProperty('--secondary-foreground', '0 0% 100%'); // White
+    
+    root.style.setProperty('--accent', convertHexToHsl(colors.accent));
+    root.style.setProperty('--accent-foreground', '0 0% 100%'); // White
+    
+    root.style.setProperty('--background', convertHexToHsl(colors.background));
+    root.style.setProperty('--foreground', convertHexToHsl(colors.text));
     
     // Add additional colors for completeness
-    root.style.setProperty('--destructive', colors.error.replace('#', ''));
-    root.style.setProperty('--destructive-foreground', '#ffffff');
+    root.style.setProperty('--destructive', convertHexToHsl(colors.error));
+    root.style.setProperty('--destructive-foreground', '0 0% 100%'); // White
     
-    root.style.setProperty('--success', colors.success.replace('#', ''));
-    root.style.setProperty('--success-foreground', '#ffffff');
+    root.style.setProperty('--success', convertHexToHsl(colors.success));
+    root.style.setProperty('--success-foreground', '0 0% 100%'); // White
     
-    root.style.setProperty('--warning', colors.warning.replace('#', ''));
-    root.style.setProperty('--warning-foreground', '#000000');
+    root.style.setProperty('--warning', convertHexToHsl(colors.warning));
+    root.style.setProperty('--warning-foreground', '0 0% 0%'); // Black
+    
+    // Additional theme variables needed for shadcn
+    root.style.setProperty('--card', convertHexToHsl(isDarkMode ? '#1e293b' : '#ffffff'));
+    root.style.setProperty('--card-foreground', convertHexToHsl(colors.text));
+    root.style.setProperty('--popover', convertHexToHsl(isDarkMode ? '#0f172a' : '#ffffff'));
+    root.style.setProperty('--popover-foreground', convertHexToHsl(colors.text));
+    root.style.setProperty('--muted', convertHexToHsl(isDarkMode ? '#334155' : '#f1f5f9'));
+    root.style.setProperty('--muted-foreground', convertHexToHsl(isDarkMode ? '#94a3b8' : '#64748b'));
+    root.style.setProperty('--border', convertHexToHsl(isDarkMode ? '#334155' : '#e2e8f0'));
+    root.style.setProperty('--input', convertHexToHsl(isDarkMode ? '#334155' : '#e2e8f0'));
+    root.style.setProperty('--ring', convertHexToHsl(colors.primary));
     
     // Also set our custom color properties for backward compatibility
     root.style.setProperty('--color-primary', colors.primary);
