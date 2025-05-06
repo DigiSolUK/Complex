@@ -51,28 +51,24 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileNavigation } from "@/components/layout/mobile-navigation";
 
-function ProtectedRoute({ component: Component, params, requireAdmin = false }: { component: React.ComponentType<any>, params: any, requireAdmin?: boolean }) {
+// Simple wrapper component that handles protected routes
+const ProtectedRoute = ({ component: Component, params, requireAdmin = false }: { component: React.ComponentType<any>, params: any, requireAdmin?: boolean }) => {
+  // Get auth state
   const { isAuthenticated, isDemoMode, isLoading, isAdmin, isSuperAdmin } = useAuth();
   const [, navigate] = useLocation();
   
-  // Use useEffect for redirects to avoid React state updates during render
-  React.useEffect(() => {
-    // Don't redirect while still loading
-    if (isLoading) return;
-    
-    // Handle authentication check
-    if (!isAuthenticated && !isDemoMode) {
-      navigate('/auth');
-      return;
+  // Check authentication once on mount
+  useEffect(() => {
+    if (!isLoading) {
+      if (!isAuthenticated && !isDemoMode) {
+        navigate('/auth');
+      } else if (requireAdmin && !isAdmin && !isSuperAdmin) {
+        navigate('/dashboard');
+      }
     }
-    
-    // Handle admin check for protected routes
-    if (requireAdmin && !isAdmin && !isSuperAdmin) {
-      navigate('/dashboard');
-      return;
-    }
-  }, [isLoading, isAuthenticated, isDemoMode, requireAdmin, isAdmin, isSuperAdmin, navigate]);
+  }, [isLoading, isAuthenticated, isDemoMode, isAdmin, isSuperAdmin, requireAdmin, navigate]);
   
+  // Show loading state while authentication is in progress
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -84,7 +80,7 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
     );
   }
   
-  // If not authenticated or not authorized, show a loading state until redirect happens
+  // If not authorized, show redirecting screen
   if ((!isAuthenticated && !isDemoMode) || (requireAdmin && !isAdmin && !isSuperAdmin)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -96,7 +92,7 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
     );
   }
   
-  // User is authenticated and has proper permissions
+  // Render the component if authorized
   return <Component params={params} />;
 }
 
@@ -212,15 +208,9 @@ function Router() {
       <AppLayout>
         <Switch>
           {commonRoutes}
-          <Route path="/dashboard">
-            {(params) => <ProtectedRoute component={Dashboard} params={params} />}
-          </Route>
-          <Route path="/patients">
-            {(params) => <ProtectedRoute component={Patients} params={params} />}
-          </Route>
-          <Route path="/patients/:id">
-            {(params) => <ProtectedRoute component={PatientProfile} params={params} />}
-          </Route>
+          <Route path="/dashboard" component={(params) => <ProtectedRoute component={Dashboard} params={params} />} />
+          <Route path="/patients" component={(params) => <ProtectedRoute component={Patients} params={params} />} />
+          <Route path="/patients/:id" component={(params) => <ProtectedRoute component={PatientProfile} params={params} />} />
           <Route path="/patient-support">
             {(params) => <ProtectedRoute component={PatientSupport} params={params} />}
           </Route>
@@ -304,15 +294,9 @@ function Router() {
           </Route>
           
           {/* Superadmin Routes */}
-          <Route path="/superadmin/dashboard">
-            {(params) => <ProtectedRoute component={SuperadminDashboard} params={params} requireAdmin={true} />}
-          </Route>
-          <Route path="/superadmin/tenant-management">
-            {(params) => <ProtectedRoute component={TenantManagement} params={params} requireAdmin={true} />}
-          </Route>
-          <Route path="/superadmin/tenants/:id">
-            {(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />}
-          </Route>
+          <Route path="/superadmin/dashboard" component={(params) => <ProtectedRoute component={SuperadminDashboard} params={params} requireAdmin={true} />} />
+          <Route path="/superadmin/tenant-management" component={(params) => <ProtectedRoute component={TenantManagement} params={params} requireAdmin={true} />} />
+          <Route path="/superadmin/tenants/:id" component={(params) => <ProtectedRoute component={TenantDetail} params={params} requireAdmin={true} />} />
           
           <Route component={NotFound} />
         </Switch>
