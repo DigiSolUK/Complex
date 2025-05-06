@@ -55,8 +55,17 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
   const { isAuthenticated, isDemoMode, isLoading, isAdmin, isSuperAdmin } = useAuth();
   const [, navigate] = useLocation();
   
-  // Don't use useEffect for redirects as it can cause race conditions
-  // Instead, check conditions and return redirect immediately
+  // Use useEffect for redirects to avoid React state updates during render
+  useEffect(() => {
+    // Handle authentication check
+    if (!isLoading && !isAuthenticated && !isDemoMode) {
+      navigate('/auth');
+    }
+    // Handle admin check for protected routes
+    else if (!isLoading && requireAdmin && !isAdmin && !isSuperAdmin) {
+      navigate('/dashboard');
+    }
+  }, [isLoading, isAuthenticated, isDemoMode, requireAdmin, isAdmin, isSuperAdmin, navigate]);
   
   if (isLoading) {
     return (
@@ -69,18 +78,16 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
     );
   }
   
-  // Handle authentication check
-  if (!isAuthenticated && !isDemoMode) {
-    // Immediately redirect to auth page
-    navigate('/auth');
-    return null;
-  }
-  
-  // Handle admin check for protected routes
-  if (requireAdmin && !isAdmin && !isSuperAdmin) {
-    // Redirect non-admin users to dashboard
-    navigate('/dashboard');
-    return null;
+  // If not authenticated or not authorized, show a loading state until redirect happens
+  if ((!isAuthenticated && !isDemoMode) || (requireAdmin && !isAdmin && !isSuperAdmin)) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Redirecting...</p>
+        </div>
+      </div>
+    );
   }
   
   // User is authenticated and has proper permissions
@@ -129,7 +136,9 @@ function Router() {
       <Route path="/login">
         {() => {
           // Redirect /login to /auth
-          navigate('/auth');
+          React.useEffect(() => {
+            navigate('/auth');
+          }, []);
           return null;
         }}
       </Route>
@@ -173,7 +182,9 @@ function Router() {
           {commonRoutes}
           <Route>
             {() => {
-              navigate('/auth');
+              React.useEffect(() => {
+                navigate('/auth');
+              }, []);
               return null;
             }}
           </Route>
