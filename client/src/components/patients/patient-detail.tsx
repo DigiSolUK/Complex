@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
-import { Patient, Appointment, CarePlan } from "@shared/schema";
+import { Patient, Appointment, CarePlan, CarePlanTemplate, MedicationAdministrationRecord, PatientMedication } from "@shared/schema";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientAvatar } from "@/components/ui/avatar";
@@ -12,6 +12,9 @@ import WearableDeviceList from "@/components/wearables/wearable-device-list";
 import { PatientDailyLog } from "@/components/patient/daily-log";
 import { BodyMap } from "@/components/patient/body-map";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { CarePlanTemplateCard } from "@/components/care-plans/care-plan-template-card";
+import { MedicationRecordCard } from "@/components/medications/medication-record-card";
+import { PatientMedicationCard } from "@/components/medications/patient-medication-card";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatedCard } from "@/components/ui";
 import { ComfortMessage } from "@/components/ui/comfort-message";
@@ -65,6 +68,21 @@ export function PatientDetail({
   // Fetch patient daily logs
   const { data: dailyLogs = [] } = useQuery<DailyLogDisplayData[]>({
     queryKey: [`/api/patients/${patient.id}/daily-logs`],
+  });
+  
+  // Fetch patient medications
+  const { data: patientMedications = [] } = useQuery<PatientMedication[]>({
+    queryKey: [`/api/patients/${patient.id}/medications`],
+  });
+  
+  // Fetch medication administration records
+  const { data: medicationRecords = [] } = useQuery<MedicationAdministrationRecord[]>({
+    queryKey: [`/api/patients/${patient.id}/medication-records`],
+  });
+  
+  // Fetch care plan templates
+  const { data: carePlanTemplates = [] } = useQuery<CarePlanTemplate[]>({
+    queryKey: [`/api/care-plan-templates`],
   });
   
   // Demo data for daily logs if needed
@@ -121,9 +139,249 @@ export function PatientDetail({
     }
   ];
   
+  // Demo data for medications
+  const demoPatientMedications: PatientMedication[] = [
+    {
+      id: 1,
+      patientId: patient.id,
+      medicationName: 'Lisinopril',
+      dose: '10',
+      unit: 'mg',
+      route: 'oral',
+      frequency: 'once daily',
+      startDate: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      endDate: null,
+      isActive: true,
+      instructions: 'Take in the morning with food',
+      reason: 'Hypertension management',
+      prescribedBy: 'Dr. Sarah Johnson',
+      prescriptionDate: new Date(Date.now() - 95 * 24 * 60 * 60 * 1000),
+      pharmacy: 'Central Pharmacy',
+      allergies: [],
+      sideEffects: ['dizziness', 'dry cough'],
+      interactions: ['potassium supplements'],
+      createdAt: new Date(Date.now() - 95 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+      metadata: {},
+    },
+    {
+      id: 2,
+      patientId: patient.id,
+      medicationName: 'Metformin',
+      dose: '500',
+      unit: 'mg',
+      route: 'oral',
+      frequency: 'twice daily',
+      startDate: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000),
+      endDate: null,
+      isActive: true,
+      instructions: 'Take with meals',
+      reason: 'Type 2 diabetes',
+      prescribedBy: 'Dr. Michael Chen',
+      prescriptionDate: new Date(Date.now() - 62 * 24 * 60 * 60 * 1000),
+      pharmacy: 'Central Pharmacy',
+      allergies: [],
+      sideEffects: ['nausea', 'diarrhea'],
+      interactions: ['alcohol'],
+      createdAt: new Date(Date.now() - 62 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+      metadata: {},
+    }
+  ];
+  
+  // Demo data for medication records
+  const demoMedicationRecords: MedicationAdministrationRecord[] = [
+    {
+      id: 1,
+      patientId: patient.id,
+      medicationName: 'Lisinopril',
+      dose: '10',
+      unit: 'mg',
+      route: 'oral',
+      frequency: 'once daily',
+      scheduledDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000),
+      administrationDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000 + 5 * 60 * 1000),
+      administeredBy: 1,
+      status: 'administered',
+      notes: 'Patient took medication without issues',
+      prescribedBy: 'Dr. Sarah Johnson',
+      prescriptionDate: null,
+      witness: null,
+      metadata: {},
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+    },
+    {
+      id: 2,
+      patientId: patient.id,
+      medicationName: 'Metformin',
+      dose: '500',
+      unit: 'mg',
+      route: 'oral',
+      frequency: 'twice daily',
+      scheduledDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000),
+      administrationDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 8 * 60 * 60 * 1000 + 10 * 60 * 1000),
+      administeredBy: 1,
+      status: 'administered',
+      notes: 'Taken with breakfast',
+      prescribedBy: 'Dr. Michael Chen',
+      prescriptionDate: null,
+      witness: null,
+      metadata: {},
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+    },
+    {
+      id: 3,
+      patientId: patient.id,
+      medicationName: 'Metformin',
+      dose: '500',
+      unit: 'mg',
+      route: 'oral',
+      frequency: 'twice daily',
+      scheduledDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 18 * 60 * 60 * 1000),
+      administrationDateTime: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000 + 18 * 60 * 60 * 1000 + 15 * 60 * 1000),
+      administeredBy: 2,
+      status: 'administered',
+      notes: 'Taken with dinner',
+      prescribedBy: 'Dr. Michael Chen',
+      prescriptionDate: null,
+      witness: null,
+      metadata: {},
+      createdAt: new Date(Date.now() - 1 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+    },
+    {
+      id: 4,
+      patientId: patient.id,
+      medicationName: 'Lisinopril',
+      dose: '10',
+      unit: 'mg',
+      route: 'oral',
+      frequency: 'once daily',
+      scheduledDateTime: new Date(Date.now() + 8 * 60 * 60 * 1000),
+      administrationDateTime: null,
+      administeredBy: null,
+      status: 'scheduled',
+      notes: null,
+      prescribedBy: 'Dr. Sarah Johnson',
+      prescriptionDate: null,
+      witness: null,
+      metadata: {},
+      createdAt: new Date(),
+      updatedAt: null,
+    },
+  ];
+  
+  // Demo care plan templates
+  const demoCarePlanTemplates: CarePlanTemplate[] = [
+    {
+      id: 1,
+      name: 'Diabetes Management Plan',
+      description: 'Comprehensive care plan for managing type 2 diabetes with regular monitoring and lifestyle adjustments',
+      category: 'chronic',
+      assessments: [
+        { id: 1, name: 'Blood Glucose Monitoring', frequency: 'daily' },
+        { id: 2, name: 'HbA1c Test', frequency: 'quarterly' },
+        { id: 3, name: 'Foot Examination', frequency: 'monthly' }
+      ],
+      goals: [
+        { id: 1, description: 'Maintain blood glucose between 70-130 mg/dL before meals' },
+        { id: 2, description: 'Achieve HbA1c level below 7%' },
+        { id: 3, description: 'Maintain healthy weight through diet and exercise' }
+      ],
+      interventions: [
+        { id: 1, description: 'Daily glucose monitoring', frequency: 'daily' },
+        { id: 2, description: 'Medication adherence check', frequency: 'daily' },
+        { id: 3, description: 'Dietary counseling', frequency: 'monthly' },
+        { id: 4, description: 'Exercise program', frequency: 'weekly' }
+      ],
+      medicationRefs: [],
+      suitableConditions: ['diabetes', 'pre-diabetes', 'metabolic syndrome'],
+      targetAudience: 'Adult patients with type 2 diabetes',
+      estimatedDuration: '6 months',
+      reviewFrequency: 'monthly',
+      isActive: true,
+      createdBy: null,
+      tenantId: null,
+      createdAt: new Date(Date.now() - 180 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+      evidenceBase: null,
+    },
+    {
+      id: 2,
+      name: 'Hypertension Management Plan',
+      description: 'Structured approach to blood pressure control through medication, monitoring, and lifestyle changes',
+      category: 'chronic',
+      assessments: [
+        { id: 1, name: 'Blood Pressure Reading', frequency: 'daily' },
+        { id: 2, name: 'Weight Check', frequency: 'weekly' },
+        { id: 3, name: 'Cardiovascular Assessment', frequency: 'quarterly' }
+      ],
+      goals: [
+        { id: 1, description: 'Maintain blood pressure below 130/80 mmHg' },
+        { id: 2, description: 'Reduce sodium intake to less than 2,300 mg per day' },
+        { id: 3, description: 'Exercise for 30 minutes at least 5 days per week' }
+      ],
+      interventions: [
+        { id: 1, description: 'Medication management', frequency: 'daily' },
+        { id: 2, description: 'Blood pressure monitoring', frequency: 'twice weekly' },
+        { id: 3, description: 'DASH diet education', frequency: 'initial and as needed' },
+        { id: 4, description: 'Stress management techniques', frequency: 'weekly' }
+      ],
+      medicationRefs: [],
+      suitableConditions: ['hypertension', 'pre-hypertension', 'cardiovascular disease'],
+      targetAudience: 'Adults with hypertension or at risk of hypertension',
+      estimatedDuration: '3 months',
+      reviewFrequency: 'monthly',
+      isActive: true,
+      createdBy: null,
+      tenantId: null,
+      createdAt: new Date(Date.now() - 120 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+      evidenceBase: null,
+    },
+    {
+      id: 3,
+      name: 'Post-Hospital Care Transition',
+      description: 'Structured support for patients transitioning from hospital to home care',
+      category: 'post-hospital',
+      assessments: [
+        { id: 1, name: 'Medication Reconciliation', frequency: 'initial and weekly' },
+        { id: 2, name: 'Wound Assessment', frequency: 'daily if applicable' },
+        { id: 3, name: 'Activities of Daily Living Assessment', frequency: 'weekly' }
+      ],
+      goals: [
+        { id: 1, description: 'Prevent hospital readmission within 30 days' },
+        { id: 2, description: 'Ensure medication compliance' },
+        { id: 3, description: 'Successful transition to independent care management' }
+      ],
+      interventions: [
+        { id: 1, description: 'Home safety evaluation', frequency: 'initial' },
+        { id: 2, description: 'Medication management support', frequency: 'daily then weekly' },
+        { id: 3, description: 'Symptom monitoring and management', frequency: 'daily' },
+        { id: 4, description: 'Care coordination with specialists', frequency: 'as needed' }
+      ],
+      medicationRefs: [],
+      suitableConditions: ['post-surgery', 'post-acute care', 'chronic condition exacerbation'],
+      targetAudience: 'Patients recently discharged from hospital',
+      estimatedDuration: '30 days',
+      reviewFrequency: 'weekly',
+      isActive: true,
+      createdBy: null,
+      tenantId: null,
+      createdAt: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000),
+      updatedAt: null,
+      evidenceBase: null,
+    }
+  ];
+  
   // Use real data or demo data
   const displayDailyLogs: DailyLogDisplayData[] = dailyLogs && dailyLogs.length > 0 ? dailyLogs : demoDailyLogs;
   const displayWearableDevices: any[] = (wearableDevices && wearableDevices.length > 0) ? wearableDevices : demoWearableDevices;
+  const displayPatientMedications: PatientMedication[] = patientMedications && patientMedications.length > 0 ? patientMedications : demoPatientMedications;
+  const displayMedicationRecords: MedicationAdministrationRecord[] = medicationRecords && medicationRecords.length > 0 ? medicationRecords : demoMedicationRecords;
+  const displayCarePlanTemplates: CarePlanTemplate[] = carePlanTemplates && carePlanTemplates.length > 0 ? carePlanTemplates : demoCarePlanTemplates;
   
   const openBodyMapDialog = (log: DailyLogDisplayData) => {
     setSelectedDailyLog(log);
@@ -177,6 +435,8 @@ export function PatientDetail({
           <TabsTrigger value="careplans">Care Plans</TabsTrigger>
           <TabsTrigger value="wearables">Wearable Devices</TabsTrigger>
           <TabsTrigger value="dailylogs">Daily Logs</TabsTrigger>
+          <TabsTrigger value="medications">Medications</TabsTrigger>
+          <TabsTrigger value="templates">Care Templates</TabsTrigger>
           <TabsTrigger value="history">Medical History</TabsTrigger>
         </TabsList>
 
@@ -346,6 +606,119 @@ export function PatientDetail({
           )}
         </TabsContent>
 
+        {/* Medications Tab */}
+        <TabsContent value="medications" className="pt-4">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Patient Medications</h3>
+              <Link href={`/medications/new?patientId=${patient.id}`}>
+                <Button variant="outline" size="sm" className="flex items-center">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Add Medication
+                </Button>
+              </Link>
+            </div>
+            
+            {displayPatientMedications.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {displayPatientMedications.map((medication) => (
+                  <PatientMedicationCard
+                    key={medication.id}
+                    medication={medication}
+                    onEdit={() => {/* TODO: implement edit */}}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-neutral-500 mb-4">No medications have been added for this patient.</p>
+                  <Link href={`/medications/new?patientId=${patient.id}`}>
+                    <Button variant="outline">
+                      Add First Medication
+                    </Button>
+                  </Link>
+                </CardContent>
+              </Card>
+            )}
+            
+            <div className="mt-10">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Recent Medication Administration</h3>
+                <Link href={`/medication-records/new?patientId=${patient.id}`}>
+                  <Button variant="outline" size="sm" className="flex items-center">
+                    <PlusCircle className="h-4 w-4 mr-2" />
+                    Add Record
+                  </Button>
+                </Link>
+              </div>
+              
+              {displayMedicationRecords.length > 0 ? (
+                <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {displayMedicationRecords.map((record) => (
+                    <MedicationRecordCard
+                      key={record.id}
+                      record={record}
+                      onEdit={() => {/* TODO: implement edit */}}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <Card className="mt-4">
+                  <CardContent className="py-8 text-center">
+                    <p className="text-neutral-500 mb-4">No medication administration records available.</p>
+                    <Link href={`/medication-records/new?patientId=${patient.id}`}>
+                      <Button variant="outline">
+                        Add First Record
+                      </Button>
+                    </Link>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          </div>
+        </TabsContent>
+        
+        {/* Care Plan Templates Tab */}
+        <TabsContent value="templates" className="pt-4">
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-medium">Available Care Plan Templates</h3>
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" className="flex items-center">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create Template
+                </Button>
+              </div>
+            </div>
+            
+            {displayCarePlanTemplates.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {displayCarePlanTemplates.map((template) => (
+                  <CarePlanTemplateCard
+                    key={template.id}
+                    template={template}
+                    onSelect={(template) => {
+                      // TODO: implement selecting template for new care plan
+                      console.log("Selected template:", template);
+                    }}
+                    onViewDetails={(template) => {
+                      // TODO: implement viewing template details
+                      console.log("View template details:", template);
+                    }}
+                  />
+                ))}
+              </div>
+            ) : (
+              <Card>
+                <CardContent className="py-8 text-center">
+                  <p className="text-neutral-500">No care plan templates available.</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+        
         <TabsContent value="history" className="pt-4">
           <Card>
             <CardHeader>

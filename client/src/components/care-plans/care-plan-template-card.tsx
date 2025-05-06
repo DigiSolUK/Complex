@@ -28,7 +28,7 @@ export function CarePlanTemplateCard({
               {template.category.replace('-', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())} Plan
             </CardDescription>
           </div>
-          <Badge variant={template.isActive ? "success" : "secondary"}>
+          <Badge className={template.isActive ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"}>
             {template.isActive ? 'Active' : 'Inactive'}
           </Badge>
         </div>
