@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, MessageCircle, BarChart2, Layers } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { DashboardCards } from "@/components/dashboard/dashboard-cards";
 import { RecentActivity, ActivityItem } from "@/components/dashboard/recent-activity";
@@ -199,6 +199,51 @@ export default function Dashboard() {
           todayAppointments={metrics?.todayAppointments}
           staffOnDuty={metrics?.staffOnDuty}
         />
+      </div>
+
+      {/* AI Features Highlight */}
+      <div className="mt-8">
+        <div className="rounded-lg bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-6 border border-primary/20">
+          <h2 className="text-xl font-semibold mb-3 flex items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            AI-Powered Healthcare Features
+          </h2>
+          <p className="mb-4 text-muted-foreground">ComplexCare CRM integrates advanced AI capabilities to enhance patient care and streamline operations.</p>
+          
+          <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+            <Link href="/patient-support">
+              <div className="p-4 rounded-md border hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
+                <h3 className="font-medium mb-2 flex items-center">
+                  <MessageCircle className="h-5 w-5 mr-2 text-primary" />
+                  Patient Support Chatbot
+                </h3>
+                <p className="text-sm text-muted-foreground">Provide compassionate, 24/7 support for patients via our AI-powered chatbot.</p>
+              </div>
+            </Link>
+
+            <Link href="/analytics-dashboard">
+              <div className="p-4 rounded-md border hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
+                <h3 className="font-medium mb-2 flex items-center">
+                  <BarChart2 className="h-5 w-5 mr-2 text-primary" />
+                  AI Analytics & Insights
+                </h3>
+                <p className="text-sm text-muted-foreground">Leverage AI to analyze patient trends and generate actionable healthcare insights.</p>
+              </div>
+            </Link>
+
+            <Link href="/compliance-dashboard">
+              <div className="p-4 rounded-md border hover:border-primary/50 hover:bg-primary/5 transition-colors cursor-pointer">
+                <h3 className="font-medium mb-2 flex items-center">
+                  <Layers className="h-5 w-5 mr-2 text-primary" />
+                  Compliance Analytics
+                </h3>
+                <p className="text-sm text-muted-foreground">AI-powered compliance monitoring and risk assessment for healthcare regulations.</p>
+              </div>
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Recent activity and upcoming appointments split view */}

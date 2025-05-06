@@ -106,18 +106,7 @@ export function Sidebar() {
             </div>
           </Link>
           
-          <Link href="/patient-support">
-            <div
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/patient-support")
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              <MessageCircle className="h-5 w-5 mr-3" />
-              Patient Support
-            </div>
-          </Link>
+          {/* Patient Support moved to AI Features section */}
 
           <Link href="/staff">
             <div
@@ -132,18 +121,38 @@ export function Sidebar() {
             </div>
           </Link>
 
-          <Link href="/analytics-dashboard">
-            <div
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/analytics-dashboard")
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              <BarChart2 className="h-5 w-5 mr-3" />
-              Analytics
+          <div className="mt-6 pt-4 border-t border-neutral-200">
+            <h3 className="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+              AI Features
+            </h3>
+            <div className="mt-2 space-y-1">
+              <Link href="/patient-support">
+                <div
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                    isActive("/patient-support")
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}
+                >
+                  <MessageCircle className="h-5 w-5 mr-3" />
+                  AI Patient Support
+                </div>
+              </Link>
+              
+              <Link href="/analytics-dashboard">
+                <div
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                    isActive("/analytics-dashboard")
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}
+                >
+                  <BarChart2 className="h-5 w-5 mr-3" />
+                  AI Analytics
+                </div>
+              </Link>
             </div>
-          </Link>
+          </div>
           
           <Link href="/reports">
             <div
