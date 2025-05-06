@@ -1130,6 +1130,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Wearable device routes
   app.use('/', wearableRoutes);
 
+  // Payroll routes
+  registerPayrollRoutes(app);
+
   // Create HTTP server
   const httpServer = createServer(app);
   
