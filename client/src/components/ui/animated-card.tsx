@@ -1,91 +1,91 @@
-import { ReactNode } from 'react';
-import { motion } from 'framer-motion';
+import React from 'react';
 import { Card } from '@/components/ui/card';
+import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-export type HoverEffect = 'none' | 'gentle-lift' | 'gentle-glow' | 'border-glow' | 'shadow-expand' | 'soft-border';
-
 export interface AnimatedCardProps {
-  children: ReactNode;
-  header?: ReactNode;
+  children: React.ReactNode;
+  header?: React.ReactNode;
+  delay?: number;
+  duration?: number;
+  hover?: boolean;
   className?: string;
-  hoverEffect?: HoverEffect;
-  clickable?: boolean;
-  onClick?: () => void;
+  cardClassName?: string;
+  hoverEffect?: 'gentle-lift' | 'gentle-glow' | 'soft-border' | 'none';
   transitionDelay?: number;
 }
 
-/**
- * AnimatedCard - Enhanced card component with subtle animations
- * Provides a more engaging user experience for cards in the UI
- */
-export function AnimatedCard({ 
-  children, 
+export function AnimatedCard({
+  children,
   header,
-  className, 
-  hoverEffect = 'none',
-  clickable = false,
-  onClick,
-  transitionDelay = 0,
-  ...props 
+  delay = 0,
+  duration = 0.5,
+  hover = true,
+  className,
+  cardClassName,
+  hoverEffect = 'gentle-lift',
+  transitionDelay = 0
 }: AnimatedCardProps) {
-  // Define hover animations based on the selected effect
-  const getHoverAnimation = () => {
-    switch (hoverEffect) {
-      case 'gentle-lift':
-        return { 
-          y: -5, 
-          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
-          transition: { type: 'spring', stiffness: 400, damping: 17, delay: transitionDelay }
-        };
-      case 'gentle-glow':
-        return { 
-          boxShadow: '0 0 15px rgba(52, 152, 219, 0.3)', 
-          transition: { duration: 0.3, delay: transitionDelay }
-        };
-      case 'border-glow':
-        return { 
-          boxShadow: '0 0 0 2px var(--primary)', 
-          transition: { duration: 0.2, delay: transitionDelay }
-        };
-      case 'shadow-expand':
-        return { 
-          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
-          transition: { duration: 0.2, delay: transitionDelay }
-        };
-      case 'soft-border':
-        return { 
-          boxShadow: '0 0 0 1.5px rgba(100, 100, 255, 0.3)', 
-          transition: { duration: 0.2, delay: transitionDelay }
-        };
-      default:
-        return {};
+  // Define the animation states
+  const initialState = { opacity: 0, y: 20 };
+  const animateState = { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      delay: delay + transitionDelay,
+      duration,
+      ease: 'easeOut'
     }
   };
+  
+  // Define the hover effect based on the selected type
+  let hoverStyles = undefined;
+  
+  if (hover && hoverEffect !== 'none') {
+    switch (hoverEffect) {
+      case 'gentle-lift':
+        hoverStyles = {
+          y: -5,
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          transition: { duration: 0.2 }
+        };
+        break;
+      case 'gentle-glow':
+        hoverStyles = {
+          boxShadow: '0 0 15px rgba(59, 130, 246, 0.5)',
+          transition: { duration: 0.3 }
+        };
+        break;
+      case 'soft-border':
+        hoverStyles = {
+          outline: '2px solid rgba(59, 130, 246, 0.5)',
+          outlineOffset: '2px',
+          transition: { duration: 0.2 }
+        };
+        break;
+      default:
+        hoverStyles = {
+          y: -5,
+          boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
+          transition: { duration: 0.2 }
+        };
+    }
+  }
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ 
-        opacity: 1, 
-        y: 0,
-        transition: { duration: 0.3, delay: transitionDelay } 
-      }}
-      whileHover={hoverEffect !== 'none' ? getHoverAnimation() : undefined}
-      whileTap={clickable ? { scale: 0.98 } : undefined}
-      onClick={clickable ? onClick : undefined}
-      className={cn(
-        clickable && 'cursor-pointer',
-        'transition-all duration-200'
-      )}
+      className={className}
+      initial={initialState}
+      animate={animateState}
+      whileHover={hoverStyles}
     >
-      <Card className={className} {...props}>
+      <Card className={cn("h-full", cardClassName)}>
         {header && (
-          <div className="p-6 border-b">
+          <div className="p-4 border-b">
             {header}
           </div>
         )}
-        <div className={header ? 'p-6' : ''}>
+        <div className={cn("p-4", { "pt-0": !header })}>
           {children}
         </div>
       </Card>

@@ -188,18 +188,18 @@ export default function AnimationsDemo() {
                   <h3 className="text-lg font-medium">Emotional State Buttons</h3>
                   <div className="flex flex-wrap gap-4">
                     <AnimatedButton emotionalState="calm">Calm Action</AnimatedButton>
-                    <AnimatedButton emotionalState="positive">Positive Feedback</AnimatedButton>
+                    <AnimatedButton emotionalState="success">Positive Feedback</AnimatedButton>
                     <AnimatedButton emotionalState="urgent">Important Action</AnimatedButton>
-                    <AnimatedButton emotionalState="neutral">Neutral Action</AnimatedButton>
+                    <AnimatedButton emotionalState="calm">Neutral Action</AnimatedButton>
                   </div>
                 </div>
                 
                 <div className="space-y-2">
-                  <h3 className="text-lg font-medium">Feedback Intensity</h3>
+                  <h3 className="text-lg font-medium">Animation Delays</h3>
                   <div className="flex flex-wrap gap-4">
-                    <AnimatedButton feedbackType="gentle">Gentle Feedback</AnimatedButton>
-                    <AnimatedButton feedbackType="strong">Strong Feedback</AnimatedButton>
-                    <AnimatedButton feedbackType="none">No Animation</AnimatedButton>
+                    <AnimatedButton delay={0}>No Delay</AnimatedButton>
+                    <AnimatedButton delay={0.2}>Short Delay</AnimatedButton>
+                    <AnimatedButton delay={0.5}>Medium Delay</AnimatedButton>
                   </div>
                 </div>
               </CardContent>

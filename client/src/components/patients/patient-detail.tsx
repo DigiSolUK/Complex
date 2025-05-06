@@ -620,7 +620,7 @@ export function PatientDetail({
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Patient Medications</h3>
               <AnimatedButton 
-                emotionalState="positive" 
+                emotionalState="success" 
                 variant="outline" 
                 size="sm" 
                 className="flex items-center gap-2"
@@ -764,7 +764,7 @@ export function PatientDetail({
                 <CardContent className="py-8 text-center">
                   <p className="text-neutral-500 mb-4">No care plan templates available.</p>
                   <AnimatedButton 
-                    emotionalState="positive" 
+                    emotionalState="success" 
                     variant="outline"
                     onClick={() => setIsTemplateSelectorOpen(true)}
                   >

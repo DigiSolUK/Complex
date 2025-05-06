@@ -638,7 +638,7 @@ export function MedicationForm({
           )}
           <AnimatedButton 
             type="submit" 
-            emotionalState="positive" 
+            emotionalState="success" 
             isLoading={mutation.isPending}
           >
             {isEditing ? 'Update Medication' : 'Add Medication'}
