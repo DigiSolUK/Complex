@@ -82,15 +82,22 @@ router.post("/tenants", async (req: Request, res: Response) => {
   try {
     console.log('Create tenant request body:', req.body);
     
-    // Validate tenant data and add metadata field if not present
-    let tenantData = req.body;
-    if (!tenantData.metadata) {
-      tenantData.metadata = {};
+    // Check if the request body has required fields
+    if (!req.body || typeof req.body !== 'object') {
+      console.error('Invalid request body format');
+      return res.status(400).json({ message: 'Invalid request body format' });
     }
     
-    // If themeColors not provided, add default values
-    if (!tenantData.themeColors) {
-      tenantData.themeColors = {
+    // Validate tenant data and add metadata field if not present
+    let tenantData = {...req.body};
+    
+    // Add default values for required fields if missing
+    const defaults = {
+      metadata: {},
+      userLimit: 10,
+      status: 'active',
+      subscriptionTier: 'standard',
+      themeColors: {
         primary: "#0070f3",
         secondary: "#6c757d",
         accent: "#f59e0b",
@@ -99,24 +106,46 @@ router.post("/tenants", async (req: Request, res: Response) => {
         success: "#10b981",
         warning: "#f59e0b",
         error: "#ef4444"
-      };
-    }
-    
-    // Validate tenant data
-    const validatedData = insertTenantSchema.parse(tenantData);
-    
-    // Create tenant in database
-    const tenant = await storage.createTenant(validatedData);
-    
-    // Add userCount and plan for backward compatibility
-    const enhancedTenant = {
-      ...tenant,
-      userCount: 0,
-      plan: tenant.subscriptionTier
+      },
+      themeName: "default",
+      themeDarkMode: false
     };
     
-    console.log('Tenant created successfully:', enhancedTenant.id);
-    res.status(201).json(enhancedTenant);
+    // Apply default values for missing fields
+    for (const [key, value] of Object.entries(defaults)) {
+      if (tenantData[key] === undefined) {
+        tenantData[key] = value;
+      }
+    }
+    
+    console.log('Tenant data with defaults:', tenantData);
+    
+    try {
+      // Validate tenant data
+      const validatedData = insertTenantSchema.parse(tenantData);
+      
+      // Create tenant in database
+      const tenant = await storage.createTenant(validatedData);
+      
+      // Add userCount and plan for backward compatibility
+      const enhancedTenant = {
+        ...tenant,
+        userCount: 0,
+        plan: tenant.subscriptionTier
+      };
+      
+      console.log('Tenant created successfully:', enhancedTenant.id);
+      res.status(201).json(enhancedTenant);
+    } catch (validationError) {
+      console.error('Validation error:', validationError);
+      if (validationError instanceof z.ZodError) {
+        return res.status(400).json({ 
+          message: 'Validation error', 
+          errors: validationError.errors 
+        });
+      }
+      throw validationError;
+    }
   } catch (error: unknown) {
     if (error instanceof z.ZodError) {
       return res.status(400).json({ message: "Invalid tenant data", errors: error.errors });

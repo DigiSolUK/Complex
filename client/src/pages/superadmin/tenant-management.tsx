@@ -96,8 +96,23 @@ export default function TenantManagement() {
   // Create tenant mutation
   const createTenantMutation = useMutation({
     mutationFn: async (data: z.infer<typeof tenantFormSchema>) => {
-      // Fix the endpoint to match the server route structure
-      const response = await apiRequest("POST", "/api/superadmin/tenants", data);
+      console.log('Sending tenant creation request with data:', data);
+      // Use proper content type and credentials
+      const response = await fetch("/api/superadmin/tenants", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+        credentials: 'include'
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        console.error('Tenant creation failed:', errorData);
+        throw new Error(errorData.message || 'Failed to create tenant');
+      }
+      
       return await response.json();
     },
     onSuccess: () => {
@@ -125,7 +140,16 @@ export default function TenantManagement() {
   );
 
   const onSubmit = (data: z.infer<typeof tenantFormSchema>) => {
-    createTenantMutation.mutate(data);
+    console.log('Form submitted with data:', data);
+    // Add default values if not provided
+    const enhancedData = {
+      ...data,
+      userLimit: data.userLimit || 10,
+      status: data.status || 'active',
+      subscriptionTier: data.subscriptionTier || 'standard'
+    };
+    
+    createTenantMutation.mutate(enhancedData);
   };
 
   const getStatusBadgeVariant = (status: string) => {

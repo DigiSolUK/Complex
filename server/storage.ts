@@ -1497,6 +1497,44 @@ export class DatabaseStorage implements IStorage {
     return tenant || undefined;
   }
 
+  async createTenant(insertTenant: InsertTenant): Promise<Tenant> {
+    try {
+      console.log('DatabaseStorage.createTenant called with data:', insertTenant);
+      
+      // Make sure metadata is an object, not null or undefined
+      const tenantWithMetadata = {
+        ...insertTenant,
+        metadata: insertTenant.metadata || {}
+      };
+      
+      // Make sure theme data has default values if not provided
+      if (!tenantWithMetadata.themeColors) {
+        tenantWithMetadata.themeColors = {
+          primary: "#0070f3",
+          secondary: "#6c757d",
+          accent: "#f59e0b",
+          background: "#ffffff",
+          text: "#000000",
+          success: "#10b981",
+          warning: "#f59e0b",
+          error: "#ef4444"
+        };
+      }
+      
+      console.log('Attempting insert with data:', tenantWithMetadata);
+      const [tenant] = await db
+        .insert(tenants)
+        .values(tenantWithMetadata)
+        .returning();
+      
+      console.log('Tenant created successfully:', tenant);
+      return tenant;
+    } catch (error) {
+      console.error('Error creating tenant in database:', error);
+      throw error;
+    }
+  }
+
   async getAllTenants(): Promise<Tenant[]> {
     return db.select().from(tenants);
   }
