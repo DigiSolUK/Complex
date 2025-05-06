@@ -10,6 +10,11 @@ import Dashboard from "@/pages/dashboard";
 import Patients from "@/pages/patients";
 import PatientProfile from "@/pages/patient-profile";
 import PatientSupport from "@/pages/patient-support";
+import AITools from "@/pages/tools";
+import ClinicalSupport from "@/pages/tools/clinical-support";
+import PatientSupportTool from "@/pages/tools/patient-support";
+import AnalyticsTool from "@/pages/tools/analytics";
+import ComplianceTool from "@/pages/tools/compliance";
 import Appointments from "@/pages/appointments";
 import CarePlans from "@/pages/care-plans";
 import CarePlanDetail from "@/pages/care-plan-detail";
@@ -213,7 +218,25 @@ function Router() {
           <Route path="/settings">
             {(params) => <ProtectedRoute component={Settings} params={params} />}
           </Route>
+
+          {/* AI Tools Routes */}
+          <Route path="/tools">
+            {(params) => <ProtectedRoute component={AITools} params={params} />}
+          </Route>
+          <Route path="/tools/clinical-support">
+            {(params) => <ProtectedRoute component={ClinicalSupport} params={params} />}
+          </Route>
+          <Route path="/tools/patient-support">
+            {(params) => <ProtectedRoute component={PatientSupportTool} params={params} />}
+          </Route>
+          <Route path="/tools/analytics">
+            {(params) => <ProtectedRoute component={AnalyticsTool} params={params} />}
+          </Route>
+          <Route path="/tools/compliance">
+            {(params) => <ProtectedRoute component={ComplianceTool} params={params} />}
+          </Route>
           
+          {/* Legacy routes - will eventually be redirected to new tools section */}
           <Route path="/analytics-dashboard">
             {(params) => <ProtectedRoute component={AnalyticsDashboard} params={params} />}
           </Route>

@@ -152,54 +152,56 @@ export function Sidebar() {
             </div>
           </Link>
 
-          <Link href="/tools">
-            <div
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/tools")
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              <Wrench className="h-5 w-5 mr-3" />
-              AI Tools
-            </div>
-          </Link>
-
-          <Link href="/clinical-decision-support">
-            <div
-              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                isActive("/clinical-decision-support")
-                  ? "bg-primary-50 text-primary-700"
-                  : "text-neutral-700 hover:bg-neutral-100"
-              }`}
-            >
-              <BriefcaseMedical className="h-5 w-5 mr-3" />
-              Clinical Decision Support
-            </div>
-          </Link>
+          {/* AI Tools section has been moved to dedicated section below */}
 
           <div className="mt-6 pt-4 border-t border-neutral-200">
             <h3 className="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
-              AI Features
+              AI Tools
             </h3>
             <div className="mt-2 space-y-1">
-              <Link href="/patient-support">
+              <Link href="/tools">
                 <div
                   className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                    isActive("/patient-support")
+                    isActive("/tools") && !isActive("/tools/")
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}
+                >
+                  <Wrench className="h-5 w-5 mr-3" />
+                  All AI Tools
+                </div>
+              </Link>
+              
+              <Link href="/tools/clinical-support">
+                <div
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                    isActive("/tools/clinical-support")
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}
+                >
+                  <BriefcaseMedical className="h-5 w-5 mr-3" />
+                  Clinical Support
+                </div>
+              </Link>
+              
+              <Link href="/tools/patient-support">
+                <div
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                    isActive("/tools/patient-support")
                       ? "bg-primary-50 text-primary-700"
                       : "text-neutral-700 hover:bg-neutral-100"
                   }`}
                 >
                   <MessageCircle className="h-5 w-5 mr-3" />
-                  AI Patient Support
+                  Patient Support
                 </div>
               </Link>
               
-              <Link href="/analytics-dashboard">
+              <Link href="/tools/analytics">
                 <div
                   className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                    isActive("/analytics-dashboard")
+                    isActive("/tools/analytics")
                       ? "bg-primary-50 text-primary-700"
                       : "text-neutral-700 hover:bg-neutral-100"
                   }`}
@@ -209,16 +211,16 @@ export function Sidebar() {
                 </div>
               </Link>
 
-              <Link href="/compliance-dashboard">
+              <Link href="/tools/compliance">
                 <div
                   className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
-                    isActive("/compliance-dashboard")
+                    isActive("/tools/compliance")
                       ? "bg-primary-50 text-primary-700"
                       : "text-neutral-700 hover:bg-neutral-100"
                   }`}
                 >
                   <Layers className="h-5 w-5 mr-3" />
-                  Compliance Analytics
+                  Compliance Checks
                 </div>
               </Link>
             </div>
