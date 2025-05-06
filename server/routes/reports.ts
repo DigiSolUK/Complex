@@ -20,6 +20,18 @@ import { eq, count, between, and, sum, avg, sql, desc, asc, gte, lte } from "dri
 import { z } from "zod";
 import { auth } from "../auth";
 
+// Helper function to handle errors with proper typing
+function handleApiError(error: unknown, message: string, res: Response): Response {
+  console.error(message, error);
+  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+  return res.status(500).json({ message, error: errorMessage });
+}
+
+// Helper function to check if a value exists and create an SQL condition
+function eqCond(column: any, value: any) {
+  return value !== undefined && value !== null ? sql`${column} = ${value}` : undefined;
+}
+
 export function registerReportRoutes(app: any) {
   // Get all reports for a tenant
   app.get("/api/reports", auth.isAuthenticated, async (req: Request, res: Response) => {
