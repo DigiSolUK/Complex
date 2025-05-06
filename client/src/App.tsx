@@ -53,6 +53,7 @@ import AnalyticsDashboard from "@/pages/analytics-dashboard";
 import WearableDevices from "@/pages/wearable-devices";
 import WearableDeviceData from "@/pages/wearable-device-data";
 import AnimationsDemo from "@/pages/demo-animations";
+import MicroAnimationsDemo from "@/pages/micro-animations-demo";
 
 // Superadmin Pages
 import SuperadminDashboard from "@/pages/superadmin/dashboard";
@@ -236,6 +237,9 @@ function Router() {
         {/* Misc Routes */}
         <Route path="/demo-animations">
           {() => <ProtectedRoute component={AnimationsDemo} />}
+        </Route>
+        <Route path="/micro-animations">
+          {() => <ProtectedRoute component={MicroAnimationsDemo} />}
         </Route>
 
         {/* Wearable Devices Routes */}

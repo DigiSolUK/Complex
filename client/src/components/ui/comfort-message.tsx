@@ -1,198 +1,104 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { Alert, AlertDescription, AlertTitle } from './alert';
+import { MicroAnimation } from './micro-animation';
+import { AlertCircle, CheckCircle, Info, HelpCircle, Heart, ThumbsUp, Frown } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { HeartPulse, ShieldCheck, Sparkles, ThumbsUp } from 'lucide-react';
 
-type ComfortType = 'reassurance' | 'empathy' | 'success' | 'information';
-
-interface ComfortMessageProps {
-  message: string;
-  type?: ComfortType;
+export interface ComfortMessageProps {
+  title?: string;
+  description?: string;
+  variant?: 'success' | 'warning' | 'error' | 'info' | 'empathetic' | 'calming' | 'encouraging';
+  icon?: React.ReactNode;
   className?: string;
-  showIcon?: boolean;
-  autoDismiss?: boolean;
-  dismissAfter?: number; // milliseconds
-  onDismiss?: () => void;
+  children?: React.ReactNode;
+  autoHide?: boolean;
+  hideDelay?: number;
+  animate?: boolean;
+  onHide?: () => void;
 }
 
-/**
- * ComfortMessage - A component for displaying messages with emotional comfort
- * 
- * This component adds subtle animations and emotionally-tuned visual cues
- * to enhance the user experience when displaying medical information.
- * 
- * Use for:
- * - Reassuring patients about medical procedures
- * - Providing empathetic feedback
- * - Confirming successful actions
- * - Delivering sensitive information in a comforting way
- */
 export function ComfortMessage({
-  message,
-  type = 'information',
+  title,
+  description,
+  variant = 'info',
+  icon,
   className,
-  showIcon = true,
-  autoDismiss = false,
-  dismissAfter = 5000, // 5 seconds default
-  onDismiss,
+  children,
+  autoHide = false,
+  hideDelay = 5000,
+  animate = true,
+  onHide,
 }: ComfortMessageProps) {
-  const [visible, setVisible] = useState(true);
+  const [visible, setVisible] = React.useState(true);
 
-  // Auto-dismiss logic
-  useEffect(() => {
-    if (autoDismiss && visible) {
+  React.useEffect(() => {
+    if (autoHide && visible) {
       const timer = setTimeout(() => {
         setVisible(false);
-        if (onDismiss) onDismiss();
-      }, dismissAfter);
-      
+        if (onHide) onHide();
+      }, hideDelay);
       return () => clearTimeout(timer);
     }
-  }, [autoDismiss, dismissAfter, visible, onDismiss]);
+  }, [autoHide, hideDelay, visible, onHide]);
 
-  // Different icons and styles based on comfort type
-  const getTypeProperties = () => {
-    switch (type) {
-      case 'reassurance':
-        return {
-          icon: <ShieldCheck className="h-5 w-5" />,
-          bgColor: 'bg-blue-50 dark:bg-blue-950/30',
-          textColor: 'text-blue-700 dark:text-blue-300',
-          borderColor: 'border-blue-200 dark:border-blue-800',
-          iconColor: 'text-blue-500'
-        };
-      case 'empathy':
-        return {
-          icon: <HeartPulse className="h-5 w-5" />,
-          bgColor: 'bg-purple-50 dark:bg-purple-950/30',
-          textColor: 'text-purple-700 dark:text-purple-300',
-          borderColor: 'border-purple-200 dark:border-purple-800',
-          iconColor: 'text-purple-500'
-        };
-      case 'success':
-        return {
-          icon: <ThumbsUp className="h-5 w-5" />,
-          bgColor: 'bg-green-50 dark:bg-green-950/30',
-          textColor: 'text-green-700 dark:text-green-300',
-          borderColor: 'border-green-200 dark:border-green-800',
-          iconColor: 'text-green-500'
-        };
-      case 'information':
-      default:
-        return {
-          icon: <Sparkles className="h-5 w-5" />,
-          bgColor: 'bg-gray-50 dark:bg-gray-900/50',
-          textColor: 'text-gray-700 dark:text-gray-300',
-          borderColor: 'border-gray-200 dark:border-gray-800',
-          iconColor: 'text-gray-500'
-        };
-    }
+  if (!visible) return null;
+
+  // Map variant to alert variant
+  const alertVariantMap: Record<string, "default" | "destructive"> = {
+    success: 'default',
+    warning: 'default',
+    error: 'destructive',
+    info: 'default',
+    empathetic: 'default',
+    calming: 'default',
+    encouraging: 'default',
   };
 
-  const { icon, bgColor, textColor, borderColor, iconColor } = getTypeProperties();
-
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0, y: 10, scale: 0.98 },
-    visible: { 
-      opacity: 1, 
-      y: 0, 
-      scale: 1,
-      transition: {
-        type: 'spring',
-        damping: 25,
-        stiffness: 300
-      }
-    },
-    exit: { 
-      opacity: 0, 
-      scale: 0.98,
-      transition: { 
-        duration: 0.2,
-        ease: 'easeOut'
-      }
-    }
+  // Map variant to animation variant
+  const animationVariantMap: Record<string, "success" | "warning" | "error" | "neutral" | "empathetic" | "calming" | "encouraging"> = {
+    success: 'success',
+    warning: 'warning',
+    error: 'error',
+    info: 'neutral',
+    empathetic: 'empathetic',
+    calming: 'calming',
+    encouraging: 'encouraging',
   };
 
-  // Heartbeat animation for empathy messages
-  const heartbeatAnimation = type === 'empathy' ? {
-    animate: {
-      scale: [1, 1.05, 1],
-      transition: {
-        repeat: Infinity,
-        repeatType: 'reverse' as const,
-        duration: 2,
-        ease: 'easeInOut'
-      }
-    }
-  } : {};
+  // Default icons based on variant
+  const defaultIcon = {
+    success: <CheckCircle className="h-5 w-5" />,
+    warning: <AlertCircle className="h-5 w-5" />,
+    error: <Frown className="h-5 w-5" />,
+    info: <Info className="h-5 w-5" />,
+    empathetic: <Heart className="h-5 w-5" />,
+    calming: <HelpCircle className="h-5 w-5" />,
+    encouraging: <ThumbsUp className="h-5 w-5" />,
+  };
 
   return (
-    <AnimatePresence>
-      {visible && (
-        <motion.div
-          className={cn(
-            'rounded-lg border p-4 shadow-sm mb-4 relative overflow-hidden',
-            bgColor,
-            borderColor,
-            className
-          )}
-          initial="hidden"
-          animate="visible"
-          exit="exit"
-          variants={containerVariants}
-          {...heartbeatAnimation}
-        >
-          <div className="flex gap-3">
-            {showIcon && (
-              <motion.div 
-                className={cn('mt-0.5', iconColor)}
-                initial={{ opacity: 0, rotate: -10 }}
-                animate={{ opacity: 1, rotate: 0 }}
-                transition={{ delay: 0.2 }}
-              >
-                {icon}
-              </motion.div>
-            )}
-            <div className={cn('flex-1', textColor)}>
-              <motion.p 
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ delay: 0.1 }}
-                className="text-sm"
-              >
-                {message}
-              </motion.p>
-            </div>
-          </div>
-          
-          {/* Subtle glowing effect for reassurance messages */}
-          {type === 'reassurance' && (
-            <motion.div 
-              className="absolute inset-0 bg-blue-400/5"
-              initial={{ opacity: 0 }}
-              animate={{ 
-                opacity: [0, 0.5, 0],
-              }}
-              transition={{
-                repeat: Infinity,
-                duration: 3,
-                ease: 'easeInOut'
-              }}
-            />
-          )}
-          
-          {/* Subtle success animation */}
-          {type === 'success' && (
-            <motion.div 
-              className="absolute top-0 left-0 w-full h-1 bg-green-400/50"
-              initial={{ scaleX: 0, transformOrigin: 'left' }}
-              animate={{ scaleX: 1 }}
-              transition={{ duration: 0.5, ease: 'easeOut' }}
-            />
-          )}
-        </motion.div>
+    <Alert 
+      variant={alertVariantMap[variant]} 
+      className={cn(
+        'relative overflow-hidden transition-all duration-300 ease-in-out',
+        variant === 'empathetic' && 'border-blue-300 bg-blue-50 text-blue-800 dark:border-blue-600 dark:bg-blue-950 dark:text-blue-200',
+        variant === 'calming' && 'border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-600 dark:bg-teal-950 dark:text-teal-200',
+        variant === 'encouraging' && 'border-yellow-300 bg-yellow-50 text-yellow-800 dark:border-yellow-600 dark:bg-yellow-950 dark:text-yellow-200',
+        className
       )}
-    </AnimatePresence>
+    >
+      <MicroAnimation
+        variant={animationVariantMap[variant]}
+        playOnMount={animate}
+        className="mr-3"
+      >
+        {icon || defaultIcon[variant]}
+      </MicroAnimation>
+      <div className="space-y-1">
+        {title && <AlertTitle>{title}</AlertTitle>}
+        {description && <AlertDescription>{description}</AlertDescription>}
+        {children}
+      </div>
+    </Alert>
   );
 }
