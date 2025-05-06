@@ -26,27 +26,27 @@ interface ThemeContextType {
   resetTheme: () => void;
 }
 
-// Default theme colors
+// Default theme colors - using our new vibrant healthcare-inspired palette
 const lightThemeColors: ThemeColors = {
-  primary: '#2563eb', // Blue
-  secondary: '#6366F1', // Indigo
-  accent: '#3B82F6', // Lighter blue
-  background: '#ffffff',
-  text: '#121212',
-  success: '#16a34a', // Green
-  warning: '#facc15', // Yellow
-  error: '#e11d48', // Red
+  primary: '#00b8d4', // Teal/aqua - matches CSS var --primary
+  secondary: '#00838f', // Darker teal
+  accent: '#2979ff', // Bright blue - matches CSS var --accent
+  background: '#f2f8fc', // Light blue-tinted background
+  text: '#172554', // Dark navy
+  success: '#00c853', // Vibrant green
+  warning: '#ffd600', // Bright yellow
+  error: '#ff3d00', // Bright red-orange
 };
 
 const darkThemeColors: ThemeColors = {
-  primary: '#3482F6', // Lighter blue
-  secondary: '#818CF8', // Lighter indigo
-  accent: '#60a5fa', // Even lighter blue
-  background: '#121212',
-  text: '#f9fafb',
-  success: '#22c55e', // Lighter green
-  warning: '#fbbf24', // Lighter yellow
-  error: '#f43f5e', // Lighter red
+  primary: '#00e5ff', // Brighter teal for dark mode
+  secondary: '#00b0ff', // Bright blue
+  accent: '#448aff', // Lighter bright blue
+  background: '#0a1929', // Deep navy background
+  text: '#e6f5ff', // Light blue-white
+  success: '#69f0ae', // Lighter green for dark mode
+  warning: '#ffea00', // Vibrant yellow
+  error: '#ff5252', // Bright red for dark mode
 };
 
 // Theme variations
@@ -150,17 +150,31 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const root = document.documentElement;
     const colors = isDarkMode && themeName === 'default' ? darkThemeColors : themeColors;
 
-    // Set color theme variables
-    Object.entries(colors).forEach(([key, value]) => {
-      root.style.setProperty(`--color-${key}`, value);
-    });
-
-    // Set dark mode class
+    // Set dark mode class first (ensures CSS variables are correctly applied)
     if (isDarkMode) {
       document.documentElement.classList.add('dark');
     } else {
       document.documentElement.classList.remove('dark');
     }
+
+    // Map our theme colors to the CSS variables in Tailwind/shadcn
+    // This ensures theme colors override the default shadcn theme
+    root.style.setProperty('--primary', 'hsl(196 94% 42%)'); // Primary teal color
+    root.style.setProperty('--accent', 'hsl(213 94% 68%)'); // Accent bright blue
+    
+    // Apply the theme colors from tenant settings
+    root.style.setProperty('--color-primary', colors.primary);
+    root.style.setProperty('--color-secondary', colors.secondary);
+    root.style.setProperty('--color-accent', colors.accent);
+    root.style.setProperty('--color-background', colors.background);
+    root.style.setProperty('--color-text', colors.text);
+    root.style.setProperty('--color-success', colors.success);
+    root.style.setProperty('--color-warning', colors.warning);
+    root.style.setProperty('--color-error', colors.error);
+    
+    // Log theme application for debugging
+    console.log('Applied theme:', themeName, 'darkMode:', isDarkMode);
+    console.log('Theme colors:', colors);
 
     // Apply custom CSS if any
     let styleTag = document.getElementById('custom-theme-css');
