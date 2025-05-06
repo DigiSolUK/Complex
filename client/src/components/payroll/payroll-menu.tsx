@@ -1,103 +1,34 @@
 import React, { useState } from 'react';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Calendar } from '@/components/ui/calendar';
-import { apiRequest } from '@/lib/query-client';
-import { Checkbox } from '@/components/ui/checkbox';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Separator } from '@/components/ui/separator';
-import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle, Calendar as CalendarIcon, Check, Cloud, Download, FileSpreadsheet, FileText, Filter, HelpCircle, Info, Loader2, RefreshCw, Settings, Upload, X } from 'lucide-react';
-import { format } from 'date-fns';
+import { apiRequest, queryClient } from '@/lib/query-client';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { cn } from '@/lib/utils';
 import { AnimatedCard } from '@/components/ui/animated-card';
-
-const PAYROLL_PERIODS = [
-  { id: 'weekly', name: 'Weekly', frequency: 52, description: 'Employees are paid every week' },
-  { id: 'biweekly', name: 'Bi-Weekly', frequency: 26, description: 'Employees are paid every two weeks' },
-  { id: 'semimonthly', name: 'Semi-Monthly', frequency: 24, description: 'Employees are paid twice per month' },
-  { id: 'monthly', name: 'Monthly', frequency: 12, description: 'Employees are paid once per month' },
-];
-
-const PAYMENT_PROVIDERS = [
-  { id: 'nhs-sbs', name: 'NHS Shared Business Services (SBS)', formats: ['xls', 'csv', 'json', 'api'] },
-  { id: 'sage', name: 'Sage Payroll', formats: ['xls', 'csv', 'api'] },
-  { id: 'xero', name: 'Xero', formats: ['csv', 'api'] },
-  { id: 'quickbooks', name: 'QuickBooks', formats: ['iif', 'csv', 'api'] },
-  { id: 'iris', name: 'IRIS Payroll', formats: ['csv', 'api'] },
-  { id: 'other', name: 'Other Provider', formats: ['csv', 'xls', 'json', 'api'] },
-];
-
-const PAYROLL_STATUS = {
-  PENDING: 'pending',
-  PROCESSING: 'processing',
-  APPROVED: 'approved',
-  EXPORTED: 'exported',
-  PAID: 'paid',
-  REJECTED: 'rejected'
-};
-
-// Mock data for payroll periods
-const PAYMENT_HISTORY = [
-  { 
-    id: 'PR-2025-05-01', 
-    period: 'May 2025 (Week 1)', 
-    date: '2025-05-01', 
-    staff: 24, 
-    total: 45720.50, 
-    status: PAYROLL_STATUS.PAID,
-    provider: 'NHS Shared Business Services (SBS)',
-    format: 'api'
-  },
-  { 
-    id: 'PR-2025-04-24', 
-    period: 'April 2025 (Week 4)', 
-    date: '2025-04-24', 
-    staff: 23, 
-    total: 43850.75, 
-    status: PAYROLL_STATUS.PAID,
-    provider: 'NHS Shared Business Services (SBS)',
-    format: 'api'
-  },
-  { 
-    id: 'PR-2025-04-17', 
-    period: 'April 2025 (Week 3)', 
-    date: '2025-04-17', 
-    staff: 24, 
-    total: 45210.25, 
-    status: PAYROLL_STATUS.PAID,
-    provider: 'NHS Shared Business Services (SBS)',
-    format: 'api'
-  },
-  { 
-    id: 'PR-2025-04-10', 
-    period: 'April 2025 (Week 2)', 
-    date: '2025-04-10', 
-    staff: 22, 
-    total: 42100.00, 
-    status: PAYROLL_STATUS.PAID,
-    provider: 'NHS Shared Business Services (SBS)',
-    format: 'api'
-  },
-  { 
-    id: 'PR-2025-04-03', 
-    period: 'April 2025 (Week 1)', 
-    date: '2025-04-03', 
-    staff: 23, 
-    total: 43500.75, 
-    status: PAYROLL_STATUS.PAID,
-    provider: 'NHS Shared Business Services (SBS)',
-    format: 'xls'
-  },
-];
+import {
+  FileSpreadsheet,
+  FileText,
+  File,
+  ExternalLink,
+  Calendar,
+  Search,
+  Filter,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+  XCircle,
+  Download,
+  RefreshCw,
+  ChevronDown,
+  Check
+} from 'lucide-react';
 
 type TimeSheet = {
   id: string;
@@ -115,770 +46,573 @@ type TimeSheet = {
   notes?: string;
 };
 
-// Sample timesheet data for the current period
-const CURRENT_TIMESHEETS: TimeSheet[] = [
-  { 
-    id: 'TS-2025-05-01-001', 
-    careProfessionalName: 'Sarah Johnson', 
-    careProfessionalId: 'CP001', 
-    period: 'May 2025 (Week 1)', 
-    hours: 38, 
-    regularHours: 37.5, 
-    overtimeHours: 0.5, 
-    rate: 25.50, 
-    totalAmount: 975.38, 
-    status: 'approved',
-    approvedBy: 'Dr. James Wilson',
-    approvedAt: '2025-05-01T14:30:00Z'
-  },
-  { 
-    id: 'TS-2025-05-01-002', 
-    careProfessionalName: 'Michael Chen', 
-    careProfessionalId: 'CP015', 
-    period: 'May 2025 (Week 1)', 
-    hours: 40, 
-    regularHours: 37.5, 
-    overtimeHours: 2.5, 
-    rate: 27.00, 
-    totalAmount: 1080.00, 
-    status: 'approved',
-    approvedBy: 'Dr. Emma Thompson',
-    approvedAt: '2025-05-01T15:45:00Z'
-  },
-  { 
-    id: 'TS-2025-05-01-003', 
-    careProfessionalName: 'Jessica Smith', 
-    careProfessionalId: 'CP008', 
-    period: 'May 2025 (Week 1)', 
-    hours: 35, 
-    regularHours: 35, 
-    overtimeHours: 0, 
-    rate: 26.25, 
-    totalAmount: 918.75, 
-    status: 'pending'
-  },
-  { 
-    id: 'TS-2025-05-01-004', 
-    careProfessionalName: 'Daniel Williams', 
-    careProfessionalId: 'CP023', 
-    period: 'May 2025 (Week 1)', 
-    hours: 42, 
-    regularHours: 37.5, 
-    overtimeHours: 4.5, 
-    rate: 24.75, 
-    totalAmount: 1050.94, 
-    status: 'approved',
-    approvedBy: 'Dr. James Wilson',
-    approvedAt: '2025-05-01T16:20:00Z',
-    notes: 'Covered for staff shortage on weekend'
-  },
-  { 
-    id: 'TS-2025-05-01-005', 
-    careProfessionalName: 'Emily Parker', 
-    careProfessionalId: 'CP042', 
-    period: 'May 2025 (Week 1)', 
-    hours: 36, 
-    regularHours: 36, 
-    overtimeHours: 0, 
-    rate: 23.50, 
-    totalAmount: 846.00, 
-    status: 'rejected',
-    approvedBy: 'Dr. Emma Thompson',
-    approvedAt: '2025-05-01T11:15:00Z',
-    notes: 'Hours do not match patient visit records, please review and resubmit'
-  },
-];
+type ExportFormat = 'xls' | 'csv' | 'json' | 'api';
+type PayrollPeriod = 'weekly' | 'biweekly' | 'monthly';
+type PayrollStatus = 'all' | 'pending' | 'approved' | 'rejected';
 
 export default function PayrollMenu() {
   const { toast } = useToast();
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [exportFormat, setExportFormat] = useState<string>('api');
-  const [payrollProvider, setPayrollProvider] = useState<string>('nhs-sbs');
-  const [isExporting, setIsExporting] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedTimesheets, setSelectedTimesheets] = useState<string[]>([]);
+  const [selectedPeriod, setSelectedPeriod] = useState<PayrollPeriod>('monthly');
+  const [statusFilter, setStatusFilter] = useState<PayrollStatus>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   
-  // Function to handle approving timesheets
-  const handleApproveTimesheets = () => {
+  // Fetch timesheets
+  const { data: timesheets, isLoading } = useQuery({
+    queryKey: ["/api/payroll/timesheets", selectedPeriod, statusFilter],
+    refetchOnWindowFocus: false,
+  });
+
+  // For bulk selection
+  const [selectedTimesheets, setSelectedTimesheets] = useState<string[]>([]);
+  const [selectAll, setSelectAll] = useState(false);
+
+  // Mutation for approving timesheets
+  const approvalMutation = useMutation({
+    mutationFn: async ({ ids, action }: { ids: string[], action: 'approve' | 'reject' }) => {
+      const response = await apiRequest('POST', `/api/payroll/timesheets/${action}`, { ids });
+      return response.json();
+    },
+    onSuccess: (data, variables) => {
+      const action = variables.action;
+      const count = variables.ids.length;
+      toast({
+        title: `Timesheets ${action === 'approve' ? 'Approved' : 'Rejected'}`,
+        description: `Successfully ${action === 'approve' ? 'approved' : 'rejected'} ${count} timesheet${count !== 1 ? 's' : ''}.`,
+        className: action === 'approve' ? "bg-green-600 text-white" : undefined,
+        variant: action === 'reject' ? 'destructive' : undefined,
+      });
+      queryClient.invalidateQueries({ queryKey: ["/api/payroll/timesheets"] });
+      setSelectedTimesheets([]);
+      setSelectAll(false);
+    },
+    onError: (error) => {
+      toast({
+        title: 'Error processing timesheets',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Mutation for exporting timesheets
+  const exportMutation = useMutation({
+    mutationFn: async ({ ids, format }: { ids: string[], format: ExportFormat }) => {
+      const response = await apiRequest('POST', `/api/payroll/export/${format}`, { ids });
+      return format === 'api' ? response.json() : response.blob();
+    },
+    onSuccess: (data, variables) => {
+      const { format, ids } = variables;
+      
+      if (format === 'api') {
+        toast({
+          title: 'API Export Successful',
+          description: `Data was successfully sent to the payroll API for ${ids.length} timesheet${ids.length !== 1 ? 's' : ''}.`,
+          className: "bg-green-600 text-white",
+        });
+        return;
+      }
+      
+      // For file downloads
+      const blob = data as Blob;
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.style.display = 'none';
+      a.href = url;
+      a.download = `payroll-export-${new Date().toISOString().split('T')[0]}.${format}`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+      
+      toast({
+        title: 'Export Successful',
+        description: `Successfully exported ${ids.length} timesheet${ids.length !== 1 ? 's' : ''} to ${format.toUpperCase()} format.`,
+        className: "bg-green-600 text-white",
+      });
+    },
+    onError: (error) => {
+      toast({
+        title: 'Export Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    },
+  });
+
+  // Handle bulk actions
+  const handleBulkAction = (action: 'approve' | 'reject') => {
     if (selectedTimesheets.length === 0) {
       toast({
         title: 'No timesheets selected',
-        description: 'Please select at least one timesheet to approve.',
+        description: 'Please select at least one timesheet.',
         variant: 'destructive',
       });
       return;
     }
     
-    setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    approvalMutation.mutate({ ids: selectedTimesheets, action });
+  };
+
+  // Handle export
+  const handleExport = (format: ExportFormat) => {
+    if (selectedTimesheets.length === 0) {
       toast({
-        title: 'Timesheets Approved',
-        description: `Successfully approved ${selectedTimesheets.length} timesheet(s).`,
-        className: "bg-green-600 text-white",
+        title: 'No timesheets selected',
+        description: 'Please select at least one timesheet for export.',
+        variant: 'destructive',
       });
+      return;
+    }
+    
+    exportMutation.mutate({ ids: selectedTimesheets, format });
+  };
+
+  // Handle checkbox selection
+  const handleCheckboxChange = (id: string) => {
+    setSelectedTimesheets(prev => {
+      if (prev.includes(id)) {
+        return prev.filter(item => item !== id);
+      } else {
+        return [...prev, id];
+      }
+    });
+  };
+
+  // Handle select all
+  const handleSelectAll = () => {
+    if (selectAll) {
       setSelectedTimesheets([]);
-    }, 1500);
-  };
-  
-  // Function to handle export of payroll data
-  const handleExportPayroll = () => {
-    const provider = PAYMENT_PROVIDERS.find(p => p.id === payrollProvider);
-    
-    if (!provider) {
-      toast({
-        title: 'Provider Not Selected',
-        description: 'Please select a valid payroll provider.',
-        variant: 'destructive',
-      });
-      return;
+    } else {
+      // Select all visible/filtered timesheets
+      const visibleTimesheets = filteredTimesheets?.map(ts => ts.id) || [];
+      setSelectedTimesheets(visibleTimesheets);
     }
-    
-    if (!provider.formats.includes(exportFormat)) {
-      toast({
-        title: 'Format Not Supported',
-        description: `${provider.name} does not support ${exportFormat.toUpperCase()} format.`,
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    setIsExporting(true);
-    
-    // Simulate export process
-    setTimeout(() => {
-      setIsExporting(false);
-      toast({
-        title: 'Export Successful',
-        description: `Payroll data exported in ${exportFormat.toUpperCase()} format for ${provider.name}.`,
-      });
-    }, 2000);
+    setSelectAll(!selectAll);
   };
-  
-  // Function to handle toggling a timesheet selection
-  const toggleTimesheet = (id: string) => {
-    setSelectedTimesheets(prev => 
-      prev.includes(id) ? prev.filter(tsId => tsId !== id) : [...prev, id]
-    );
-  };
-  
-  // Function to format a status badge
+
+  // Get status badge
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case PAYROLL_STATUS.PAID:
-        return <Badge className="bg-green-600">Paid</Badge>;
-      case PAYROLL_STATUS.EXPORTED:
-        return <Badge className="bg-blue-600">Exported</Badge>;
-      case PAYROLL_STATUS.APPROVED:
-        return <Badge className="bg-green-500">Approved</Badge>;
-      case PAYROLL_STATUS.PROCESSING:
-        return <Badge className="bg-yellow-500">Processing</Badge>;
-      case PAYROLL_STATUS.PENDING:
-        return <Badge variant="outline">Pending</Badge>;
-      case PAYROLL_STATUS.REJECTED:
-        return <Badge variant="destructive">Rejected</Badge>;
+    switch (status.toLowerCase()) {
       case 'approved':
-        return <Badge className="bg-green-500">Approved</Badge>;
+        return <Badge className="bg-green-600"><CheckCircle2 className="h-3 w-3 mr-1" />Approved</Badge>;
       case 'pending':
-        return <Badge variant="outline">Pending</Badge>;
+        return <Badge variant="outline"><Clock className="h-3 w-3 mr-1" />Pending</Badge>;
       case 'rejected':
-        return <Badge variant="destructive">Rejected</Badge>;
+        return <Badge variant="destructive"><XCircle className="h-3 w-3 mr-1" />Rejected</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge variant="secondary"><AlertCircle className="h-3 w-3 mr-1" />{status}</Badge>;
     }
   };
-  
-  // Function to format currency
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-    }).format(amount);
-  };
-  
-  // Generate payroll period name
-  const getPayrollPeriodName = (period: any) => {
-    if (!date) return 'Select a date';
+
+  // Filter timesheets based on search and status
+  const filteredTimesheets = React.useMemo(() => {
+    if (!timesheets) return [];
     
-    const month = format(date, 'MMMM yyyy');
-    const weekOfMonth = Math.ceil(date.getDate() / 7);
+    return (timesheets as TimeSheet[]).filter(timesheet => {
+      // Status filter
+      if (statusFilter !== 'all' && timesheet.status.toLowerCase() !== statusFilter) {
+        return false;
+      }
+      
+      // Search query filter (case insensitive)
+      if (searchQuery) {
+        const query = searchQuery.toLowerCase();
+        return (
+          timesheet.careProfessionalName.toLowerCase().includes(query) ||
+          timesheet.careProfessionalId.toLowerCase().includes(query) ||
+          timesheet.period.toLowerCase().includes(query)
+        );
+      }
+      
+      return true;
+    });
+  }, [timesheets, statusFilter, searchQuery]);
+
+  // Calculate totals for summary
+  const calculateSummary = () => {
+    if (!filteredTimesheets.length) {
+      return {
+        totalHours: 0,
+        totalRegularHours: 0,
+        totalOvertimeHours: 0,
+        totalAmount: 0,
+        staffCount: 0,
+        avgHoursPerStaff: 0,
+      };
+    }
     
-    return `${month} (Week ${weekOfMonth})`;
+    const totalHours = filteredTimesheets.reduce((sum, ts) => sum + ts.hours, 0);
+    const totalRegularHours = filteredTimesheets.reduce((sum, ts) => sum + ts.regularHours, 0);
+    const totalOvertimeHours = filteredTimesheets.reduce((sum, ts) => sum + ts.overtimeHours, 0);
+    const totalAmount = filteredTimesheets.reduce((sum, ts) => sum + ts.totalAmount, 0);
+    const staffCount = new Set(filteredTimesheets.map(ts => ts.careProfessionalId)).size;
+    
+    return {
+      totalHours,
+      totalRegularHours,
+      totalOvertimeHours,
+      totalAmount,
+      staffCount,
+      avgHoursPerStaff: staffCount ? +(totalHours / staffCount).toFixed(1) : 0,
+    };
   };
   
-  // Calculate selected timesheet totals
-  const getSelectedTimesheetsTotal = () => {
-    return CURRENT_TIMESHEETS
-      .filter(ts => selectedTimesheets.includes(ts.id))
-      .reduce((sum, ts) => sum + ts.totalAmount, 0);
-  };
-  
-  // Find the current provider
-  const currentProvider = PAYMENT_PROVIDERS.find(provider => provider.id === payrollProvider);
-  
+  const summary = calculateSummary();
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Payroll Management</CardTitle>
+          <CardDescription>Loading timesheet data...</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-center py-10">
+            <RefreshCw className="h-10 w-10 animate-spin text-primary" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <div className="space-y-6">
-      <Tabs defaultValue="current" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="current">Current Period</TabsTrigger>
-          <TabsTrigger value="history">Payment History</TabsTrigger>
-          <TabsTrigger value="settings">Export Settings</TabsTrigger>
-        </TabsList>
-        
-        {/* Current Period Tab */}
-        <TabsContent value="current" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                <div>
-                  <CardTitle>Current Payroll Period</CardTitle>
-                  <CardDescription>
-                    {date ? format(date, 'dd MMMM yyyy') : 'Select a payroll period'}
-                  </CardDescription>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className="flex items-center gap-2">
-                        <CalendarIcon className="h-4 w-4" />
-                        {date ? format(date, 'PPP') : 'Select date'}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="end">
-                      <Calendar
-                        mode="single"
-                        selected={date}
-                        onSelect={setDate}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  
-                  <Select
-                    value={payrollProvider}
-                    onValueChange={setPayrollProvider}
-                  >
-                    <SelectTrigger className="w-[180px]">
-                      <SelectValue placeholder="Select provider" />
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle>Payroll Management</CardTitle>
+              <CardDescription>Manage and approve timesheets for your care professionals</CardDescription>
+            </div>
+            <div className="flex space-x-2">
+              <Select value={selectedPeriod} onValueChange={(value) => setSelectedPeriod(value as PayrollPeriod)}>
+                <SelectTrigger className="w-[160px]">
+                  <SelectValue placeholder="Select period" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="biweekly">Bi-Weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <Tabs defaultValue="timesheets" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="timesheets">Timesheets</TabsTrigger>
+              <TabsTrigger value="summary">Summary & Analytics</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="timesheets" className="space-y-4 pt-4">
+              {/* Filters and search */}
+              <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
+                <div className="flex items-center space-x-2">
+                  <div className="relative w-full md:w-64">
+                    <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      placeholder="Search staff or period..."
+                      className="pl-8"
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                    />
+                  </div>
+                  <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value as PayrollStatus)}>
+                    <SelectTrigger className="w-[140px]">
+                      <Filter className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Filter status" />
                     </SelectTrigger>
                     <SelectContent>
-                      {PAYMENT_PROVIDERS.map((provider) => (
-                        <SelectItem key={provider.id} value={provider.id}>
-                          {provider.name}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="all">All Statuses</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="approved">Approved</SelectItem>
+                      <SelectItem value="rejected">Rejected</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Filter timesheets..."
-                      className="w-full md:w-[300px] lg:w-[400px]"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Filter className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      onClick={handleApproveTimesheets}
-                      disabled={selectedTimesheets.length === 0 || isSubmitting}
-                    >
-                      {isSubmitting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Approve Selected
-                        </>
-                      )}
-                    </Button>
-                    
-                    <Button
-                      onClick={handleExportPayroll}
-                      disabled={isExporting}
-                    >
-                      {isExporting ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Exporting...
-                        </>
-                      ) : (
-                        <>
-                          <Download className="mr-2 h-4 w-4" />
-                          Export Payroll
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
                 
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead className="w-[40px]">
-                          <Checkbox
-                            checked={selectedTimesheets.length === CURRENT_TIMESHEETS.length}
-                            onCheckedChange={(checked) => {
-                              if (checked) {
-                                setSelectedTimesheets(CURRENT_TIMESHEETS.map(ts => ts.id));
-                              } else {
-                                setSelectedTimesheets([]);
-                              }
-                            }}
-                          />
-                        </TableHead>
-                        <TableHead>Professional</TableHead>
-                        <TableHead className="hidden md:table-cell">ID</TableHead>
-                        <TableHead className="text-right">Hours</TableHead>
-                        <TableHead className="text-right hidden md:table-cell">Rate</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {CURRENT_TIMESHEETS.map((timesheet) => (
-                        <TableRow key={timesheet.id}>
-                          <TableCell>
-                            <Checkbox
-                              checked={selectedTimesheets.includes(timesheet.id)}
-                              onCheckedChange={() => toggleTimesheet(timesheet.id)}
-                              disabled={timesheet.status === 'rejected'}
-                            />
-                          </TableCell>
-                          <TableCell className="font-medium">{timesheet.careProfessionalName}</TableCell>
-                          <TableCell className="hidden md:table-cell">{timesheet.careProfessionalId}</TableCell>
-                          <TableCell className="text-right">
-                            {timesheet.hours}
-                            {timesheet.overtimeHours > 0 && (
-                              <span className="text-xs text-muted-foreground ml-1">
-                                (+{timesheet.overtimeHours} OT)
-                              </span>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-right hidden md:table-cell">
-                            £{timesheet.rate.toFixed(2)}/hr
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(timesheet.totalAmount)}
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {getStatusBadge(timesheet.status)}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-                
-                <div className="flex justify-end">
-                  <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-md">
-                    <div className="text-sm text-muted-foreground mb-1">
-                      Selected: {selectedTimesheets.length} of {CURRENT_TIMESHEETS.length} timesheets
-                    </div>
-                    <div className="text-lg font-semibold">
-                      Total: {formatCurrency(getSelectedTimesheetsTotal())}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </CardContent>
-            <CardFooter className="flex justify-between border-t pt-4">
-              <div className="text-sm text-muted-foreground">
-                {currentProvider ? (
-                  <span className="flex items-center">
-                    <Info className="h-4 w-4 mr-1" />
-                    Export provider: {currentProvider.name}
-                  </span>
-                ) : 'No provider selected'}
-              </div>
-              <Button variant="outline" size="sm" className="h-8">
-                <HelpCircle className="h-4 w-4 mr-1" />
-                Help
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-        
-        {/* Payment History Tab */}
-        <TabsContent value="history" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payment History</CardTitle>
-              <CardDescription>
-                View and download past payroll records
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="Search payments..."
-                      className="w-full md:w-[300px] lg:w-[400px]"
-                    />
-                    <Button variant="outline" size="icon">
-                      <Filter className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="flex items-center gap-2">
-                    <Select defaultValue="all">
-                      <SelectTrigger className="w-[150px]">
-                        <SelectValue placeholder="Status filter" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="all">All Status</SelectItem>
-                        <SelectItem value="paid">Paid</SelectItem>
-                        <SelectItem value="exported">Exported</SelectItem>
-                        <SelectItem value="approved">Approved</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                
-                <div className="border rounded-md">
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Period</TableHead>
-                        <TableHead className="hidden md:table-cell">Date</TableHead>
-                        <TableHead className="text-right">Staff</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                        <TableHead className="hidden md:table-cell text-center">Provider</TableHead>
-                        <TableHead className="text-center">Status</TableHead>
-                        <TableHead className="text-right">Actions</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {PAYMENT_HISTORY.map((payment) => (
-                        <TableRow key={payment.id}>
-                          <TableCell className="font-medium">{payment.id}</TableCell>
-                          <TableCell>{payment.period}</TableCell>
-                          <TableCell className="hidden md:table-cell">
-                            {format(new Date(payment.date), 'dd MMM yyyy')}
-                          </TableCell>
-                          <TableCell className="text-right">{payment.staff}</TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(payment.total)}
-                          </TableCell>
-                          <TableCell className="hidden md:table-cell text-center">
-                            <Badge variant="outline" className="font-normal">
-                              {payment.format.toUpperCase()}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {getStatusBadge(payment.status)}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <Button variant="ghost" size="icon">
-                              <Download className="h-4 w-4" />
+                <div className="flex flex-wrap gap-2">
+                  {selectedTimesheets.length > 0 && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-green-600" 
+                        onClick={() => handleBulkAction('approve')}
+                        disabled={approvalMutation.isPending}
+                      >
+                        {approvalMutation.isPending ? (
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <CheckCircle2 className="mr-2 h-4 w-4" />
+                        )}
+                        Approve Selected
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="text-red-600" 
+                        onClick={() => handleBulkAction('reject')}
+                        disabled={approvalMutation.isPending}
+                      >
+                        {approvalMutation.isPending ? (
+                          <RefreshCw className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                          <XCircle className="mr-2 h-4 w-4" />
+                        )}
+                        Reject Selected
+                      </Button>
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button variant="outline" size="sm">
+                            <Download className="mr-2 h-4 w-4" />
+                            Export
+                            <ChevronDown className="ml-2 h-4 w-4" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-52" align="end">
+                          <div className="grid gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="justify-start" 
+                              onClick={() => handleExport('xls')}
+                              disabled={exportMutation.isPending}
+                            >
+                              <FileSpreadsheet className="mr-2 h-4 w-4" />
+                              Excel (.xls)
                             </Button>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-        
-        {/* Export Settings Tab */}
-        <TabsContent value="settings" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Payroll Export Settings</CardTitle>
-              <CardDescription>
-                Configure payroll export preferences and providers
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Payroll Periods</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    {PAYROLL_PERIODS.map((period) => (
-                      <div key={period.id} className="border rounded-md p-4 space-y-2">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium">{period.name}</h4>
-                          <Badge variant="outline">{period.frequency}x/year</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground">{period.description}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Export Format</h3>
-                  <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-                    <div
-                      className={cn(
-                        "border rounded-md p-4 space-y-2 cursor-pointer hover:border-primary transition-colors",
-                        exportFormat === 'xls' && "border-primary bg-primary/5"
-                      )}
-                      onClick={() => setExportFormat('xls')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium flex items-center">
-                          <FileSpreadsheet className="h-4 w-4 mr-2" />
-                          Excel (.xls)
-                        </h4>
-                        {exportFormat === 'xls' && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Microsoft Excel spreadsheet format</p>
-                    </div>
-                    
-                    <div
-                      className={cn(
-                        "border rounded-md p-4 space-y-2 cursor-pointer hover:border-primary transition-colors",
-                        exportFormat === 'csv' && "border-primary bg-primary/5"
-                      )}
-                      onClick={() => setExportFormat('csv')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium flex items-center">
-                          <FileText className="h-4 w-4 mr-2" />
-                          CSV (.csv)
-                        </h4>
-                        {exportFormat === 'csv' && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Comma-separated values format</p>
-                    </div>
-                    
-                    <div
-                      className={cn(
-                        "border rounded-md p-4 space-y-2 cursor-pointer hover:border-primary transition-colors",
-                        exportFormat === 'json' && "border-primary bg-primary/5"
-                      )}
-                      onClick={() => setExportFormat('json')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium flex items-center">
-                          <FileText className="h-4 w-4 mr-2" />
-                          JSON (.json)
-                        </h4>
-                        {exportFormat === 'json' && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground">JavaScript Object Notation format</p>
-                    </div>
-                    
-                    <div
-                      className={cn(
-                        "border rounded-md p-4 space-y-2 cursor-pointer hover:border-primary transition-colors",
-                        exportFormat === 'api' && "border-primary bg-primary/5"
-                      )}
-                      onClick={() => setExportFormat('api')}
-                    >
-                      <div className="flex items-center justify-between">
-                        <h4 className="font-medium flex items-center">
-                          <Cloud className="h-4 w-4 mr-2" />
-                          API Integration
-                        </h4>
-                        {exportFormat === 'api' && <Check className="h-4 w-4 text-primary" />}
-                      </div>
-                      <p className="text-sm text-muted-foreground">Direct API integration with provider</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <Separator />
-                
-                <div className="space-y-4">
-                  <h3 className="text-lg font-medium">Payroll Provider Configuration</h3>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="space-y-2">
-                      <Label htmlFor="payroll-provider">Provider</Label>
-                      <Select
-                        value={payrollProvider}
-                        onValueChange={setPayrollProvider}
-                      >
-                        <SelectTrigger id="payroll-provider">
-                          <SelectValue placeholder="Select provider" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {PAYMENT_PROVIDERS.map((provider) => (
-                            <SelectItem key={provider.id} value={provider.id}>
-                              {provider.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="export-format">Export Format</Label>
-                      <Select
-                        value={exportFormat}
-                        onValueChange={setExportFormat}
-                      >
-                        <SelectTrigger id="export-format">
-                          <SelectValue placeholder="Select format" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {currentProvider?.formats.map((format) => (
-                            <SelectItem key={format} value={format}>
-                              {format === 'xls' ? 'Excel (.xls)' :
-                               format === 'csv' ? 'CSV (.csv)' :
-                               format === 'json' ? 'JSON (.json)' :
-                               format === 'api' ? 'API Integration' :
-                               format.toUpperCase()}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                  
-                  {exportFormat === 'api' && (
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertTitle>API Configuration Required</AlertTitle>
-                      <AlertDescription>
-                        Direct API integration requires additional setup in the API Integrations settings.
-                        <Button variant="link" className="p-0 h-auto font-normal" asChild>
-                          <a href="/settings">Configure API Integrations</a>
-                        </Button>
-                      </AlertDescription>
-                    </Alert>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="justify-start" 
+                              onClick={() => handleExport('csv')}
+                              disabled={exportMutation.isPending}
+                            >
+                              <FileText className="mr-2 h-4 w-4" />
+                              CSV (.csv)
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="justify-start" 
+                              onClick={() => handleExport('json')}
+                              disabled={exportMutation.isPending}
+                            >
+                              <File className="mr-2 h-4 w-4" />
+                              JSON (.json)
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              className="justify-start" 
+                              onClick={() => handleExport('api')}
+                              disabled={exportMutation.isPending}
+                            >
+                              <ExternalLink className="mr-2 h-4 w-4" />
+                              Send to Payroll API
+                            </Button>
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </>
                   )}
                 </div>
               </div>
-            </CardContent>
-            <CardFooter className="border-t pt-4">
-              <Button 
-                onClick={() => {
-                  toast({
-                    title: 'Settings Saved',
-                    description: 'Your payroll export settings have been updated.',
-                    className: "bg-green-600 text-white",
-                  });
-                }}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Save Settings
-              </Button>
-            </CardFooter>
-          </Card>
-        </TabsContent>
-      </Tabs>
-      
-      <div className="grid gap-4 md:grid-cols-3">
-        <AnimatedCard header={<h3 className="text-md font-medium">Payroll Summary</h3>} hoverEffect="gentle-lift">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Current period statistics and totals
-            </p>
-            <div className="pt-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Total Staff</span>
-                <span className="font-medium">{CURRENT_TIMESHEETS.length}</span>
+              
+              {/* Timesheets table */}
+              <div className="rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead className="w-[40px]">
+                        <div className="flex items-center">
+                          <input
+                            type="checkbox"
+                            checked={selectAll}
+                            onChange={handleSelectAll}
+                            className="rounded border-gray-300 text-primary focus:ring-primary"
+                          />
+                        </div>
+                      </TableHead>
+                      <TableHead>Staff</TableHead>
+                      <TableHead>Period</TableHead>
+                      <TableHead className="text-right">Hours</TableHead>
+                      <TableHead className="text-right">Rate (£)</TableHead>
+                      <TableHead className="text-right">Amount (£)</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredTimesheets.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="h-24 text-center">
+                          No timesheets found.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      filteredTimesheets.map((timesheet) => (
+                        <TableRow key={timesheet.id}>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <input
+                                type="checkbox"
+                                checked={selectedTimesheets.includes(timesheet.id)}
+                                onChange={() => handleCheckboxChange(timesheet.id)}
+                                className="rounded border-gray-300 text-primary focus:ring-primary"
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <div className="font-medium">{timesheet.careProfessionalName}</div>
+                              <div className="text-sm text-muted-foreground">ID: {timesheet.careProfessionalId}</div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center">
+                              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+                              {timesheet.period}
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <div>
+                              <div className="font-medium">{timesheet.hours.toFixed(1)}</div>
+                              <div className="text-xs text-muted-foreground">
+                                {timesheet.regularHours.toFixed(1)} reg + {timesheet.overtimeHours.toFixed(1)} OT
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {timesheet.rate.toFixed(2)}
+                          </TableCell>
+                          <TableCell className="text-right font-medium">
+                            {timesheet.totalAmount.toFixed(2)}
+                          </TableCell>
+                          <TableCell>
+                            {getStatusBadge(timesheet.status)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {timesheet.status.toLowerCase() === 'pending' && (
+                              <div className="flex justify-end space-x-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-green-600"
+                                  onClick={() => approvalMutation.mutate({ ids: [timesheet.id], action: 'approve' })}
+                                  disabled={approvalMutation.isPending}
+                                >
+                                  <Check className="h-4 w-4" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-8 w-8 text-red-600"
+                                  onClick={() => approvalMutation.mutate({ ids: [timesheet.id], action: 'reject' })}
+                                  disabled={approvalMutation.isPending}
+                                >
+                                  <XCircle className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Total Hours</span>
-                <span className="font-medium">
-                  {CURRENT_TIMESHEETS.reduce((sum, ts) => sum + ts.hours, 0)}
-                </span>
+              
+              {/* Pagination or load more could be added here */}
+            </TabsContent>
+            
+            <TabsContent value="summary" className="space-y-4 pt-4">
+              {/* Summary cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <AnimatedCard>
+                  <div className="p-6">
+                    <h3 className="text-lg font-medium">Staff Summary</h3>
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total Staff</p>
+                        <p className="text-2xl font-bold">{summary.staffCount}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Avg Hours/Staff</p>
+                        <p className="text-2xl font-bold">{summary.avgHoursPerStaff}</p>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedCard>
+                
+                <AnimatedCard>
+                  <div className="p-6">
+                    <h3 className="text-lg font-medium">Hours Breakdown</h3>
+                    <div className="mt-4 grid grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-muted-foreground">Total</p>
+                        <p className="text-2xl font-bold">{summary.totalHours.toFixed(1)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Regular</p>
+                        <p className="text-2xl font-bold">{summary.totalRegularHours.toFixed(1)}</p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-muted-foreground">Overtime</p>
+                        <p className="text-2xl font-bold">{summary.totalOvertimeHours.toFixed(1)}</p>
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedCard>
+                
+                <AnimatedCard>
+                  <div className="p-6">
+                    <h3 className="text-lg font-medium">Financial Summary</h3>
+                    <div className="mt-4">
+                      <p className="text-sm text-muted-foreground">Total Amount (£)</p>
+                      <p className="text-3xl font-bold">{summary.totalAmount.toFixed(2)}</p>
+                      <div className="mt-2 text-sm text-muted-foreground">
+                        For {filteredTimesheets.length} timesheet(s)
+                      </div>
+                    </div>
+                  </div>
+                </AnimatedCard>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm">Total Amount</span>
-                <span className="font-medium">
-                  {formatCurrency(CURRENT_TIMESHEETS.reduce((sum, ts) => sum + ts.totalAmount, 0))}
-                </span>
-              </div>
+              
+              {/* Additional analytics and charts would go here */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Payroll Analytics</CardTitle>
+                  <CardDescription>Detailed breakdown of staff hours and costs</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Detailed analytics charts will be displayed here.</p>
+                    <p className="text-sm">Shows trends, department breakdowns, and cost analytics.</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </Tabs>
+        </CardContent>
+        <CardFooter className="border-t pt-6">
+          <div className="flex flex-col xs:flex-row justify-between items-start xs:items-center w-full text-sm text-muted-foreground">
+            <div>
+              Showing {filteredTimesheets.length} timesheets
+              {statusFilter !== 'all' && ` with status: ${statusFilter}`}
+              {searchQuery && ` matching: "${searchQuery}"`}
+            </div>
+            <div>
+              {selectedTimesheets.length > 0 && (
+                <span className="font-medium">{selectedTimesheets.length} selected</span>
+              )}
             </div>
           </div>
-        </AnimatedCard>
-        
-        <AnimatedCard header={<h3 className="text-md font-medium">Approval Status</h3>} hoverEffect="gentle-lift">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Timesheet approval status breakdown
-            </p>
-            <div className="pt-2 space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm flex items-center">
-                  <Badge className="mr-2 bg-green-500 h-2 w-2 rounded-full p-0" />
-                  Approved
-                </span>
-                <span className="font-medium">
-                  {CURRENT_TIMESHEETS.filter(ts => ts.status === 'approved').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm flex items-center">
-                  <Badge className="mr-2 bg-gray-500 h-2 w-2 rounded-full p-0" />
-                  Pending
-                </span>
-                <span className="font-medium">
-                  {CURRENT_TIMESHEETS.filter(ts => ts.status === 'pending').length}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm flex items-center">
-                  <Badge className="mr-2 bg-red-500 h-2 w-2 rounded-full p-0" />
-                  Rejected
-                </span>
-                <span className="font-medium">
-                  {CURRENT_TIMESHEETS.filter(ts => ts.status === 'rejected').length}
-                </span>
-              </div>
-            </div>
-          </div>
-        </AnimatedCard>
-        
-        <AnimatedCard header={<h3 className="text-md font-medium">Quick Actions</h3>} hoverEffect="gentle-lift">
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Frequently used payroll actions
-            </p>
-            <div className="pt-2 space-y-2">
-              <Button variant="outline" className="w-full justify-start" asChild>
-                <a href="/timesheets">
-                  <Check className="h-4 w-4 mr-2" />
-                  Review Timesheets
-                </a>
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Upload className="h-4 w-4 mr-2" />
-                Import Timesheet Data
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Tax Settings
-              </Button>
-            </div>
-          </div>
-        </AnimatedCard>
-      </div>
-      
-      <Alert className="mt-4">
-        <HelpCircle className="h-4 w-4" />
-        <AlertTitle>Payroll Integration Support</AlertTitle>
-        <AlertDescription>
-          If you need assistance with payroll integrations, please contact our support team at <span className="font-medium">payroll@complexcare.com</span> or refer to the documentation.
-        </AlertDescription>
-      </Alert>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

@@ -12,6 +12,7 @@ import tenantRoutes from "./routes/superadmin/tenants";
 import tenantThemeRoutes from "./routes/tenant-theme";
 import patientChatbotRoutes from "./routes/patient-chatbot";
 import wearableRoutes from "./routes/wearables";
+import { registerPayrollRoutes } from "./routes/payroll";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
