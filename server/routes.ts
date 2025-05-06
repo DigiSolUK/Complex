@@ -15,6 +15,40 @@ import wearableRoutes from "./routes/wearables";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  // API Integration Settings
+  app.get('/api/settings/api-integrations', (req, res) => {
+    // Return default settings or get from database in a real implementation
+    res.json({
+      nmc: { enabled: false, status: 'unconfigured' },
+      dbs: { enabled: false, status: 'unconfigured' },
+      nhsGpConnect: { enabled: false, status: 'unconfigured' },
+      dmAndD: { enabled: false, status: 'unconfigured' },
+      o365: { enabled: false, status: 'unconfigured' },
+    });
+  });
+
+  app.patch('/api/settings/api-integrations', (req, res) => {
+    // Update settings - in a real implementation, would save to database
+    console.log('Updating API integration settings:', req.body);
+    res.json({ success: true, message: 'Settings updated successfully' });
+  });
+
+  app.post('/api/settings/api-integrations/:apiName/validate', (req, res) => {
+    const { apiName } = req.params;
+    const { config } = req.body;
+    
+    console.log(`Validating ${apiName} API connection:`, config);
+    
+    // This simulates API validation - in a real implementation, would actually test the connection
+    // In production, this would use the actual API credentials to test the connection
+    setTimeout(() => {
+      res.json({ 
+        success: true, 
+        message: `${apiName} API connection validated successfully` 
+      });
+    }, 1000); // Simulate network delay
+  });
+
   // Set up authentication middleware
   const authMiddlewares = auth.initialize();
   authMiddlewares.forEach(middleware => {

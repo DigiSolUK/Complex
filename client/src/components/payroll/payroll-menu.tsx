@@ -217,7 +217,7 @@ export default function PayrollMenu() {
       toast({
         title: 'Timesheets Approved',
         description: `Successfully approved ${selectedTimesheets.length} timesheet(s).`,
-        variant: 'success',
+        className: "bg-green-600 text-white",
       });
       setSelectedTimesheets([]);
     }, 1500);
@@ -771,7 +771,7 @@ export default function PayrollMenu() {
                   toast({
                     title: 'Settings Saved',
                     description: 'Your payroll export settings have been updated.',
-                    variant: 'success',
+                    className: "bg-green-600 text-white",
                   });
                 }}
               >
