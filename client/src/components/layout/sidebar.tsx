@@ -179,6 +179,19 @@ export function Sidebar() {
             </div>
           </Link>
 
+          <Link href="/payroll">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/payroll")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <BarChart2 className="h-5 w-5 mr-3" />
+              Payroll Management
+            </div>
+          </Link>
+
           <Link href="/documents">
             <div
               className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
