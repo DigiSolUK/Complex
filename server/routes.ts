@@ -1238,6 +1238,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // SuperAdmin routes
   app.use('/api/superadmin', nhsDigitalRoutes);
+  // The client expects tenants routes to be under /api/superadmin/tenants
+  // but our router already defines /tenants, so we need to mount at /api/superadmin
   app.use('/api/superadmin', tenantRoutes);
   
   // Tenant theme routes
