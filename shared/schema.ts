@@ -342,3 +342,221 @@ export const insertDocumentSchema = createInsertSchema(documents).omit({
 
 export type InsertDocument = z.infer<typeof insertDocumentSchema>;
 export type Document = typeof documents.$inferSelect;
+
+// Wearable Device Integration
+export const wearableDevices = pgTable("wearable_devices", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  deviceType: text("device_type", { 
+    enum: [
+      "smartwatch",
+      "fitness_tracker",
+      "glucose_monitor",
+      "blood_pressure_monitor",
+      "heart_monitor",
+      "pulse_oximeter",
+      "sleep_tracker",
+      "thermometer",
+      "other"
+    ] 
+  }).notNull(),
+  manufacturer: text("manufacturer").notNull(), // Apple, Fitbit, Samsung, Dexcom, etc.
+  model: text("model").notNull(),
+  serialNumber: text("serial_number").notNull(),
+  lastSyncDate: timestamp("last_sync_date"),
+  batteryStatus: integer("battery_status"), // Battery percentage (0-100)
+  connectionStatus: text("connection_status", { 
+    enum: ["connected", "disconnected", "pairing", "error"] 
+  }).default("disconnected"),
+  activationDate: timestamp("activation_date").defaultNow(),
+  deactivationDate: timestamp("deactivation_date"),
+  apiAccessToken: text("api_access_token"),
+  apiRefreshToken: text("api_refresh_token"),
+  tokenExpiryDate: timestamp("token_expiry_date"),
+  dataPermissions: json("data_permissions").default({}), 
+  settings: json("settings").default({}),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Device measurements/readings
+export const deviceReadings = pgTable("device_readings", {
+  id: serial("id").primaryKey(),
+  deviceId: integer("device_id").references(() => wearableDevices.id).notNull(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  readingType: text("reading_type", { 
+    enum: [
+      "heart_rate",
+      "blood_pressure",
+      "blood_glucose",
+      "oxygen_saturation",
+      "temperature",
+      "respiratory_rate",
+      "steps",
+      "sleep",
+      "calories",
+      "activity",
+      "weight",
+      "ecg",
+      "other"
+    ] 
+  }).notNull(),
+  value: text("value").notNull(), // Store as text to handle different types of values
+  unit: text("unit").notNull(), // bpm, mmHg, mg/dL, etc.
+  timestamp: timestamp("timestamp").notNull(),
+  readingStatus: text("reading_status", { 
+    enum: ["normal", "warning", "critical", "error"] 
+  }).default("normal"),
+  locationRecorded: text("location_recorded"),
+  notes: text("notes"),
+  rawData: json("raw_data"),
+  metricGroup: text("metric_group"), // For grouping related metrics (e.g. systolic and diastolic)
+  relatedReadingIds: integer("related_reading_ids").array(),
+  verified: boolean("verified").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+// Device alerts based on readings
+export const deviceAlerts = pgTable("device_alerts", {
+  id: serial("id").primaryKey(),
+  deviceId: integer("device_id").references(() => wearableDevices.id).notNull(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  readingId: integer("reading_id").references(() => deviceReadings.id),
+  alertType: text("alert_type", { 
+    enum: [
+      "low_heart_rate",
+      "high_heart_rate",
+      "low_blood_glucose",
+      "high_blood_glucose",
+      "low_oxygen",
+      "high_blood_pressure",
+      "irregular_heartbeat",
+      "fever",
+      "fall_detected",
+      "lack_of_movement",
+      "device_disconnected",
+      "battery_low",
+      "missed_reading",
+      "other"
+    ] 
+  }).notNull(),
+  severity: text("severity", { 
+    enum: ["info", "warning", "urgent", "emergency"] 
+  }).notNull(),
+  message: text("message").notNull(),
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+  acknowledgedBy: integer("acknowledged_by").references(() => users.id),
+  acknowledgedAt: timestamp("acknowledged_at"),
+  actionTaken: text("action_taken"),
+  resolved: boolean("resolved").default(false),
+  resolvedAt: timestamp("resolved_at"),
+  notificationSent: boolean("notification_sent").default(false),
+  metadata: json("metadata"),
+});
+
+// Microsoft 365 Integration
+export const msIntegrations = pgTable("ms_integrations", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id).notNull(),
+  mstenantId: text("mstenant_id").notNull(), // Microsoft 365 tenant ID
+  clientId: text("client_id").notNull(), // Azure App registration client ID
+  clientSecret: text("client_secret").notNull(),
+  redirectUri: text("redirect_uri").notNull(),
+  scopes: text("scopes").array(),
+  adminConsent: boolean("admin_consent").default(false),
+  consentDate: timestamp("consent_date"),
+  accessToken: text("access_token"),
+  refreshToken: text("refresh_token"),
+  tokenExpiryDate: timestamp("token_expiry_date"),
+  emailScanEnabled: boolean("email_scan_enabled").default(false),
+  emailScanFrequency: text("email_scan_frequency", { 
+    enum: ["hourly", "daily", "weekly"] 
+  }).default("daily"),
+  lastScanDate: timestamp("last_scan_date"),
+  scanFilters: json("scan_filters").default({}),
+  status: text("status", { 
+    enum: ["active", "inactive", "error", "setup_required"] 
+  }).default("setup_required"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+// Patient communications (emails, messages, etc.)
+export const patientCommunications = pgTable("patient_communications", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  communicationType: text("communication_type", { 
+    enum: ["email", "message", "call", "video", "letter", "other"] 
+  }).notNull(),
+  source: text("source", {
+    enum: ["ms365", "manual", "system", "other"]
+  }).notNull(),
+  sourceId: text("source_id"), // ID in the source system (e.g., email ID)
+  direction: text("direction", { 
+    enum: ["inbound", "outbound"] 
+  }).notNull(),
+  subject: text("subject"),
+  content: text("content").notNull(),
+  timestamp: timestamp("timestamp").notNull(),
+  sender: text("sender"),
+  recipients: text("recipients").array(),
+  carbonCopies: text("carbon_copies").array(),
+  attachmentCount: integer("attachment_count").default(0),
+  attachments: json("attachments").default([]),
+  status: text("status", { 
+    enum: ["new", "read", "archived", "flagged"] 
+  }).default("new"),
+  importanceFlag: text("importance_flag", { 
+    enum: ["low", "normal", "high"] 
+  }).default("normal"),
+  tags: text("tags").array(),
+  notes: text("notes"),
+  linkedStaffId: integer("linked_staff_id").references(() => careStaff.id),
+  createdAt: timestamp("created_at").defaultNow(),
+  metadata: json("metadata"),
+});
+
+// Insert schemas
+export const insertWearableDeviceSchema = createInsertSchema(wearableDevices).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertDeviceReadingSchema = createInsertSchema(deviceReadings).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertDeviceAlertSchema = createInsertSchema(deviceAlerts).omit({
+  id: true,
+  timestamp: true,
+});
+
+export const insertMsIntegrationSchema = createInsertSchema(msIntegrations).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertPatientCommunicationSchema = createInsertSchema(patientCommunications).omit({
+  id: true,
+  createdAt: true,
+});
+
+// Types
+export type InsertWearableDevice = z.infer<typeof insertWearableDeviceSchema>;
+export type WearableDevice = typeof wearableDevices.$inferSelect;
+
+export type InsertDeviceReading = z.infer<typeof insertDeviceReadingSchema>;
+export type DeviceReading = typeof deviceReadings.$inferSelect;
+
+export type InsertDeviceAlert = z.infer<typeof insertDeviceAlertSchema>;
+export type DeviceAlert = typeof deviceAlerts.$inferSelect;
+
+export type InsertMsIntegration = z.infer<typeof insertMsIntegrationSchema>;
+export type MsIntegration = typeof msIntegrations.$inferSelect;
+
+export type InsertPatientCommunication = z.infer<typeof insertPatientCommunicationSchema>;
+export type PatientCommunication = typeof patientCommunications.$inferSelect;
