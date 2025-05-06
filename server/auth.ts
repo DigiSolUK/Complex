@@ -85,23 +85,7 @@ class Auth {
       }
     });
 
-    // Create session middleware with settings optimized for Replit environment
-    const sessionMiddleware = session({
-      secret: process.env.SESSION_SECRET || "complex-care-secret",
-      resave: true,            // Force session to save on each request to ensure nothing is lost
-      saveUninitialized: true, // Create session before anything is stored for testing
-      rolling: true,           // Force cookie set on every response
-      cookie: {
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours
-        httpOnly: true,
-        // Cookie settings will be set dynamically per request
-        path: "/",
-        sameSite: 'none',      // Allows cookies in cross-site requests
-        secure: true,          // Cookies only sent over HTTPS
-      },
-      store: storage.sessionStore, // Use database session store
-      name: "complexcare.sid", // Unique name to avoid conflicts
-    });
+    // Session middleware is now configured in index.ts
     
     // Create a middleware function to ensure consistent cookie settings for Replit environment
     const dynamicCookieMiddleware = (req: Request, res: Response, next: NextFunction) => {
@@ -117,7 +101,7 @@ class Auth {
     };
 
     // Return all middleware functions
-    return [sessionMiddleware, dynamicCookieMiddleware, passport.initialize(), passport.session()];
+    return [dynamicCookieMiddleware, passport.initialize(), passport.session()];
   }
 
   // Authentication middleware

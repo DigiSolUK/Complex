@@ -2,6 +2,7 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cookieParser from "cookie-parser";
+import session from "express-session";
 import { storage } from "./storage";
 import { auth } from "./auth";
 
@@ -17,6 +18,21 @@ app.use(cookieParser(process.env.SESSION_SECRET || "complex-care-secret"));
 // Set trust proxy - essential for secure cookies to work in Replit environment
 // Support both proxied and direct requests
 app.set("trust proxy", 1);
+
+// Configure express-session with appropriate settings for Replit environment
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'complex-care-secret',
+  cookie: {
+    secure: true,
+    httpOnly: true,
+    sameSite: 'none',
+    maxAge: 24 * 60 * 60 * 1000 // 1 day
+  },
+  resave: false,
+  saveUninitialized: false,
+  store: storage.sessionStore,
+  name: 'complexcare.sid'
+}));
 
 // Log request protocol for debugging and set secure cookie flags
 app.use((req, res, next) => {
