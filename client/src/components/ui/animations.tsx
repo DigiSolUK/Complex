@@ -1,6 +1,8 @@
 import React, { ReactNode } from 'react';
 import { motion, AnimatePresence, MotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { CheckCircle, AlertCircle, Info, HelpCircle } from 'lucide-react';
 
 /**
  * Enhanced Micro-Interactions
@@ -368,7 +370,7 @@ export function ProgressIndicator({
   );
 }
 
-export type ComfortType = 'info' | 'success' | 'warning' | 'error' | 'neutral';
+export type ComfortType = 'info' | 'success' | 'warning' | 'error' | 'neutral' | 'reassurance' | 'empathy' | 'information';
 
 /**
  * ComfortMessage - A visually calming message component for different states
@@ -378,14 +380,16 @@ export function ComfortMessage({
   icon, 
   title, 
   description, 
+  message,
   type = 'neutral',
   action,
   className,
   ...props 
 }: {
-  icon: ReactNode;
-  title: string;
-  description: string;
+  icon?: ReactNode;
+  title?: string;
+  description?: string;
+  message?: string; // Allow message as an alternative to title+description
   type?: ComfortType;
   action?: {
     actionLabel: string;
@@ -396,33 +400,66 @@ export function ComfortMessage({
   const getTypeStyles = () => {
     switch (type) {
       case 'info':
-        return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'information':
+        return 'bg-blue-50 border-blue-200 text-blue-800 dark:bg-blue-950 dark:border-blue-900 dark:text-blue-200';
       case 'success':
-        return 'bg-green-50 border-green-200 text-green-800';
+        return 'bg-green-50 border-green-200 text-green-800 dark:bg-green-950 dark:border-green-900 dark:text-green-200';
       case 'warning':
-        return 'bg-amber-50 border-amber-200 text-amber-800';
+        return 'bg-amber-50 border-amber-200 text-amber-800 dark:bg-amber-950 dark:border-amber-900 dark:text-amber-200';
       case 'error':
-        return 'bg-red-50 border-red-200 text-red-800';
+        return 'bg-red-50 border-red-200 text-red-800 dark:bg-red-950 dark:border-red-900 dark:text-red-200';
+      case 'reassurance':
+        return 'bg-indigo-50 border-indigo-200 text-indigo-800 dark:bg-indigo-950 dark:border-indigo-900 dark:text-indigo-200';
+      case 'empathy':
+        return 'bg-purple-50 border-purple-200 text-purple-800 dark:bg-purple-950 dark:border-purple-900 dark:text-purple-200';
       default:
-        return 'bg-gray-50 border-gray-200 text-gray-800';
+        return 'bg-gray-50 border-gray-200 text-gray-800 dark:bg-gray-900 dark:border-gray-800 dark:text-gray-300';
     }
   };
 
   const getButtonStyles = () => {
     switch (type) {
       case 'info':
-        return 'bg-blue-100 hover:bg-blue-200 text-blue-800';
+      case 'information':
+        return 'bg-blue-100 hover:bg-blue-200 text-blue-800 dark:bg-blue-800 dark:hover:bg-blue-700 dark:text-blue-50';
       case 'success':
-        return 'bg-green-100 hover:bg-green-200 text-green-800';
+        return 'bg-green-100 hover:bg-green-200 text-green-800 dark:bg-green-800 dark:hover:bg-green-700 dark:text-green-50';
       case 'warning':
-        return 'bg-amber-100 hover:bg-amber-200 text-amber-800';
+        return 'bg-amber-100 hover:bg-amber-200 text-amber-800 dark:bg-amber-800 dark:hover:bg-amber-700 dark:text-amber-50';
       case 'error':
-        return 'bg-red-100 hover:bg-red-200 text-red-800';
+        return 'bg-red-100 hover:bg-red-200 text-red-800 dark:bg-red-800 dark:hover:bg-red-700 dark:text-red-50';
+      case 'reassurance':
+        return 'bg-indigo-100 hover:bg-indigo-200 text-indigo-800 dark:bg-indigo-800 dark:hover:bg-indigo-700 dark:text-indigo-50';
+      case 'empathy':
+        return 'bg-purple-100 hover:bg-purple-200 text-purple-800 dark:bg-purple-800 dark:hover:bg-purple-700 dark:text-purple-50';
       default:
-        return 'bg-gray-100 hover:bg-gray-200 text-gray-800';
+        return 'bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-100';
     }
   };
 
+  // Default icons for different message types
+  const getDefaultIcon = () => {
+    if (icon) return icon; // Use provided icon if available
+    
+    switch (type) {
+      case 'info':
+      case 'information':
+        return <Info className="w-12 h-12 text-blue-600" />;
+      case 'success':
+        return <CheckCircle className="w-12 h-12 text-green-600" />;
+      case 'warning':
+        return <AlertCircle className="w-12 h-12 text-amber-600" />;
+      case 'error':
+        return <AlertCircle className="w-12 h-12 text-red-600" />;
+      case 'reassurance':
+        return <HelpCircle className="w-12 h-12 text-indigo-600" />;
+      case 'empathy':
+        return <HelpCircle className="w-12 h-12 text-purple-600" />;
+      default:
+        return <Info className="w-12 h-12 text-gray-600" />;
+    }
+  };
+  
   return (
     <div 
       className={cn(
@@ -433,12 +470,15 @@ export function ComfortMessage({
       {...props}
     >
       <ComfortIcon animationType="pulse">
-        {icon}
+        {getDefaultIcon()}
       </ComfortIcon>
       
-      <h3 className="mt-4 text-xl font-medium">{title}</h3>
+      {title && <h3 className="mt-4 text-xl font-medium">{title}</h3>}
       
-      <p className="mt-2 max-w-md">{description}</p>
+      {description && <p className="mt-2 max-w-md">{description}</p>}
+      
+      {/* When using the simplified message format */}
+      {message && <p className="mt-2 max-w-md">{message}</p>}
       
       {action && (
         <button 

@@ -1,110 +1,119 @@
-import React from 'react';
-import { Button, ButtonProps } from '@/components/ui/button';
-import { ButtonFeedback } from '@/components/ui/animations';
+import { ButtonHTMLAttributes, forwardRef } from 'react';
+import { motion } from 'framer-motion';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { ButtonProps } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
-interface AnimatedButtonProps extends ButtonProps {
-  emotionalState?: 'calm' | 'positive' | 'urgent' | 'neutral';
-  feedbackType?: 'gentle' | 'strong' | 'none';
+export type EmotionalState = 'calm' | 'positive' | 'urgent' | 'neutral';
+export type FeedbackType = 'gentle' | 'strong' | 'none';
+
+interface AnimatedButtonProps extends ButtonHTMLAttributes<HTMLButtonElement>, ButtonProps {
+  emotionalState?: EmotionalState;
+  feedbackType?: FeedbackType;
+  isLoading?: boolean;
 }
 
 /**
- * AnimatedButton - An enhanced button component with micro-interactions
- * 
- * This button provides subtle animations based on emotional states to create
- * a more comforting and responsive user experience.
- * 
- * emotionalState:
- * - calm: Soothing, gentle interactions for everyday tasks
- * - positive: Uplifting feedback for successful actions or good news
- * - urgent: More attention-grabbing for important actions without causing anxiety
- * - neutral: Standard feedback with minimal emotional cues
- * 
- * feedbackType:
- * - gentle: Subtle animations suitable for most contexts
- * - strong: More noticeable animations for important actions
- * - none: No animations, for when accessibility or user preference requires it
+ * AnimatedButton - Enhanced button component with emotional states and feedback animations
+ * Designed for healthcare interfaces where calm, reassuring interactions are important
  */
-export function AnimatedButton({
-  children,
-  className,
-  emotionalState = 'neutral',
-  feedbackType = 'gentle',
+const AnimatedButton = forwardRef<HTMLButtonElement, AnimatedButtonProps>(({ 
+  children, 
+  className, 
   variant = 'default',
   size = 'default',
-  ...props
-}: AnimatedButtonProps) {
-  // Skip animation if user prefers reduced motion or feedback is set to none
-  const prefersReducedMotion = 
-    typeof window !== 'undefined' && 
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  
-  const shouldAnimate = feedbackType !== 'none' && !prefersReducedMotion;
-  
-  // Determine the hover scale based on feedbackType
-  const hoverScale = feedbackType === 'gentle' ? 1.02 : feedbackType === 'strong' ? 1.04 : 1;
-  const tapScale = feedbackType === 'gentle' ? 0.98 : feedbackType === 'strong' ? 0.96 : 1;
-  
-  // Adjust variant based on emotional state if using default variant
-  // Adjusting variant based on emotional state
-  // First, define a safe default
-  let adjustedVariant: ButtonProps['variant'] = variant;
-  
-  // Only change variant if we're starting from default and have a non-neutral state
-  if (variant === 'default' && emotionalState !== 'neutral') {
-    // Handle each emotional state with appropriate button variant
+  emotionalState = 'neutral',
+  feedbackType = 'gentle',
+  isLoading = false,
+  disabled,
+  ...props 
+}, ref) => {
+  // Get colors based on emotional state
+  const getEmotionalStateStyles = () => {
     switch (emotionalState) {
       case 'calm':
-        // @ts-ignore - Type safety handled at runtime
-        adjustedVariant = 'secondary';
-        break;
+        return 'bg-blue-50 hover:bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900 dark:hover:bg-blue-800 dark:text-blue-50 dark:border-blue-700';
       case 'positive':
-        // @ts-ignore - Type safety handled at runtime
-        adjustedVariant = 'secondary';
-        break;
+        return 'bg-green-50 hover:bg-green-100 text-green-800 border-green-200 dark:bg-green-900 dark:hover:bg-green-800 dark:text-green-50 dark:border-green-700';
       case 'urgent':
-        // @ts-ignore - Type safety handled at runtime
-        adjustedVariant = 'destructive';
-        break;
+        return 'bg-red-50 hover:bg-red-100 text-red-800 border-red-200 dark:bg-red-900 dark:hover:bg-red-800 dark:text-red-50 dark:border-red-700';
+      case 'neutral':
+      default:
+        return '';
     }
-  }
-  
-  // Define emotional state classes - subtle color adjustments
-  const emotionalClasses = {
-    calm: 'shadow-sm hover:shadow-md transition-shadow',
-    positive: 'shadow-sm hover:shadow-md transition-shadow',
-    urgent: 'shadow-md transition-shadow',
-    neutral: ''
   };
   
-  // If animations are disabled, render a regular button
-  if (!shouldAnimate) {
-    return (
-      <Button
-        className={cn(emotionalClasses[emotionalState], className)}
-        variant={adjustedVariant as any}
-        size={size}
-        {...props}
-      >
-        {children}
-      </Button>
-    );
-  }
+  // Button feedback animations
+  const getFeedbackAnimation = () => {
+    switch (feedbackType) {
+      case 'strong':
+        return {
+          scale: 0.95,
+          transition: { duration: 0.1 }
+        };
+      case 'gentle':
+        return {
+          scale: 0.98,
+          transition: { duration: 0.1 }
+        };
+      case 'none':
+      default:
+        return {};
+    }
+  };
+  
+  // Hover animations
+  const getHoverAnimation = () => {
+    switch (feedbackType) {
+      case 'strong':
+        return {
+          scale: 1.05,
+          transition: { duration: 0.2 }
+        };
+      case 'gentle':
+        return {
+          scale: 1.02,
+          transition: { duration: 0.2 }
+        };
+      case 'none':
+      default:
+        return {};
+    }
+  };
+
+  const isDisabled = disabled || isLoading;
   
   return (
-    <ButtonFeedback 
-      whileHover={{ scale: hoverScale }}
-      whileTap={{ scale: tapScale }}
-      className={cn("inline-block", className)}
+    <motion.div
+      whileHover={!isDisabled ? getHoverAnimation() : undefined}
+      whileTap={!isDisabled ? getFeedbackAnimation() : undefined}
+      className="inline-block"
     >
       <Button
-        className={cn(emotionalClasses[emotionalState])}
-        variant={adjustedVariant as any}
+        ref={ref}
+        variant={variant}
         size={size}
+        disabled={isDisabled}
+        className={cn(
+          emotionalState !== 'neutral' && variant === 'outline' ? getEmotionalStateStyles() : '',
+          className
+        )}
         {...props}
       >
-        {children}
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            {children}
+          </>
+        ) : (
+          children
+        )}
       </Button>
-    </ButtonFeedback>
+    </motion.div>
   );
-}
+});
+
+AnimatedButton.displayName = 'AnimatedButton';
+
+export { AnimatedButton };
