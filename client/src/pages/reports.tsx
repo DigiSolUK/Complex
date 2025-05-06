@@ -381,20 +381,378 @@ export default function Reports() {
             </Card>
           </TabsContent>
           
-          <TabsContent value="clinical">
-            <div className="text-center py-10">Clinical reports content will be displayed here</div>
+          <TabsContent value="clinical" className="space-y-4">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <HeartPulse className="h-5 w-5" />
+                  Care Plan Metrics
+                </CardTitle>
+                <p className="text-sm text-gray-500">Analysis of active care plans and their effectiveness.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("care-plan-metrics"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Care Plan Progress
+                </CardTitle>
+                <p className="text-sm text-gray-500">Detailed progression of care plans and patient outcomes.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("care-plan-progress"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Medication Compliance
+                </CardTitle>
+                <p className="text-sm text-gray-500">Patient medication adherence and compliance metrics.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("medication-compliance"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  Clinical Outcomes
+                </CardTitle>
+                <p className="text-sm text-gray-500">Results and outcomes of treatment plans and interventions.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("clinical-outcomes"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
           
-          <TabsContent value="operational">
-            <div className="text-center py-10">Operational reports content will be displayed here</div>
+          <TabsContent value="operational" className="space-y-4">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Staff Activity
+                </CardTitle>
+                <p className="text-sm text-gray-500">Comprehensive analysis of staff activity and productivity.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("staff-activity"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Appointment Analysis
+                </CardTitle>
+                <p className="text-sm text-gray-500">Detailed analysis of appointments, cancellations, and scheduling patterns.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("appointment-analysis"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Resource Utilization
+                </CardTitle>
+                <p className="text-sm text-gray-500">Analysis of facility and resource usage and efficiency.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("resource-utilization"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  System Usage
+                </CardTitle>
+                <p className="text-sm text-gray-500">Metrics on system usage, login patterns, and feature utilization.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("system-usage"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
           
-          <TabsContent value="financial">
-            <div className="text-center py-10">Financial reports content will be displayed here</div>
+          <TabsContent value="financial" className="space-y-4">
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building className="h-5 w-5" />
+                  Revenue Analysis
+                </CardTitle>
+                <p className="text-sm text-gray-500">Comprehensive breakdown of revenue streams and financial performance.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("revenue-analysis"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Billing Analysis
+                </CardTitle>
+                <p className="text-sm text-gray-500">Detailed analysis of billing, payments, and outstanding invoices.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("billing-analysis"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <PieChart className="h-5 w-5" />
+                  Service Cost Analysis
+                </CardTitle>
+                <p className="text-sm text-gray-500">Cost breakdown by service type and operational expenses.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("service-cost-analysis"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="mb-6">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <RefreshCw className="h-5 w-5" />
+                  Financial Forecasting
+                </CardTitle>
+                <p className="text-sm text-gray-500">Predictive analysis of future financial performance and trends.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button className="justify-start" onClick={() => { setReportType("financial-forecasting"); handleGenerateReport(); }}>
+                    <BarChart2 className="mr-2 h-4 w-4" /> Generate
+                  </Button>
+                  <Button variant="outline" className="justify-start">
+                    <FileDown className="mr-2 h-4 w-4" /> Download
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
           
-          <TabsContent value="custom">
-            <div className="text-center py-10">Custom reports content will be displayed here</div>
+          <TabsContent value="custom" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle>Custom Report Builder</CardTitle>
+                <p className="text-sm text-gray-500">Create tailored reports by selecting specific data fields and parameters.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Report Title</label>
+                    <Input placeholder="Enter report title" className="max-w-md" />
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Data Category</label>
+                      <Select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="patients">Patients</SelectItem>
+                          <SelectItem value="appointments">Appointments</SelectItem>
+                          <SelectItem value="staff">Staff</SelectItem>
+                          <SelectItem value="care-plans">Care Plans</SelectItem>
+                          <SelectItem value="medications">Medications</SelectItem>
+                          <SelectItem value="billing">Billing & Financials</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Report Type</label>
+                      <Select>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="summary">Summary Report</SelectItem>
+                          <SelectItem value="detailed">Detailed Report</SelectItem>
+                          <SelectItem value="trend">Trend Analysis</SelectItem>
+                          <SelectItem value="comparison">Comparison Report</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">Start Date</label>
+                      <Input 
+                        type="date" 
+                        className="w-full" 
+                        value={startDate} 
+                        onChange={(e) => setStartDate(e.target.value)}
+                      />
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium">End Date</label>
+                      <Input 
+                        type="date" 
+                        className="w-full"
+                        value={endDate} 
+                        onChange={(e) => setEndDate(e.target.value)} 
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="pt-4">
+                    <Button className="mr-2" onClick={() => { setReportType("custom-report"); handleGenerateReport(); }}>
+                      <BarChart2 className="mr-2 h-4 w-4" /> Generate Custom Report
+                    </Button>
+                    <Button variant="outline">
+                      <FileDown className="mr-2 h-4 w-4" /> Save Report Template
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>Saved Report Templates</CardTitle>
+                <p className="text-sm text-gray-500">Your previously saved custom report configurations.</p>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="rounded-md border p-4 hover:bg-muted/50 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">Quarterly Patient Demographics</h3>
+                        <p className="text-sm text-muted-foreground">Created on May 2, 2025</p>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        Load Template
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-md border p-4 hover:bg-muted/50 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">Staff Performance Analysis</h3>
+                        <p className="text-sm text-muted-foreground">Created on April 28, 2025</p>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        Load Template
+                      </Button>
+                    </div>
+                  </div>
+                  
+                  <div className="rounded-md border p-4 hover:bg-muted/50 cursor-pointer">
+                    <div className="flex justify-between items-center">
+                      <div>
+                        <h3 className="font-medium">Monthly Revenue Breakdown</h3>
+                        <p className="text-sm text-muted-foreground">Created on April 15, 2025</p>
+                      </div>
+                      <Button variant="ghost" size="sm">
+                        Load Template
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>

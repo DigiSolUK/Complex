@@ -19,6 +19,7 @@ import Appointments from "@/pages/appointments";
 import CarePlans from "@/pages/care-plans";
 import CarePlanDetail from "@/pages/care-plan-detail";
 import Staff from "@/pages/staff";
+import Tasks from "@/pages/tasks";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
@@ -211,6 +212,9 @@ function Router() {
           </Route>
           <Route path="/staff">
             {(params) => <ProtectedRoute component={Staff} params={params} />}
+          </Route>
+          <Route path="/tasks">
+            {(params) => <ProtectedRoute component={Tasks} params={params} />}
           </Route>
           <Route path="/reports">
             {(params) => <ProtectedRoute component={Reports} params={params} />}
