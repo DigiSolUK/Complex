@@ -121,7 +121,7 @@ class Auth {
   }
 
   // Authentication middleware
-  isAuthenticated(req: Request, res: Response, next: NextFunction) {
+  async isAuthenticated(req: Request, res: Response, next: NextFunction) {
     // Debug the session state
     console.log('Request cookies:', req.headers.cookie);
     console.log('Session ID:', req.sessionID);
@@ -129,18 +129,34 @@ class Auth {
     console.log('User in session:', req.user ? `User ID: ${req.user.id}` : 'No user');
     console.log('Session data:', req.session);
     
-    // Check for the test cookie
-    console.log('User ID cookie:', req.cookies?.user_id);
+    // Check for the user_id cookie
+    const userIdFromCookie = req.cookies?.user_id;
+    console.log('User ID cookie:', userIdFromCookie);
     
-    // For superadmin or tenant management requests, pass through for now
-    // This is a temporary fix to allow tenant creation while the authentication issue is being resolved
-    const url = req.originalUrl.toLowerCase();
-    if (url.includes('/api/superadmin/') || 
-        url.includes('/tenants') || 
-        url.includes('/patients') ||
-        url.includes('/api/staff')) {
-      console.log('EMERGENCY OVERRIDE: Allowing access to critical endpoint:', req.originalUrl);
-      return next();
+    // If we have a user ID cookie but no authenticated session, restore the session
+    if (userIdFromCookie && !req.isAuthenticated()) {
+      try {
+        // Try to fetch the user by ID
+        const userId = parseInt(userIdFromCookie);
+        if (!isNaN(userId)) {
+          console.log('Attempting to restore session from user_id cookie:', userId);
+          const storage = req.app.get('storage');
+          const user = await storage.getUserById(userId);
+          
+          if (user) {
+            console.log('User found, logging in from cookie');
+            return req.login(user, (err) => {
+              if (err) {
+                console.error('Error logging in from cookie:', err);
+                return next();
+              }
+              return next();
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error restoring session from cookie:', err);
+      }
     }
     
     // Check both Passport authentication and our custom session flag

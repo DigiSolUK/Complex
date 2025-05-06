@@ -2,8 +2,14 @@ import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
 import cookieParser from "cookie-parser";
+import { storage } from "./storage";
+import { auth } from "./auth";
 
 const app = express();
+
+// Make storage available to the entire application
+app.set('storage', storage);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 app.use(cookieParser(process.env.SESSION_SECRET || "complex-care-secret"));
