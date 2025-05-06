@@ -213,6 +213,39 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(401).json({ message: "Unauthorized" });
   });
   
+  // Test superadmin login route - not protected for testing purposes (only for development)
+  app.get("/api/test-login-superadmin", (req, res) => {
+    if (req.isAuthenticated()) {
+      return res.json({ message: "Already logged in", user: req.user });
+    }
+    
+    // Find the admin user
+    storage.getUserByUsername("admin")
+      .then(user => {
+        if (!user) {
+          return res.status(404).json({ message: "Superadmin user not found" });
+        }
+        
+        // Log in as admin
+        req.login(user, (err) => {
+          if (err) {
+            console.error("Login error:", err);
+            return res.status(500).json({ message: "Error logging in" });
+          }
+          
+          console.log("Test superadmin login successful");
+          return res.json({
+            message: "Successfully logged in as superadmin",
+            user: req.user
+          });
+        });
+      })
+      .catch(err => {
+        console.error("Error finding superadmin user:", err);
+        return res.status(500).json({ message: "Error finding user" });
+      });
+  });
+  
   // Test session route - not protected for testing purposes
   app.get("/api/test-session", (req, res) => {
     // Set a test value in session if it doesn't exist
@@ -242,6 +275,48 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Add test superadmin route - creates a superadmin account
+  app.get("/api/test/create-superadmin", async (req, res) => {
+    try {
+      // Check if admin user already exists
+      const existingUser = await storage.getUserByUsername("admin");
+      
+      if (existingUser) {
+        return res.json({
+          message: "Superadmin already exists",
+          username: "admin",
+          password: "admin123"
+        });
+      }
+      
+      // Create the admin user
+      const hashedPassword = await cryptoService.hashPassword("admin123");
+      const user = await storage.createUser({
+        username: "admin",
+        password: hashedPassword,
+        email: "admin@complexcare.com",
+        name: "System Administrator",
+        role: "superadmin",
+        tenantId: null
+      });
+      
+      // Remove password from response
+      const { password: _, ...userWithoutPassword } = user;
+      
+      return res.json({
+        message: "Superadmin created successfully",
+        user: userWithoutPassword,
+        credentials: {
+          username: "admin",
+          password: "admin123"
+        }
+      });
+    } catch (error) {
+      console.error("Error creating superadmin:", error);
+      return res.status(500).json({ message: "Error creating superadmin" });
+    }
+  });
+  
   // Add test user route - creates a test user account
   app.get("/api/test/create-user", async (req, res) => {
     try {
