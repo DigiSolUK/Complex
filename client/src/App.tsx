@@ -56,14 +56,20 @@ function ProtectedRoute({ component: Component, params, requireAdmin = false }: 
   const [, navigate] = useLocation();
   
   // Use useEffect for redirects to avoid React state updates during render
-  useEffect(() => {
+  React.useEffect(() => {
+    // Don't redirect while still loading
+    if (isLoading) return;
+    
     // Handle authentication check
-    if (!isLoading && !isAuthenticated && !isDemoMode) {
+    if (!isAuthenticated && !isDemoMode) {
       navigate('/auth');
+      return;
     }
+    
     // Handle admin check for protected routes
-    else if (!isLoading && requireAdmin && !isAdmin && !isSuperAdmin) {
+    if (requireAdmin && !isAdmin && !isSuperAdmin) {
       navigate('/dashboard');
+      return;
     }
   }, [isLoading, isAuthenticated, isDemoMode, requireAdmin, isAdmin, isSuperAdmin, navigate]);
   
@@ -133,15 +139,14 @@ function Router() {
   const commonRoutes = (
     <>
       <Route path="/auth" component={AuthPage} />
-      <Route path="/login">
-        {() => {
-          // Redirect /login to /auth
-          React.useEffect(() => {
-            navigate('/auth');
-          }, []);
-          return null;
-        }}
-      </Route>
+      <Route path="/login" component={() => {
+        const [, loginNavigate] = useLocation();
+        // Redirect /login to /auth
+        React.useEffect(() => {
+          loginNavigate('/auth');
+        }, [loginNavigate]);
+        return <div>Redirecting to login...</div>;
+      }} />
       <Route path="/test-login" component={TestLogin} />
       <Route path="/demo-login" component={DemoLogin} />
       {/* Landing Pages */}
@@ -180,14 +185,13 @@ function Router() {
       return (
         <Switch>
           {commonRoutes}
-          <Route>
-            {() => {
-              React.useEffect(() => {
-                navigate('/auth');
-              }, []);
-              return null;
-            }}
-          </Route>
+          <Route component={() => {
+            const [, routeNavigate] = useLocation();
+            React.useEffect(() => {
+              routeNavigate('/auth');
+            }, [routeNavigate]);
+            return <div>Redirecting to login...</div>;
+          }} />
         </Switch>
       );
     }
