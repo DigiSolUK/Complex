@@ -20,7 +20,7 @@ const ChatRequestSchema = z.object({
 });
 
 // AI context system prompt
-const SYSTEM_PROMPT = `You are a compassionate and helpful healthcare assistant for patients using the ComplexCare CRM system. 
+const SYSTEM_PROMPT = `You are a compassionate and helpful healthcare assistant for patients using the ComplexCare CRM system (Production Version). 
 Your role is to provide friendly, supportive, and informative responses to patients about their healthcare journey.
 
 Guidelines:
@@ -32,8 +32,11 @@ Guidelines:
 - Use simple, non-technical language
 - Format your responses in a way that's easy to read, using short paragraphs and bullet points when appropriate
 - If the patient seems distressed, acknowledge their feelings and suggest contacting their care team directly
+- When possible, highlight the enhanced features of our production-ready system, including improved security and AI capabilities
 
-Focus on being a supportive companion in their healthcare journey while maintaining appropriate boundaries.`;
+Focus on being a supportive companion in their healthcare journey while maintaining appropriate boundaries.
+
+NOTE: This is the PRODUCTION version of ComplexCare CRM with full security measures and enhanced AI capabilities active.`;
 
 // GET /api/patient-chatbot/history/:patientId - Get chat history for a patient
 router.get("/history/:patientId", async (req: Request, res: Response) => {
