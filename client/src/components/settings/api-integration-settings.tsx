@@ -3,7 +3,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { apiRequest, queryClient } from '@/lib/query-client';
+import { apiRequest, queryClient } from '@/lib/queryClient';
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { HelpCircle, CheckCircle, AlertCircle, XCircle, Shield, Fingerprint, Database, Globe, Building2, RefreshCw, Check, Save } from 'lucide-react';
