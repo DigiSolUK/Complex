@@ -22,8 +22,14 @@ declare module "express-session" {
 
 declare global {
   namespace Express {
-    interface User extends Omit<User, "password"> {
+    // Define a standalone user interface instead of extending itself
+    interface User {
+      id: number;
+      username: string;
+      email: string;
       role: "superadmin" | "admin" | "care_staff" | "patient";
+      name: string;
+      createdAt: Date | string | null;
       tenantId?: number | null;
     }
   }
@@ -192,7 +198,7 @@ class Auth {
   authenticateLocal(req: Request, res: Response, next: NextFunction) {
     console.log("Incoming login request cookies:", req.headers.cookie);
     
-    passport.authenticate("local", (err, user, info) => {
+    passport.authenticate("local", (err: Error | null, user: Express.User | false, info: { message: string } | undefined) => {
       if (err) {
         console.error("Authentication error:", err);
         return next(err);
@@ -204,7 +210,7 @@ class Auth {
       console.log("Authentication successful, logging in user...");
       
       // Enhanced login with explicit session saving
-      req.logIn(user, (err) => {
+      req.logIn(user, (err: Error | null) => {
         if (err) {
           console.error("Login error:", err);
           return next(err);
@@ -214,7 +220,7 @@ class Auth {
         console.log("Cookie settings:", req.session.cookie);
         
         // Explicitly save the session to ensure it is stored
-        req.session.save(err => {
+        req.session.save((err: Error | null) => {
           if (err) {
             console.error("Session save error:", err);
             return next(err);
