@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PatientAvatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Calendar, ClipboardList, FileEdit, Activity, Clock, PlusCircle } from "lucide-react";
+import { Calendar, ClipboardList, FileEdit, Activity, Clock, PlusCircle, Plus, Pill } from "lucide-react";
 import { calculateAge } from "@/lib/utils";
 import { AppointmentCard } from "@/components/appointments/appointment-card";
 import WearableDeviceList from "@/components/wearables/wearable-device-list";
@@ -13,11 +13,15 @@ import { PatientDailyLog } from "@/components/patient/daily-log";
 import { BodyMap } from "@/components/patient/body-map";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CarePlanTemplateCard } from "@/components/care-plans/care-plan-template-card";
+import { TemplateSelector } from "@/components/care-plans/template-selector";
 import { MedicationRecordCard } from "@/components/medications/medication-record-card";
 import { PatientMedicationCard } from "@/components/medications/patient-medication-card";
+import { AddMedicationDialog } from "@/components/medications/add-medication-dialog";
 import { useQuery } from "@tanstack/react-query";
 import { AnimatedCard } from "@/components/ui";
 import { ComfortMessage } from "@/components/ui/comfort-message";
+import { AnimatedButton } from "@/components/ui/animated-button";
+import { motion } from "framer-motion";
 
 interface PatientDetailProps {
   patient: Patient;
@@ -59,6 +63,10 @@ export function PatientDetail({
   const age = patient.dateOfBirth ? calculateAge(patient.dateOfBirth) : "N/A";
   const [isBodyMapDialogOpen, setIsBodyMapDialogOpen] = useState(false);
   const [selectedDailyLog, setSelectedDailyLog] = useState<DailyLogDisplayData | null>(null);
+  const [isMedicationDialogOpen, setIsMedicationDialogOpen] = useState(false);
+  const [selectedMedication, setSelectedMedication] = useState<PatientMedication | null>(null);
+  const [isTemplateSelectorOpen, setIsTemplateSelectorOpen] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState<CarePlanTemplate | null>(null);
   
   // Fetch wearable devices for this patient
   const { data: wearableDevices = [] } = useQuery<any[]>({
@@ -611,33 +619,54 @@ export function PatientDetail({
           <div className="space-y-6">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Patient Medications</h3>
-              <Link href={`/medications/new?patientId=${patient.id}`}>
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Add Medication
-                </Button>
-              </Link>
+              <AnimatedButton 
+                emotionalState="positive" 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-2"
+                onClick={() => setIsMedicationDialogOpen(true)}
+              >
+                <Pill className="h-4 w-4" />
+                Add Medication
+              </AnimatedButton>
             </div>
             
             {displayPatientMedications.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
                 {displayPatientMedications.map((medication) => (
-                  <PatientMedicationCard
+                  <motion.div
                     key={medication.id}
-                    medication={medication}
-                    onEdit={() => {/* TODO: implement edit */}}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <PatientMedicationCard
+                      key={medication.id}
+                      medication={medication}
+                      onEdit={() => {
+                        setSelectedMedication(medication);
+                        setIsMedicationDialogOpen(true);
+                      }}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             ) : (
               <Card>
                 <CardContent className="py-8 text-center">
                   <p className="text-neutral-500 mb-4">No medications have been added for this patient.</p>
-                  <Link href={`/medications/new?patientId=${patient.id}`}>
-                    <Button variant="outline">
-                      Add First Medication
-                    </Button>
-                  </Link>
+                  <AnimatedButton 
+                    emotionalState="calm" 
+                    variant="outline"
+                    onClick={() => setIsMedicationDialogOpen(true)}
+                  >
+                    Add First Medication
+                  </AnimatedButton>
                 </CardContent>
               </Card>
             )}
@@ -685,34 +714,62 @@ export function PatientDetail({
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-medium">Available Care Plan Templates</h3>
               <div className="flex space-x-2">
-                <Button variant="outline" size="sm" className="flex items-center">
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Create Template
-                </Button>
+                <AnimatedButton 
+                  emotionalState="calm"
+                  variant="outline" 
+                  size="sm" 
+                  className="flex items-center gap-2"
+                  onClick={() => setIsTemplateSelectorOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Select Template
+                </AnimatedButton>
               </div>
             </div>
             
             {displayCarePlanTemplates.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {displayCarePlanTemplates.map((template) => (
-                  <CarePlanTemplateCard
+              <motion.div 
+                className="grid grid-cols-1 md:grid-cols-2 gap-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ staggerChildren: 0.1 }}
+              >
+                {displayCarePlanTemplates.slice(0, 4).map((template) => (
+                  <motion.div
                     key={template.id}
-                    template={template}
-                    onSelect={(template) => {
-                      // TODO: implement selecting template for new care plan
-                      console.log("Selected template:", template);
-                    }}
-                    onViewDetails={(template) => {
-                      // TODO: implement viewing template details
-                      console.log("View template details:", template);
-                    }}
-                  />
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.5 }}
+                  >
+                    <CarePlanTemplateCard
+                      key={template.id}
+                      template={template}
+                      onSelect={(template) => {
+                        setSelectedTemplate(template);
+                        // Here you would create a new care plan based on this template
+                        console.log("Selected template for new care plan:", template);
+                      }}
+                      onViewDetails={(template) => {
+                        // Set the selected template and open the template details dialog
+                        setSelectedTemplate(template);
+                        console.log("View template details:", template);
+                      }}
+                      minimal={true}
+                    />
+                  </motion.div>
                 ))}
-              </div>
+              </motion.div>
             ) : (
               <Card>
                 <CardContent className="py-8 text-center">
-                  <p className="text-neutral-500">No care plan templates available.</p>
+                  <p className="text-neutral-500 mb-4">No care plan templates available.</p>
+                  <AnimatedButton 
+                    emotionalState="positive" 
+                    variant="outline"
+                    onClick={() => setIsTemplateSelectorOpen(true)}
+                  >
+                    Browse Templates
+                  </AnimatedButton>
                 </CardContent>
               </Card>
             )}
@@ -941,6 +998,35 @@ export function PatientDetail({
               />
             )}
           </div>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Medication Dialog */}
+      <AddMedicationDialog
+        open={isMedicationDialogOpen}
+        onOpenChange={setIsMedicationDialogOpen}
+        patient={patient}
+        initialData={selectedMedication || undefined}
+        onSuccess={() => {
+          setSelectedMedication(null);
+          // Refetch data to show the updated medication list
+        }}
+      />
+      
+      {/* Care Plan Template Selector Dialog */}
+      <Dialog open={isTemplateSelectorOpen} onOpenChange={setIsTemplateSelectorOpen}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+          <TemplateSelector
+            templates={displayCarePlanTemplates}
+            patientId={patient.id}
+            onSelect={(template) => {
+              setSelectedTemplate(template);
+              setIsTemplateSelectorOpen(false);
+              // Here you would create a new care plan based on this template
+              console.log("Creating new care plan from template:", template);
+            }}
+            onClose={() => setIsTemplateSelectorOpen(false)}
+          />
         </DialogContent>
       </Dialog>
     </div>
