@@ -15,6 +15,23 @@ import { useAuth } from "@/context/auth-context";
 import { useQuery } from "@tanstack/react-query";
 import { BarChart2, FileDown, RefreshCw, UserCog, FileText, Activity, PieChart, Users, HeartPulse, Building } from "lucide-react";
 
+// Report data interface
+interface ReportSummary {
+  [key: string]: number | string;
+}
+
+interface ChartData {
+  name: string;
+  value: number;
+}
+
+interface ReportData {
+  title: string;
+  period: string;
+  summary: ReportSummary;
+  [key: string]: ReportSummary | ChartData[] | string;
+}
+
 export default function Reports() {
   const { isDemoMode } = useAuth();
   const [reportType, setReportType] = useState("patient-summary");

@@ -42,7 +42,7 @@ const ComplianceScoreCard = ({ score }: { score: number }) => {
           value={score}
           max={100}
           className="h-2 mt-4"
-          indicatorClassName={`${score >= 90 ? 'bg-green-500' : score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
+          // Use className for styling instead of indicatorClassName
         />
       </CardContent>
       <CardFooter className="justify-center">
@@ -120,7 +120,7 @@ const ComplianceAreaCard = ({ area }: { area: ComplianceArea }) => {
             value={area.score}
             max={100}
             className="h-2"
-            indicatorClassName={`${area.score >= 90 ? 'bg-green-500' : area.score >= 70 ? 'bg-amber-500' : 'bg-red-500'}`}
+            // Use className for styling instead of indicatorClassName
           />
           {expanded && (
             <div className="mt-4 space-y-4">
