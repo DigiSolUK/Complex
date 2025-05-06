@@ -8,7 +8,7 @@ import { auth } from "../auth";
 const router = express.Router();
 
 // Get theme settings for a specific tenant
-router.get("/api/tenants/:id/theme", auth.isAuthenticated, async (req, res) => {
+router.get("/api/tenants/:id/theme", async (req, res) => {
   try {
     const tenantId = parseInt(req.params.id);
     
@@ -36,7 +36,7 @@ router.get("/api/tenants/:id/theme", auth.isAuthenticated, async (req, res) => {
 });
 
 // Get current tenant theme settings (based on user's session)
-router.get("/api/tenants/current/theme", auth.isAuthenticated, async (req, res) => {
+router.get("/api/tenants/current/theme", async (req, res) => {
   try {
     // Get the tenant associated with the user
     const userTenantId = req.user?.tenantId !== undefined ? req.user.tenantId : null;

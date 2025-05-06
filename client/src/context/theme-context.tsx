@@ -159,10 +159,29 @@ export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     // Map our theme colors to the CSS variables in Tailwind/shadcn
     // This ensures theme colors override the default shadcn theme
-    root.style.setProperty('--primary', 'hsl(196 94% 42%)'); // Primary teal color
-    root.style.setProperty('--accent', 'hsl(213 94% 68%)'); // Accent bright blue
+    root.style.setProperty('--primary', colors.primary.replace('#', '')); 
+    root.style.setProperty('--primary-foreground', '#ffffff');
     
-    // Apply the theme colors from tenant settings
+    root.style.setProperty('--secondary', colors.secondary.replace('#', ''));
+    root.style.setProperty('--secondary-foreground', '#ffffff');
+    
+    root.style.setProperty('--accent', colors.accent.replace('#', ''));
+    root.style.setProperty('--accent-foreground', '#ffffff');
+    
+    root.style.setProperty('--background', colors.background.replace('#', ''));
+    root.style.setProperty('--foreground', colors.text.replace('#', ''));
+    
+    // Add additional colors for completeness
+    root.style.setProperty('--destructive', colors.error.replace('#', ''));
+    root.style.setProperty('--destructive-foreground', '#ffffff');
+    
+    root.style.setProperty('--success', colors.success.replace('#', ''));
+    root.style.setProperty('--success-foreground', '#ffffff');
+    
+    root.style.setProperty('--warning', colors.warning.replace('#', ''));
+    root.style.setProperty('--warning-foreground', '#000000');
+    
+    // Also set our custom color properties for backward compatibility
     root.style.setProperty('--color-primary', colors.primary);
     root.style.setProperty('--color-secondary', colors.secondary);
     root.style.setProperty('--color-accent', colors.accent);
