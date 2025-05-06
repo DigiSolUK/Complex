@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Shield, CheckCircle2, AlertTriangle, XCircle, FileSearch, Download, ClipboardList, Info, PieChart } from 'lucide-react';
-import { Progress } from '@/components/ui/progress';
+import { Progress } from '@/components/ui';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
