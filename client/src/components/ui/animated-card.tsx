@@ -1,118 +1,66 @@
 import { ReactNode } from 'react';
-import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card';
 import { motion } from 'framer-motion';
+import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
 
-interface AnimatedCardProps {
+export type HoverEffect = 'none' | 'gentle-lift' | 'border-glow' | 'shadow-expand';
+
+export interface AnimatedCardProps {
   children: ReactNode;
   className?: string;
-  headerClassName?: string;
-  contentClassName?: string;
-  footerClassName?: string;
-  header?: ReactNode;
-  footer?: ReactNode;
-  hoverEffect?: 'gentle-lift' | 'gentle-glow' | 'soft-border' | 'none';
-  transitionDelay?: number;
+  hoverEffect?: HoverEffect;
+  clickable?: boolean;
   onClick?: () => void;
 }
 
 /**
- * AnimatedCard - Enhanced card with subtle micro-interactions
- * 
- * This component adds calm, reassuring animations to card elements
- * to improve the emotional experience of the healthcare interface.
- * 
- * Use for:
- * - Patient records
- * - Medical information display
- * - Treatment options
- * - Statistical information that might cause anxiety
+ * AnimatedCard - Enhanced card component with subtle animations
+ * Provides a more engaging user experience for cards in the UI
  */
-export function AnimatedCard({
-  children,
-  className,
-  headerClassName,
-  contentClassName,
-  footerClassName,
-  header,
-  footer,
-  hoverEffect = 'gentle-lift',
-  transitionDelay = 0,
+export function AnimatedCard({ 
+  children, 
+  className, 
+  hoverEffect = 'none',
+  clickable = false,
   onClick,
-  ...props
+  ...props 
 }: AnimatedCardProps) {
-  // Accessibility check for reduced motion preference
-  const prefersReducedMotion = 
-    typeof window !== 'undefined' && 
-    window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
-  
-  // Base transitions for all animations
-  const baseTransition = {
-    type: 'spring',
-    stiffness: 300,
-    damping: 30,
-    delay: transitionDelay,
-  };
-  
-  // Define hover animations based on effect type
+  // Define hover animations based on the selected effect
   const getHoverAnimation = () => {
-    if (prefersReducedMotion || hoverEffect === 'none') return {};
-    
     switch (hoverEffect) {
       case 'gentle-lift':
-        return {
-          whileHover: { y: -5, boxShadow: '0 5px 10px rgba(0,0,0,0.1)' },
-          transition: baseTransition
+        return { 
+          y: -5, 
+          boxShadow: '0 4px 20px rgba(0, 0, 0, 0.1)',
+          transition: { type: 'spring', stiffness: 400, damping: 17 }
         };
-      case 'gentle-glow':
-        return {
-          whileHover: { boxShadow: '0 0 8px rgba(124, 58, 237, 0.6)' },
-          transition: baseTransition
+      case 'border-glow':
+        return { 
+          boxShadow: '0 0 0 2px var(--primary)', 
+          transition: { duration: 0.2 }
         };
-      case 'soft-border':
-        return {
-          whileHover: { borderColor: 'var(--primary)' },
-          transition: baseTransition
+      case 'shadow-expand':
+        return { 
+          boxShadow: '0 8px 30px rgba(0, 0, 0, 0.12)',
+          transition: { duration: 0.2 }
         };
       default:
         return {};
     }
   };
-  
-  const hoverAnimation = getHoverAnimation();
-  
-  // Entry animation - soft fade up
-  const entryAnimation = !prefersReducedMotion ? {
-    initial: { opacity: 0, y: 10 },
-    animate: { opacity: 1, y: 0 },
-    transition: {
-      ...baseTransition,
-      delay: transitionDelay
-    }
-  } : {};
-  
+
   return (
     <motion.div
-      className={cn("cursor-default", onClick && "cursor-pointer", className)}
-      onClick={onClick}
-      {...entryAnimation}
-      {...hoverAnimation}
-      {...props}
+      whileHover={hoverEffect !== 'none' ? getHoverAnimation() : undefined}
+      whileTap={clickable ? { scale: 0.98 } : undefined}
+      onClick={clickable ? onClick : undefined}
+      className={cn(
+        clickable && 'cursor-pointer',
+        'transition-all duration-200'
+      )}
     >
-      <Card className="border-[1.5px] h-full transition-colors duration-200">
-        {header && (
-          <CardHeader className={headerClassName}>
-            {header}
-          </CardHeader>
-        )}
-        <CardContent className={cn("pt-6", !header && "pt-6", contentClassName)}>
-          {children}
-        </CardContent>
-        {footer && (
-          <CardFooter className={footerClassName}>
-            {footer}
-          </CardFooter>
-        )}
+      <Card className={className} {...props}>
+        {children}
       </Card>
     </motion.div>
   );

@@ -1,19 +1,13 @@
-// This file re-exports all UI components to make importing easier
-export { Progress } from './progress';
-export { 
-  FadeIn,
-  SlideIn,
-  ScaleIn,
-  ContentSwitch,
-  PulseEffect,
-  ComfortIcon,
-  ButtonFeedback,
-  GentleListItem,
-  SuccessFeedback,
-  ProgressIndicator
-} from './animations';
-export { AnimatedButton } from './animated-button';
-export { AnimatedCard } from './animated-card';
-export { ComfortMessage } from './comfort-message';
-export { PatientInfoTransition, PatientInfoItem } from './patient-info-transition';
-// Add other components as needed
+// Export all UI components for easier imports
+export * from './card';
+export * from './button';
+export * from './form';
+export * from './select';
+export * from './dialog';
+export * from './animations';
+export * from './alert';
+export * from './page-header';
+export * from './progress';
+
+// Specialized components
+export * from './animated-card';

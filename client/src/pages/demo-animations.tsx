@@ -1,12 +1,7 @@
 import React, { useState } from 'react';
 // Use the app layout structure instead of importing a layout component
-import { 
-  AnimatedButton, 
-  AnimatedCard,
-  ComfortMessage,
-  PatientInfoTransition,
-  PatientInfoItem
-} from '@/components/ui';
+import { AnimatedCard } from '@/components/ui/animated-card';
+import { ComfortMessage } from '@/components/ui/animations';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';

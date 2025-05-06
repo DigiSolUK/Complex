@@ -367,3 +367,90 @@ export function ProgressIndicator({
     </motion.div>
   );
 }
+
+export type ComfortType = 'info' | 'success' | 'warning' | 'error' | 'neutral';
+
+/**
+ * ComfortMessage - A visually calming message component for different states
+ * Use for: Empty states, success messages, alerts, or guidance
+ */
+export function ComfortMessage({ 
+  icon, 
+  title, 
+  description, 
+  type = 'neutral',
+  action,
+  className,
+  ...props 
+}: {
+  icon: ReactNode;
+  title: string;
+  description: string;
+  type?: ComfortType;
+  action?: {
+    actionLabel: string;
+    onClick: () => void;
+  };
+  className?: string;
+}) {
+  const getTypeStyles = () => {
+    switch (type) {
+      case 'info':
+        return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'success':
+        return 'bg-green-50 border-green-200 text-green-800';
+      case 'warning':
+        return 'bg-amber-50 border-amber-200 text-amber-800';
+      case 'error':
+        return 'bg-red-50 border-red-200 text-red-800';
+      default:
+        return 'bg-gray-50 border-gray-200 text-gray-800';
+    }
+  };
+
+  const getButtonStyles = () => {
+    switch (type) {
+      case 'info':
+        return 'bg-blue-100 hover:bg-blue-200 text-blue-800';
+      case 'success':
+        return 'bg-green-100 hover:bg-green-200 text-green-800';
+      case 'warning':
+        return 'bg-amber-100 hover:bg-amber-200 text-amber-800';
+      case 'error':
+        return 'bg-red-100 hover:bg-red-200 text-red-800';
+      default:
+        return 'bg-gray-100 hover:bg-gray-200 text-gray-800';
+    }
+  };
+
+  return (
+    <div 
+      className={cn(
+        'flex flex-col items-center justify-center p-8 text-center border rounded-lg',
+        getTypeStyles(),
+        className
+      )}
+      {...props}
+    >
+      <ComfortIcon animationType="pulse">
+        {icon}
+      </ComfortIcon>
+      
+      <h3 className="mt-4 text-xl font-medium">{title}</h3>
+      
+      <p className="mt-2 max-w-md">{description}</p>
+      
+      {action && (
+        <button 
+          onClick={action.onClick}
+          className={cn(
+            'mt-4 px-4 py-2 rounded font-medium transition-colors',
+            getButtonStyles()
+          )}
+        >
+          {action.actionLabel}
+        </button>
+      )}
+    </div>
+  );
+}

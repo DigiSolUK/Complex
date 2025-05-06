@@ -1,21 +1,39 @@
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
-  title: string;
+  heading: string;
   description?: string;
   className?: string;
   actions?: React.ReactNode;
 }
 
-export function PageHeader({ title, description, className, actions }: PageHeaderProps) {
+/**
+ * PageHeader - Standardized page heading component
+ * Use for consistency in page headers across the application
+ */
+export function PageHeader({ 
+  heading, 
+  description, 
+  className,
+  actions,
+}: PageHeaderProps) {
   return (
-    <div className={cn("mb-8", className)}>
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">{title}</h1>
-        {actions && <div className="flex items-center space-x-2">{actions}</div>}
+    <div className={cn(
+      'flex flex-col md:flex-row justify-between items-start md:items-center gap-4', 
+      className
+    )}>
+      <div>
+        <h1 className="text-2xl font-bold tracking-tight">{heading}</h1>
+        {description && (
+          <p className="text-muted-foreground mt-1">{description}</p>
+        )}
       </div>
-      {description && (
-        <p className="mt-2 text-muted-foreground">{description}</p>
+      
+      {actions && (
+        <div className="flex items-center gap-2">
+          {actions}
+        </div>
       )}
     </div>
   );

@@ -1,108 +1,138 @@
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
-import { queryClient } from '@/lib/queryClient';
+import { useLocation } from 'wouter';
 import { WearableDevice } from '@shared/schema';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, PlusCircle, RefreshCw, Trash2, Settings, LinkIcon, Activity } from 'lucide-react';
-import { AnimatedButton, AnimatedCard } from '@/components/ui';
-import WearableDeviceForm from './wearable-device-form';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AnimatedCard } from '@/components/ui';
+import { Loader2, Plus, RefreshCw, Wifi, WifiOff, AlertCircle, Battery, Settings } from 'lucide-react';
 
-export default function WearableDeviceList({ patientId }: { patientId: number }) {
-  const [showAddForm, setShowAddForm] = useState(false);
+interface WearableDeviceListProps {
+  patientId?: number;
+}
+
+const formatDateRelative = (date: string | null): string => {
+  if (!date) return 'Never';
+  
+  const now = new Date();
+  const syncDate = new Date(date);
+  const diffMs = now.getTime() - syncDate.getTime();
+  const diffMin = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+  
+  if (diffMin < 1) return 'Just now';
+  if (diffMin < 60) return `${diffMin} minute${diffMin !== 1 ? 's' : ''} ago`;
+  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`;
+  if (diffDays < 30) return `${diffDays} day${diffDays !== 1 ? 's' : ''} ago`;
+  
+  return syncDate.toLocaleDateString();
+};
+
+const getConnectionStatusBadge = (status: string) => {
+  switch (status) {
+    case 'connected':
+      return (
+        <Badge className="bg-green-500">
+          <Wifi className="h-3 w-3 mr-1" />
+          Connected
+        </Badge>
+      );
+    case 'disconnected':
+      return (
+        <Badge className="bg-red-500">
+          <WifiOff className="h-3 w-3 mr-1" />
+          Disconnected
+        </Badge>
+      );
+    case 'pairing':
+      return (
+        <Badge className="bg-yellow-500">
+          <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
+          Pairing
+        </Badge>
+      );
+    default:
+      return (
+        <Badge className="bg-gray-500">
+          <AlertCircle className="h-3 w-3 mr-1" />
+          Unknown
+        </Badge>
+      );
+  }
+};
+
+const getBatteryStatusIndicator = (batteryStatus: number | null) => {
+  if (batteryStatus === null) return null;
+  
+  let color = 'text-green-500';
+  if (batteryStatus < 20) color = 'text-red-500';
+  else if (batteryStatus < 50) color = 'text-yellow-500';
+  
+  return (
+    <div className="flex items-center">
+      <Battery className={`h-4 w-4 mr-1 ${color}`} />
+      <span className="text-sm text-muted-foreground">{batteryStatus}%</span>
+    </div>
+  );
+};
+
+const WearableDeviceList: React.FC<WearableDeviceListProps> = ({ patientId }) => {
+  const [, navigate] = useLocation();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
+  const [isAddDeviceDialogOpen, setIsAddDeviceDialogOpen] = useState(false);
   
-  // Fetch wearable devices for this patient
-  const { data: wearableDevices, isLoading, isError } = useQuery({
-    queryKey: [`/api/patients/${patientId}/wearables`],
-    enabled: !!patientId,
+  // Fetch devices for a specific patient or all devices
+  const { data: devices, isLoading, error } = useQuery({
+    queryKey: patientId ? [`/api/patients/${patientId}/wearables`] : ['/api/wearables'],
+    enabled: true,
   });
   
-  // Delete device mutation
-  const deleteDeviceMutation = useMutation({
-    mutationFn: async (deviceId: number) => {
-      const res = await fetch(`/api/wearables/${deviceId}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-      });
-      
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to delete device');
-      }
-      
-      return true;
-    },
-    onSuccess: () => {
-      toast({
-        title: 'Device removed successfully',
-        description: 'The wearable device has been removed from this patient.',
-        variant: 'default',
-      });
-      
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/wearables`] });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: 'Error removing device',
-        description: error.message,
-        variant: 'destructive',
-      });
-    },
-  });
-
-  // Handle sync device
+  // Sync device mutation
   const syncDeviceMutation = useMutation({
     mutationFn: async (deviceId: number) => {
-      const res = await fetch(`/api/wearables/${deviceId}/sync`, {
+      const response = await fetch(`/api/wearables/${deviceId}/sync`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
       });
       
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || 'Failed to sync device');
+      if (!response.ok) {
+        throw new Error('Failed to sync device');
       }
       
-      return await res.json();
+      return response.json();
     },
     onSuccess: () => {
+      // Invalidate queries to refetch data
+      if (patientId) {
+        queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/wearables`] });
+      } else {
+        queryClient.invalidateQueries({ queryKey: ['/api/wearables'] });
+      }
+      
       toast({
-        title: 'Device synced successfully',
-        description: 'The latest data has been retrieved from the device.',
+        title: 'Device synced',
+        description: 'The device has been successfully synced',
         variant: 'default',
       });
-      
-      queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/wearables`] });
     },
-    onError: (error: Error) => {
+    onError: (error) => {
       toast({
-        title: 'Error syncing device',
-        description: error.message,
+        title: 'Sync failed',
+        description: error.message || 'Failed to sync device',
         variant: 'destructive',
       });
     },
   });
-
-  const getConnectionStatusColor = (status: string) => {
-    switch (status) {
-      case 'connected': return 'bg-green-500';
-      case 'disconnected': return 'bg-red-500';
-      case 'pairing': return 'bg-yellow-500';
-      case 'error': return 'bg-orange-500';
-      default: return 'bg-gray-500';
-    }
+  
+  const handleSyncDevice = (deviceId: number) => {
+    syncDeviceMutation.mutate(deviceId);
   };
-
-  const getBatteryStatusColor = (percentage?: number) => {
-    if (!percentage && percentage !== 0) return 'bg-gray-400';
-    if (percentage < 20) return 'bg-red-500';
-    if (percentage < 50) return 'bg-yellow-500';
-    return 'bg-green-500';
-  };
-
+  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -110,159 +140,132 @@ export default function WearableDeviceList({ patientId }: { patientId: number })
       </div>
     );
   }
-
-  if (isError) {
+  
+  if (error) {
     return (
-      <div className="bg-red-50 p-4 rounded-md">
-        <p className="text-red-800">Failed to load wearable devices. Please try again later.</p>
+      <div className="bg-red-50 p-4 rounded-md border border-red-200">
+        <div className="flex items-center">
+          <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+          <p className="text-red-700">Error loading devices</p>
+        </div>
+        <p className="text-sm text-red-600 mt-2">{(error as Error).message}</p>
       </div>
     );
   }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-medium">Connected Devices</h3>
-        <AnimatedButton 
-          onClick={() => setShowAddForm(!showAddForm)}
-          emotionalState="calm"
-          variant="outline"
-          size="sm"
-        >
-          <PlusCircle className="h-4 w-4 mr-2" />
-          {showAddForm ? 'Cancel' : 'Add Device'}
-        </AnimatedButton>
+  
+  if (!devices || devices.length === 0) {
+    return (
+      <div className="text-center p-8 border rounded-md bg-gray-50">
+        <div className="mx-auto w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+          <Wifi className="h-6 w-6 text-primary" />
+        </div>
+        <h3 className="text-lg font-medium">No Wearable Devices</h3>
+        <p className="text-muted-foreground mb-4">
+          {patientId
+            ? 'This patient doesn\'t have any connected wearable devices.'
+            : 'There are no wearable devices in the system.'}
+        </p>
+        <Button onClick={() => setIsAddDeviceDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Device
+        </Button>
       </div>
-
-      {showAddForm && (
-        <AnimatedCard>
-          <CardHeader>
-            <CardTitle>Add New Wearable Device</CardTitle>
-            <CardDescription>
-              Connect a new wearable device to monitor this patient's health metrics.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <WearableDeviceForm 
-              patientId={patientId} 
-              onSuccess={() => {
-                setShowAddForm(false);
-                queryClient.invalidateQueries({ queryKey: [`/api/patients/${patientId}/wearables`] });
-              }}
-            />
-          </CardContent>
-        </AnimatedCard>
-      )}
-
-      {wearableDevices?.length === 0 ? (
-        <div className="bg-muted/30 border rounded-md p-8 text-center">
-          <p className="text-muted-foreground mb-4">No wearable devices connected</p>
-          {!showAddForm && (
-            <AnimatedButton 
-              onClick={() => setShowAddForm(true)}
-              emotionalState="calm"
-            >
-              <PlusCircle className="h-4 w-4 mr-2" />Add First Device
-            </AnimatedButton>
-          )}
+    );
+  }
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between mb-4">
+        <div>
+          <h3 className="text-lg font-medium">Connected Devices</h3>
+          <p className="text-sm text-muted-foreground">
+            {patientId
+              ? `Manage this patient's connected health monitoring devices`
+              : 'View and manage all connected health monitoring devices'}
+          </p>
         </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {wearableDevices?.map((device: WearableDevice) => (
-            <AnimatedCard key={device.id} hoverEffect="gentle-lift">
-              <CardHeader className="pb-2">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-base">{device.manufacturer} {device.model}</CardTitle>
-                  <Badge
-                    className={`${getConnectionStatusColor(device.connectionStatus)}`}
-                  >
-                    {device.connectionStatus}
-                  </Badge>
+        <Button onClick={() => setIsAddDeviceDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Device
+        </Button>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+        {devices.map((device: WearableDevice) => (
+          <AnimatedCard key={device.id} hoverEffect="gentle-lift">
+            <CardHeader className="pb-2">
+              <div className="flex justify-between items-start">
+                <CardTitle className="text-base">
+                  {device.manufacturer} {device.model}
+                </CardTitle>
+                {getConnectionStatusBadge(device.connectionStatus)}
+              </div>
+              <CardDescription>
+                {device.deviceType.replace('_', ' ')}
+              </CardDescription>
+            </CardHeader>
+            
+            <CardContent>
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Serial Number:</span>
+                  <span className="font-mono">{device.serialNumber}</span>
                 </div>
-                <CardDescription>
-                  {device.deviceType.replace('_', ' ')}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Serial Number:</span>
-                    <span>{device.serialNumber}</span>
-                  </div>
-                  {device.batteryStatus !== null && (
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">Battery:</span>
-                      <div className="flex items-center">
-                        <div className="w-16 h-3 bg-gray-200 rounded-full mr-2 overflow-hidden">
-                          <div 
-                            className={`h-full ${getBatteryStatusColor(device.batteryStatus)}`}
-                            style={{ width: `${device.batteryStatus}%` }}
-                          />
-                        </div>
-                        <span>{device.batteryStatus}%</span>
-                      </div>
-                    </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-muted-foreground">Last Sync:</span>
-                    <span>
-                      {device.lastSyncDate 
-                        ? new Date(device.lastSyncDate).toLocaleString() 
-                        : 'Never'}
-                    </span>
-                  </div>
+                
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Last Sync:</span>
+                  <span>{formatDateRelative(device.lastSyncDate)}</span>
                 </div>
-              </CardContent>
-              <CardFooter className="flex justify-between pt-0">
-                <div className="flex space-x-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => syncDeviceMutation.mutate(device.id)}
-                    disabled={syncDeviceMutation.isPending}
-                  >
-                    {syncDeviceMutation.isPending 
-                      ? <Loader2 className="h-4 w-4 animate-spin" /> 
-                      : <RefreshCw className="h-4 w-4" />}
-                    <span className="sr-only">Sync</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.location.href = `/patients/${patientId}/wearables/${device.id}/data`}
-                  >
-                    <Activity className="h-4 w-4" />
-                    <span className="sr-only">View Data</span>
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => window.location.href = `/patients/${patientId}/wearables/${device.id}/settings`}
-                  >
-                    <Settings className="h-4 w-4" />
-                    <span className="sr-only">Settings</span>
-                  </Button>
+                
+                <div className="flex justify-between text-sm">
+                  <span className="text-muted-foreground">Battery:</span>
+                  {getBatteryStatusIndicator(device.batteryStatus)}
                 </div>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to remove this device?')) {
-                      deleteDeviceMutation.mutate(device.id);
-                    }
-                  }}
-                  disabled={deleteDeviceMutation.isPending}
-                >
-                  {deleteDeviceMutation.isPending 
-                    ? <Loader2 className="h-4 w-4 animate-spin" /> 
-                    : <Trash2 className="h-4 w-4" />}
-                  <span className="sr-only">Remove</span>
-                </Button>
-              </CardFooter>
-            </AnimatedCard>
-          ))}
-        </div>
-      )}
+              </div>
+            </CardContent>
+            
+            <CardFooter className="justify-between pt-0">
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleSyncDevice(device.id)}
+                disabled={syncDeviceMutation.isPending}
+              >
+                {syncDeviceMutation.isPending ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                )}
+                Sync
+              </Button>
+              
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => navigate(`/patients/${device.patientId}/wearables/${device.id}/data`)}
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                View Data
+              </Button>
+            </CardFooter>
+          </AnimatedCard>
+        ))}
+      </div>
+      
+      {/* TODO: Create and implement WearableDeviceForm component for the dialog */}
+      <Dialog open={isAddDeviceDialogOpen} onOpenChange={setIsAddDeviceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Wearable Device</DialogTitle>
+          </DialogHeader>
+          <div className="p-4 text-center">
+            <p>Device form will be implemented here.</p>
+            <Button className="mt-4" onClick={() => setIsAddDeviceDialogOpen(false)}>Close</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
-}
+};
+
+export default WearableDeviceList;
