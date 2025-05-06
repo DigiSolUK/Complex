@@ -213,37 +213,81 @@ export async function registerRoutes(app: Express): Promise<Server> {
     return res.status(401).json({ message: "Unauthorized" });
   });
   
-  // Test superadmin login route - not protected for testing purposes (only for development)
-  app.get("/api/test-login-superadmin", (req, res) => {
-    if (req.isAuthenticated()) {
-      return res.json({ message: "Already logged in", user: req.user });
-    }
-    
-    // Find the admin user
-    storage.getUserByUsername("admin")
-      .then(user => {
-        if (!user) {
-          return res.status(404).json({ message: "Superadmin user not found" });
+  // Combined route to create and login as superadmin - useful for development and troubleshooting
+  app.get("/api/test/create-and-login-superadmin", async (req, res) => {
+    try {
+      if (req.isAuthenticated()) {
+        return res.json({ message: "Already logged in", user: req.user });
+      }
+      
+      // First try to find if the admin user exists
+      let user = await storage.getUserByUsername("admin");
+      
+      // If no admin user exists, create one
+      if (!user) {
+        console.log("Admin user not found, creating superadmin account");
+        const hashedPassword = await cryptoService.hashPassword("admin123");
+        user = await storage.createUser({
+          username: "admin",
+          password: hashedPassword,
+          email: "admin@complexcare.com",
+          name: "System Administrator",
+          role: "superadmin",
+          tenantId: null
+        });
+        console.log("Superadmin account created successfully");
+      }
+      
+      // Log in as admin
+      req.login(user, (err) => {
+        if (err) {
+          console.error("Login error:", err);
+          return res.status(500).json({ message: "Error logging in" });
         }
         
-        // Log in as admin
-        req.login(user, (err) => {
-          if (err) {
-            console.error("Login error:", err);
-            return res.status(500).json({ message: "Error logging in" });
+        // Store an authentication flag in the session
+        req.session.isAuthenticated = true;
+        req.session.userId = user.id;
+        req.session.lastLogin = new Date().toISOString();
+        
+        // Set user ID cookie with settings for secure environment
+        res.cookie('user_id', user.id, {
+          maxAge: 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        });
+        
+        // Explicitly save the session
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error("Session save error:", saveErr);
+            return res.status(500).json({ message: "Error saving session" });
           }
           
-          console.log("Test superadmin login successful");
+          console.log("Superadmin login successful, session saved");
+          console.log("Session ID:", req.sessionID);
+          console.log("Session data:", req.session);
+          
           return res.json({
-            message: "Successfully logged in as superadmin",
-            user: req.user
+            message: "Successfully created and logged in as superadmin",
+            user: req.user,
+            credentials: {
+              username: "admin",
+              password: "admin123"
+            }
           });
         });
-      })
-      .catch(err => {
-        console.error("Error finding superadmin user:", err);
-        return res.status(500).json({ message: "Error finding user" });
       });
+    } catch (err) {
+      console.error("Error in create-and-login-superadmin:", err);
+      return res.status(500).json({ message: "Error processing request" });
+    }
+  });
+  
+  // Legacy route for backward compatibility
+  app.get("/api/test-login-superadmin", (req, res) => {
+    res.redirect('/api/test/create-and-login-superadmin');
   });
   
   // Test session route - not protected for testing purposes

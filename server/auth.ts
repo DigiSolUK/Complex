@@ -219,6 +219,28 @@ class Auth {
         console.log("Session before save:", req.session);
         console.log("Cookie settings:", req.session.cookie);
         
+        // Store an authentication flag in the session
+        req.session.isAuthenticated = true;
+        req.session.userId = user.id;
+        req.session.lastLogin = new Date().toISOString();
+        
+        // In Replit environment, always use secure cookie settings
+        
+        // Set user ID cookie with settings for secure environment
+        res.cookie('user_id', user.id, {
+          maxAge: 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          secure: true,
+          sameSite: 'none'
+        });
+        
+        // Log cookie settings for debugging
+        console.log(`Setting user_id cookie with secure=true, sameSite=none`);
+        
+        // Explicitly set session cookie parameters for secure environment
+        req.session.cookie.secure = true;
+        req.session.cookie.sameSite = 'none';
+        
         // Explicitly save the session to ensure it is stored
         req.session.save((err: Error | null) => {
           if (err) {
@@ -226,32 +248,9 @@ class Auth {
             return next(err);
           }
           
-          // Store an authentication flag in the session
-          req.session.isAuthenticated = true;
-          req.session.userId = user.id;
-          req.session.lastLogin = new Date().toISOString();
-          
-          // In Replit environment, always use secure cookie settings
-          
-          // Set user ID cookie with settings for secure environment
-          res.cookie('user_id', user.id, {
-            maxAge: 24 * 60 * 60 * 1000,
-            httpOnly: true,
-            secure: true,
-            sameSite: 'none'
-          });
-          
-          // Log cookie settings for debugging
-          console.log(`Setting user_id cookie with secure=true, sameSite=none`);
-          
-          // Explicitly set session cookie parameters for secure environment
-          req.session.cookie.secure = true;
-          req.session.cookie.sameSite = 'none';
-          
-          // Log session cookie settings
-          console.log(`Setting session cookie with secure=true, sameSite=none`);
-          
           console.log("Login successful for user ID:", user.id);
+          console.log("Session ID:", req.sessionID);
+          console.log("Session data:", req.session);
           console.log("Response headers being sent:", res.getHeaders());
           
           return res.json(user);

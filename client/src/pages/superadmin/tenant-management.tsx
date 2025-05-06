@@ -167,15 +167,11 @@ export default function TenantManagement() {
           <Button 
             onClick={async () => {
               try {
-                // First create a superadmin if it doesn't exist
-                const createResponse = await fetch('/api/test/create-superadmin');
-                await createResponse.json();
+                // Use our new combined endpoint to create and login in one step
+                const response = await fetch('/api/test/create-and-login-superadmin');
+                const data = await response.json();
                 
-                // Then login as the superadmin
-                const loginResponse = await fetch('/api/test-login-superadmin');
-                const loginData = await loginResponse.json();
-                
-                if (loginResponse.ok) {
+                if (response.ok) {
                   toast({
                     title: "Login Successful",
                     description: "You are now logged in as a superadmin."
@@ -185,7 +181,7 @@ export default function TenantManagement() {
                 } else {
                   toast({
                     title: "Login Failed",
-                    description: loginData.message || "An error occurred.",
+                    description: data.message || "An error occurred.",
                     variant: "destructive"
                   });
                 }
