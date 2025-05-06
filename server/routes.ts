@@ -13,7 +13,7 @@ import tenantThemeRoutes from "./routes/tenant-theme";
 import patientChatbotRoutes from "./routes/patient-chatbot";
 import wearableRoutes from "./routes/wearables";
 import { registerPayrollRoutes } from "./routes/payroll";
-
+import { registerReportRoutes } from "./routes/reports";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // API Integration Settings
@@ -1251,6 +1251,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Payroll routes
   registerPayrollRoutes(app);
+
+  // Enhanced reports and analytics routes
+  registerReportRoutes(app);
 
   // Create HTTP server
   const httpServer = createServer(app);

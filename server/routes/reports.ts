@@ -27,14 +27,18 @@ export function registerReportRoutes(app: any) {
       // @ts-ignore - User is added by the isAuthenticated middleware
       const tenantId = req.user?.tenantId;
 
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
+
       const reports = await db
         .select()
         .from(analyticsReports)
-        .where(eq(analyticsReports.tenantId, tenantId))
+        .where(tenantId ? sql`${analyticsReports.tenantId} = ${tenantId}` : undefined)
         .orderBy(desc(analyticsReports.createdAt));
 
       return res.status(200).json(reports);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error retrieving reports:", error);
       return res.status(500).json({ message: "Failed to retrieve reports", error: error.message });
     }
@@ -511,15 +515,19 @@ export function registerReportRoutes(app: any) {
     try {
       // @ts-ignore - User is added by the isAuthenticated middleware
       const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
 
       const dashboards = await db
         .select()
         .from(reportDashboards)
-        .where(eq(reportDashboards.tenantId, tenantId))
+        .where(tenantId ? sql`${reportDashboards.tenantId} = ${tenantId}` : undefined)
         .orderBy(desc(reportDashboards.createdAt));
 
       return res.status(200).json(dashboards);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error retrieving dashboards:", error);
       return res.status(500).json({ message: "Failed to retrieve dashboards", error: error.message });
     }
@@ -606,11 +614,15 @@ export function registerReportRoutes(app: any) {
     try {
       // @ts-ignore - User is added by the isAuthenticated middleware
       const tenantId = req.user?.tenantId;
+      
+      if (!tenantId) {
+        return res.status(400).json({ message: "Tenant ID is required" });
+      }
 
       const metrics = await db
         .select()
         .from(analyticsMetrics)
-        .where(eq(analyticsMetrics.tenantId, tenantId))
+        .where(tenantId ? sql`${analyticsMetrics.tenantId} = ${tenantId}` : undefined)
         .orderBy(asc(analyticsMetrics.category), asc(analyticsMetrics.metricName));
 
       return res.status(200).json(metrics);
