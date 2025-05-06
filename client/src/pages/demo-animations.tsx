@@ -2,9 +2,109 @@ import React, { useState } from 'react';
 // Use the app layout structure instead of importing a layout component
 import { AnimatedCard } from '@/components/ui/animated-card';
 import { ComfortMessage } from '@/components/ui/animations';
+import { AnimatedButton } from '@/components/ui/animated-button';
+import { cn } from '@/lib/utils';
 import { motion } from 'framer-motion';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+// Patient info transition component for smooth transitions between patient data
+type TransitionType = 'gentle-fade' | 'gentle-slide' | 'scale-fade';
+
+interface PatientInfoTransitionProps {
+  children: React.ReactNode;
+  id: number;
+  isVisible: boolean;
+  transitionType?: TransitionType;
+}
+
+function PatientInfoTransition({ 
+  children, 
+  id, 
+  isVisible, 
+  transitionType = 'gentle-fade' 
+}: PatientInfoTransitionProps) {
+  // Set up animation variants based on transition type
+  const getAnimationVariants = () => {
+    switch (transitionType) {
+      case 'gentle-slide':
+        return {
+          hidden: { opacity: 0, x: -20 },
+          visible: { 
+            opacity: 1, 
+            x: 0,
+            transition: { duration: 0.5, ease: 'easeOut' } 
+          },
+          exit: { 
+            opacity: 0, 
+            x: 20,
+            transition: { duration: 0.3, ease: 'easeIn' } 
+          }
+        };
+      case 'scale-fade':
+        return {
+          hidden: { opacity: 0, scale: 0.95 },
+          visible: { 
+            opacity: 1, 
+            scale: 1,
+            transition: { duration: 0.4, ease: 'easeOut' } 
+          },
+          exit: { 
+            opacity: 0, 
+            scale: 0.95,
+            transition: { duration: 0.3, ease: 'easeIn' } 
+          }
+        };
+      default: // gentle-fade
+        return {
+          hidden: { opacity: 0 },
+          visible: { 
+            opacity: 1,
+            transition: { duration: 0.4 } 
+          },
+          exit: { 
+            opacity: 0,
+            transition: { duration: 0.3 } 
+          }
+        };
+    }
+  };
+
+  if (!isVisible) return null;
+  
+  return (
+    <motion.div
+      key={id}
+      initial="hidden"
+      animate="visible"
+      exit="exit"
+      variants={getAnimationVariants()}
+    >
+      {children}
+    </motion.div>
+  );
+}
+
+// Patient info item component for displaying patient details with styling
+interface PatientInfoItemProps {
+  label: string;
+  value: string;
+  important?: boolean;
+}
+
+function PatientInfoItem({ label, value, important = false }: PatientInfoItemProps) {
+  return (
+    <div className="flex flex-col space-y-1">
+      <span className="text-xs text-muted-foreground">{label}</span>
+      <span className={cn(
+        "text-sm", 
+        important ? "font-semibold text-primary" : "font-medium"
+      )}>
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export default function AnimationsDemo() {
   const [activeTab, setActiveTab] = useState('buttons');
