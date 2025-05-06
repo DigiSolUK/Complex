@@ -89,7 +89,7 @@ export default function TenantManagement() {
   });
 
   // Fetch tenants data
-  const { data: tenants, isLoading, error } = useQuery({
+  const { data: tenants = [], isLoading, error } = useQuery<Tenant[]>({
     queryKey: ["/api/superadmin/tenants"]
   });
 
@@ -118,10 +118,10 @@ export default function TenantManagement() {
   });
 
   // Filter tenants by search query
-  const filteredTenants = tenants ? tenants.filter(tenant => 
+  const filteredTenants = tenants.filter(tenant => 
     tenant.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     tenant.domain.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  );
 
   const onSubmit = (data: z.infer<typeof tenantFormSchema>) => {
     createTenantMutation.mutate(data);
