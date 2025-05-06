@@ -15,6 +15,11 @@ import {
   Shield,
   Layers,
   MessageCircle,
+  FileText,
+  Clock,
+  Wrench,
+  FileCheck,
+  BriefcaseMedical
 } from "lucide-react";
 
 export function Sidebar() {
@@ -121,6 +126,58 @@ export function Sidebar() {
             </div>
           </Link>
 
+          <Link href="/tasks">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/tasks")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <Clock className="h-5 w-5 mr-3" />
+              Tasks
+            </div>
+          </Link>
+
+          <Link href="/documents">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/documents")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <FileText className="h-5 w-5 mr-3" />
+              Documents
+            </div>
+          </Link>
+
+          <Link href="/tools">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/tools")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <Wrench className="h-5 w-5 mr-3" />
+              AI Tools
+            </div>
+          </Link>
+
+          <Link href="/clinical-decision-support">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/clinical-decision-support")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <BriefcaseMedical className="h-5 w-5 mr-3" />
+              Clinical Decision Support
+            </div>
+          </Link>
+
           <div className="mt-6 pt-4 border-t border-neutral-200">
             <h3 className="px-3 text-xs font-semibold text-neutral-500 uppercase tracking-wider">
               AI Features
@@ -149,6 +206,19 @@ export function Sidebar() {
                 >
                   <BarChart2 className="h-5 w-5 mr-3" />
                   AI Analytics
+                </div>
+              </Link>
+
+              <Link href="/compliance-dashboard">
+                <div
+                  className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                    isActive("/compliance-dashboard")
+                      ? "bg-primary-50 text-primary-700"
+                      : "text-neutral-700 hover:bg-neutral-100"
+                  }`}
+                >
+                  <Layers className="h-5 w-5 mr-3" />
+                  Compliance Analytics
                 </div>
               </Link>
             </div>
