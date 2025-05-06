@@ -1,6 +1,16 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
-import { User } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
+
+// Define a User type that matches the actual API response
+type User = {
+  id: number;
+  username: string;
+  email: string;
+  role: "superadmin" | "admin" | "care_staff" | "patient";
+  name: string;
+  createdAt: string | Date | null;
+  tenantId: number | null;
+};
 
 interface AuthContextType {
   user: User | null;
@@ -90,12 +100,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // EMERGENCY FIX: For development, create a mock admin user
       // This bypasses the authentication system issues until they're fixed
       console.log("EMERGENCY FIX: Creating mock admin user for development");
-      const mockUser = {
+      const mockUser: User = {
         id: 1,
         username: username || "admin",
         email: "admin@complexcare.dev",
         name: "Admin User",
-        role: "superadmin",
+        role: "superadmin" as const,
         tenantId: 1,
         createdAt: new Date().toISOString()
       };
@@ -124,7 +134,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         });
         
         console.log("Backend login response status:", res.status);
-        console.log("Response headers:", [...res.headers.entries()]);
+        // Safely log headers without using iterator
+        const headerObj: Record<string, string> = {};
+        res.headers.forEach((value, key) => {
+          headerObj[key] = value;
+        });
+        console.log("Response headers:", headerObj);
         
         if (res.ok) {
           const userData = await res.json();
@@ -167,14 +182,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.log("Demo login - setting up with role:", role);
       
       // Create a demo user based on role
+      // Ensure role is one of the allowed types
+      const safeRole = role === 'admin' ? 'admin' : 
+                      role === 'superadmin' ? 'superadmin' : 
+                      role === 'care_staff' ? 'care_staff' : 
+                      role === 'patient' ? 'patient' : 'care_staff';
+                      
       const demoUser: User = {
         id: 999,
-        username: `demo_${role}`,
-        email: `demo_${role}@example.com`,
-        name: role === 'admin' ? 'Demo Administrator' : 'Demo Care Staff',
-        role: role as any,
+        username: `demo_${safeRole}`,
+        email: `demo_${safeRole}@example.com`,
+        name: safeRole === 'admin' ? 'Demo Administrator' : 'Demo Care Staff',
+        role: safeRole,
         tenantId: 1,
-        createdAt: new Date().toISOString() as any
+        createdAt: new Date().toISOString()
       };
       
       // Set demo mode and user
