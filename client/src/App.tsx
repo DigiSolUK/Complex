@@ -1,7 +1,7 @@
 import { Switch, Route, useLocation } from "wouter";
 import React, { useEffect } from "react";
 import AuthPage from "@/pages/auth-page";
-import { queryClient } from "./lib/queryClient";
+import { queryClient } from "./lib/query-client";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -29,6 +29,7 @@ import Timesheets from "@/pages/timesheets";
 import Compliance from "@/pages/compliance";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
+import PayrollPage from "@/pages/payroll";
 import Login from "@/pages/login";
 import TestLogin from "@/pages/test-login";
 import DemoLogin from "@/pages/demo-login";
@@ -240,6 +241,9 @@ function Router() {
           </Route>
           <Route path="/settings">
             {(params) => <ProtectedRoute component={Settings} params={params} />}
+          </Route>
+          <Route path="/payroll">
+            {(params) => <ProtectedRoute component={PayrollPage} params={params} />}
           </Route>
 
           {/* AI Tools Routes */}
