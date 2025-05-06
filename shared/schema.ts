@@ -303,6 +303,162 @@ export const insertChatHistorySchema = createInsertSchema(chatHistory).omit({
 export type InsertChatHistory = z.infer<typeof insertChatHistorySchema>;
 export type ChatHistory = typeof chatHistory.$inferSelect;
 
+// Analytics and report data
+export const analyticsReports = pgTable("analytics_reports", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  title: text("title").notNull(),
+  description: text("description"),
+  reportType: text("report_type", {
+    enum: [
+      "patient_summary",
+      "staff_performance",
+      "appointment_analysis",
+      "care_plan_metrics",
+      "financial_analysis",
+      "medication_administration", 
+      "clinical_outcomes",
+      "operational_efficiency",
+      "custom"
+    ]
+  }).notNull(),
+  parameters: json("parameters").default({}),
+  generatedData: json("generated_data").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date").notNull(),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  isTemplate: boolean("is_template").default(false),
+  scheduledFrequency: text("scheduled_frequency", {
+    enum: ["daily", "weekly", "monthly", "quarterly", "yearly", "none"]
+  }).default("none"),
+  lastRun: timestamp("last_run"),
+  nextScheduledRun: timestamp("next_scheduled_run"),
+  visualizationSettings: json("visualization_settings").default({}),
+});
+
+export const analyticsMetrics = pgTable("analytics_metrics", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  metricName: text("metric_name").notNull(),
+  metricKey: text("metric_key").notNull(),
+  metricType: text("metric_type", {
+    enum: ["count", "sum", "average", "ratio", "percentage", "custom"]
+  }).notNull(),
+  category: text("category", {
+    enum: ["patient", "staff", "appointment", "care_plan", "financial", "medication", "clinical", "operational"]
+  }).notNull(),
+  calculation: text("calculation"),
+  description: text("description"),
+  visualization: text("visualization", {
+    enum: ["bar", "line", "pie", "table", "kpi", "map", "custom"]
+  }).default("bar"),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  metadata: json("metadata").default({}),
+});
+
+export const analyticsDataSources = pgTable("analytics_data_sources", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  name: text("name").notNull(),
+  sourceType: text("source_type", {
+    enum: ["internal", "external_api", "file_import", "manual_entry"]
+  }).notNull(),
+  connectionDetails: json("connection_details").default({}),
+  refreshFrequency: text("refresh_frequency", {
+    enum: ["real_time", "hourly", "daily", "weekly", "monthly", "manual"]
+  }).default("daily"),
+  lastRefresh: timestamp("last_refresh"),
+  nextScheduledRefresh: timestamp("next_scheduled_refresh"),
+  isActive: boolean("is_active").default(true),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  metadata: json("metadata").default({}),
+});
+
+export const reportDashboards = pgTable("report_dashboards", {
+  id: serial("id").primaryKey(),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  name: text("name").notNull(),
+  description: text("description"),
+  layout: json("layout").notNull(),
+  isPublic: boolean("is_public").default(false),
+  createdBy: integer("created_by").references(() => users.id),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at"),
+  dashboardType: text("dashboard_type", {
+    enum: ["executive", "clinical", "operational", "financial", "custom"]
+  }).default("custom"),
+  permission: text("permission", { 
+    enum: ["public", "tenant", "role", "user"]
+  }).default("tenant"),
+  permissionDetails: json("permission_details").default({}),
+});
+
+export const reportExports = pgTable("report_exports", {
+  id: serial("id").primaryKey(),
+  reportId: integer("report_id").references(() => analyticsReports.id).notNull(),
+  exportFormat: text("export_format", {
+    enum: ["pdf", "csv", "excel", "json"]
+  }).notNull(),
+  fileName: text("file_name").notNull(),
+  filePath: text("file_path").notNull(),
+  fileSize: integer("file_size"),
+  exportedBy: integer("exported_by").references(() => users.id),
+  exportedAt: timestamp("exported_at").defaultNow().notNull(),
+  metadata: json("metadata").default({}),
+});
+
+// Insert schemas for analytics tables
+export const insertAnalyticsReportSchema = createInsertSchema(analyticsReports).omit({
+  id: true,
+  createdAt: true,
+  lastRun: true,
+});
+
+export const insertAnalyticsMetricSchema = createInsertSchema(analyticsMetrics).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertAnalyticsDataSourceSchema = createInsertSchema(analyticsDataSources).omit({
+  id: true,
+  createdAt: true,
+  lastRefresh: true,
+  nextScheduledRefresh: true,
+});
+
+export const insertReportDashboardSchema = createInsertSchema(reportDashboards).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export const insertReportExportSchema = createInsertSchema(reportExports).omit({
+  id: true,
+  exportedAt: true,
+});
+
+// Types for analytics and reports
+export type InsertAnalyticsReport = z.infer<typeof insertAnalyticsReportSchema>;
+export type AnalyticsReport = typeof analyticsReports.$inferSelect;
+
+export type InsertAnalyticsMetric = z.infer<typeof insertAnalyticsMetricSchema>;
+export type AnalyticsMetric = typeof analyticsMetrics.$inferSelect;
+
+export type InsertAnalyticsDataSource = z.infer<typeof insertAnalyticsDataSourceSchema>;
+export type AnalyticsDataSource = typeof analyticsDataSources.$inferSelect;
+
+export type InsertReportDashboard = z.infer<typeof insertReportDashboardSchema>;
+export type ReportDashboard = typeof reportDashboards.$inferSelect;
+
+export type InsertReportExport = z.infer<typeof insertReportExportSchema>;
+export type ReportExport = typeof reportExports.$inferSelect;
+
 // Patient Documents
 export const documents = pgTable("documents", {
   id: serial("id").primaryKey(),
