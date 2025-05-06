@@ -19,6 +19,7 @@ import {
   Clock,
   Wrench,
   FileCheck,
+  CalendarDays,
   BriefcaseMedical
 } from "lucide-react";
 
@@ -149,6 +150,19 @@ export function Sidebar() {
             >
               <Clock className="h-5 w-5 mr-3" />
               Tasks
+            </div>
+          </Link>
+
+          <Link href="/timesheets">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/timesheets")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <CalendarDays className="h-5 w-5 mr-3" />
+              Timesheets
             </div>
           </Link>
 
