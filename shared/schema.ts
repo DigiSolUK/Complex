@@ -545,6 +545,97 @@ export const insertPatientCommunicationSchema = createInsertSchema(patientCommun
   createdAt: true,
 });
 
+// Care Plan Templates
+export const carePlanTemplates = pgTable("care_plan_templates", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category", { 
+    enum: ["general", "physical", "mental", "palliative", "chronic", "post-hospital", "rehabilitation"] 
+  }).notNull().default("general"),
+  assessments: json("assessments").default([]),
+  goals: json("goals").default([]),
+  interventions: json("interventions").default([]),
+  medicationRefs: json("medication_refs").default([]),
+  reviewFrequency: text("review_frequency"), // e.g., "weekly", "monthly", "quarterly"
+  suitableConditions: text("suitable_conditions").array(),
+  targetAudience: text("target_audience"),
+  estimatedDuration: text("estimated_duration"), // e.g., "3 months", "6 weeks"
+  evidenceBase: text("evidence_base"),
+  createdBy: integer("created_by").references(() => users.id),
+  tenantId: integer("tenant_id").references(() => tenants.id),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertCarePlanTemplateSchema = createInsertSchema(carePlanTemplates).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Medication Administration Records (MAR)
+export const medicationAdministrationRecords = pgTable("medication_administration_records", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  medicationName: text("medication_name").notNull(),
+  dose: text("dose").notNull(),
+  unit: text("unit").notNull(), // e.g., "mg", "ml", "tablet"
+  route: text("route").notNull(), // e.g., "oral", "injection", "topical"
+  frequency: text("frequency").notNull(), // e.g., "twice daily", "every 8 hours"
+  scheduledDateTime: timestamp("scheduled_date_time").notNull(),
+  administrationDateTime: timestamp("administration_date_time"),
+  administeredBy: integer("administered_by").references(() => careStaff.id),
+  status: text("status", { 
+    enum: ["scheduled", "administered", "missed", "refused", "held", "cancelled"] 
+  }).notNull().default("scheduled"),
+  notes: text("notes"),
+  witness: integer("witness").references(() => careStaff.id),
+  prescribedBy: text("prescribed_by"),
+  prescriptionDate: timestamp("prescription_date"),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertMedicationAdministrationRecordSchema = createInsertSchema(medicationAdministrationRecords).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+// Patient Medication Details
+export const patientMedications = pgTable("patient_medications", {
+  id: serial("id").primaryKey(),
+  patientId: integer("patient_id").references(() => patients.id).notNull(),
+  medicationName: text("medication_name").notNull(),
+  dose: text("dose").notNull(),
+  unit: text("unit").notNull(),
+  route: text("route").notNull(),
+  frequency: text("frequency").notNull(),
+  startDate: timestamp("start_date").notNull(),
+  endDate: timestamp("end_date"),
+  isActive: boolean("is_active").default(true),
+  instructions: text("instructions"),
+  reason: text("reason"),
+  prescribedBy: text("prescribed_by"),
+  prescriptionDate: timestamp("prescription_date"),
+  pharmacy: text("pharmacy"),
+  allergies: text("allergies").array(),
+  sideEffects: text("side_effects").array(),
+  interactions: text("interactions").array(),
+  metadata: json("metadata"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at"),
+});
+
+export const insertPatientMedicationSchema = createInsertSchema(patientMedications).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
 // Types
 export type InsertWearableDevice = z.infer<typeof insertWearableDeviceSchema>;
 export type WearableDevice = typeof wearableDevices.$inferSelect;
@@ -560,3 +651,12 @@ export type MsIntegration = typeof msIntegrations.$inferSelect;
 
 export type InsertPatientCommunication = z.infer<typeof insertPatientCommunicationSchema>;
 export type PatientCommunication = typeof patientCommunications.$inferSelect;
+
+export type InsertCarePlanTemplate = z.infer<typeof insertCarePlanTemplateSchema>;
+export type CarePlanTemplate = typeof carePlanTemplates.$inferSelect;
+
+export type InsertMedicationAdministrationRecord = z.infer<typeof insertMedicationAdministrationRecordSchema>;
+export type MedicationAdministrationRecord = typeof medicationAdministrationRecords.$inferSelect;
+
+export type InsertPatientMedication = z.infer<typeof insertPatientMedicationSchema>;
+export type PatientMedication = typeof patientMedications.$inferSelect;
