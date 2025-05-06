@@ -20,7 +20,7 @@ import CarePlans from "@/pages/care-plans";
 import CarePlanDetail from "@/pages/care-plan-detail";
 import Staff from "@/pages/staff";
 import Tasks from "@/pages/tasks";
-import Documents from "@/pages/documents_fixed";
+import Documents from "@/pages/documents";
 import CareProfessionals from "@/pages/care-professionals";
 import Timesheets from "@/pages/timesheets";
 import Compliance from "@/pages/compliance";
