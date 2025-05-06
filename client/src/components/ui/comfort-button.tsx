@@ -24,9 +24,9 @@ export function ComfortButton({
   const [key, setKey] = React.useState(0);
 
   // Map emotional state to button variant
-  const variantMap = {
-    success: 'success',
-    warning: 'warning',
+  const variantMap: Record<string, "default" | "destructive" | "outline" | "secondary" | "ghost" | "link"> = {
+    success: 'default',
+    warning: 'default',
     error: 'destructive',
     neutral: 'default',
     empathetic: 'outline',
