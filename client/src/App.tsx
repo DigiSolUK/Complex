@@ -21,6 +21,7 @@ import CarePlanDetail from "@/pages/care-plan-detail";
 import Staff from "@/pages/staff";
 import Tasks from "@/pages/tasks";
 import Documents from "@/pages/documents_fixed";
+import CareProfessionals from "@/pages/care-professionals";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
@@ -213,6 +214,9 @@ function Router() {
           </Route>
           <Route path="/staff">
             {(params) => <ProtectedRoute component={Staff} params={params} />}
+          </Route>
+          <Route path="/care-professionals">
+            {(params) => <ProtectedRoute component={CareProfessionals} params={params} />}
           </Route>
           <Route path="/tasks">
             {(params) => <ProtectedRoute component={Tasks} params={params} />}

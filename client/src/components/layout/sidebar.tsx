@@ -125,6 +125,19 @@ export function Sidebar() {
               Staff
             </div>
           </Link>
+          
+          <Link href="/care-professionals">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/care-professionals")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <FileCheck className="h-5 w-5 mr-3" />
+              Care Professionals
+            </div>
+          </Link>
 
           <Link href="/tasks">
             <div
