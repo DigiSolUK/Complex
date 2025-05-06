@@ -1,0 +1,37 @@
+[vite] connecting...
+[vite] connected.
+Applied theme: default darkMode: false
+Theme colors: 
+Object {primary: "#00b8d4", secondary: "#00838f", accent: "#2979ff", background: "#f2f8fc", text: "#172554", …}
+Auth check - sending request to /api/auth/me
+Auth check response status: 401
+Not authenticated, status: 401
+Auth check response status: 401
+Not authenticated, status: 401
+Warning: Cannot update a component (&#x60;Router&#x60;) while rendering a different component (&#x60;Route&#x60;). To locate the bad setState() call inside &#x60;Route&#x60;, follow the stack trace as described in https://reactjs.org/link/setstate-in-render
+Route@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:323:14
+Switch@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/wouter.js:380:27
+Router@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/src/App.tsx:155:61
+ThemeProvider@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/src/context/theme-context.tsx:105:5
+AuthProvider@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/src/context/auth-context.tsx:41:5
+TooltipProviderProvider@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/chunk-OXZDJRWN.js:38:13
+TooltipProvider@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@radix-ui_react-tooltip.js:65:43
+QueryClientProvider@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/@fs/home/runner/workspace/node_modules/.vite/deps/@tanstack_react-query.js:2805:9
+App
+AuthProvider@https://3bc5750f-6a0c-4ed3-bc21-6394f3777736-00-16aojsjqfffw9.picard.replit.dev/src/context/auth-context.tsx:41:5
+Login - attempting to authenticate with 
+Object {username: "admin"}
+EMERGENCY FIX: Creating mock admin user for development
+Mock login successful 
+Object {id: 1, username: "admin", email: "admin@complexcare.dev", name: "Admin User", role: "superadmin", …}
+Applied theme: purple darkMode: false
+Theme colors: 
+Object {text: "#172554", error: "#ff3d00", accent: "#d8b4fe", primary: "#7e22ce", success: "#00c853", …}
+Backend login response status: 200
+Response headers: 
+Object {content-length: "151", content-type: "application/json; charset=utf-8", date: "Tue, 06 May 2025 15:35:48 GMT", etag: "W/"97-6uIhr3MHKsjGhaScsMYagTXyqz4"", replit-cluster: "picard", …}
+Backend login successful, user data received 
+Object {id: 1, username: "admin", email: "admin@complexcare.dev", role: "superadmin", name: "Admin User", …}
+Applied theme: purple darkMode: false
+Theme colors: 
+Object {text: "#172554", error: "#ff3d00", accent: "#d8b4fe", primary: "#7e22ce", success: "#00c853", …}
