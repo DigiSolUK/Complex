@@ -139,6 +139,19 @@ export function Sidebar() {
               Care Professionals
             </div>
           </Link>
+          
+          <Link href="/compliance">
+            <div
+              className={`flex items-center px-3 py-2 text-sm font-medium rounded-md cursor-pointer ${
+                isActive("/compliance")
+                  ? "bg-primary-50 text-primary-700"
+                  : "text-neutral-700 hover:bg-neutral-100"
+              }`}
+            >
+              <Shield className="h-5 w-5 mr-3" />
+              Compliance
+            </div>
+          </Link>
 
           <Link href="/tasks">
             <div

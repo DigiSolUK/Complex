@@ -23,6 +23,7 @@ import Tasks from "@/pages/tasks";
 import Documents from "@/pages/documents_fixed";
 import CareProfessionals from "@/pages/care-professionals";
 import Timesheets from "@/pages/timesheets";
+import Compliance from "@/pages/compliance";
 import Reports from "@/pages/reports";
 import Settings from "@/pages/settings";
 import Login from "@/pages/login";
@@ -227,6 +228,9 @@ function Router() {
           </Route>
           <Route path="/timesheets">
             {(params) => <ProtectedRoute component={Timesheets} params={params} />}
+          </Route>
+          <Route path="/compliance">
+            {(params) => <ProtectedRoute component={Compliance} params={params} />}
           </Route>
           <Route path="/reports">
             {(params) => <ProtectedRoute component={Reports} params={params} />}
