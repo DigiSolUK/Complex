@@ -570,12 +570,12 @@ export default function Documents() {
           <div className="flex items-center space-x-4 mb-4">
             <div className="flex items-center space-x-2">
               <Label htmlFor="filter-category" className="whitespace-nowrap text-sm">Category:</Label>
-              <Select value={selectedCategory || ''} onValueChange={(value) => setSelectedCategory(value || null)}>
+              <Select value={selectedCategory || 'all-categories'} onValueChange={(value) => setSelectedCategory(value === 'all-categories' ? null : value)}>
                 <SelectTrigger id="filter-category" className="h-8 w-[180px]">
                   <SelectValue placeholder="All Categories" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Categories</SelectItem>
+                  <SelectItem value="all-categories">All Categories</SelectItem>
                   {categories.map((category) => (
                     <SelectItem key={category} value={category}>{category}</SelectItem>
                   ))}
@@ -584,12 +584,12 @@ export default function Documents() {
             </div>
             <div className="flex items-center space-x-2">
               <Label htmlFor="filter-type" className="whitespace-nowrap text-sm">Type:</Label>
-              <Select value={selectedType || ''} onValueChange={(value) => setSelectedType(value as Document['type'] || null)}>
+              <Select value={selectedType || 'all-types'} onValueChange={(value) => setSelectedType(value === 'all-types' ? null : value as Document['type'])}>
                 <SelectTrigger id="filter-type" className="h-8 w-[160px]">
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Types</SelectItem>
+                  <SelectItem value="all-types">All Types</SelectItem>
                   {types.map((type) => (
                     <SelectItem key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</SelectItem>
                   ))}
