@@ -96,6 +96,7 @@ export default function TenantManagement() {
   // Create tenant mutation
   const createTenantMutation = useMutation({
     mutationFn: async (data: z.infer<typeof tenantFormSchema>) => {
+      // Fix the endpoint to match the server route structure
       const response = await apiRequest("POST", "/api/superadmin/tenants", data);
       return await response.json();
     },
