@@ -6,6 +6,19 @@ import { eq, and, desc, gte } from 'drizzle-orm';
 
 const router = Router();
 
+// Get all wearable devices
+router.get('/api/wearables', auth.isAuthenticated, async (req, res) => {
+  try {
+    const devices = await db.select().from(wearableDevices)
+      .orderBy(desc(wearableDevices.lastSyncDate));
+
+    res.json(devices);
+  } catch (error) {
+    console.error('Error fetching all wearable devices:', error);
+    res.status(500).json({ message: 'Failed to fetch wearable devices' });
+  }
+});
+
 // Get all wearable devices for a patient
 router.get('/patients/:patientId/wearables', auth.isAuthenticated, async (req, res) => {
   try {

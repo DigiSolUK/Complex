@@ -16,6 +16,8 @@ import PatientSupportTool from "@/pages/tools/patient-support";
 import AnalyticsTool from "@/pages/tools/analytics";
 import ComplianceTool from "@/pages/tools/compliance";
 import AnimationsDemo from "@/pages/demo-animations";
+import WearableDevices from "@/pages/wearable-devices";
+import WearableDeviceData from "@/pages/wearable-device-data";
 import Appointments from "@/pages/appointments";
 import CarePlans from "@/pages/care-plans";
 import CarePlanDetail from "@/pages/care-plan-detail";
@@ -260,6 +262,17 @@ function Router() {
           {/* Animation Demo Route */}
           <Route path="/demo-animations">
             {(params) => <ProtectedRoute component={AnimationsDemo} params={params} />}
+          </Route>
+          
+          {/* Wearable Devices Routes */}
+          <Route path="/wearable-devices">
+            {(params) => <ProtectedRoute component={WearableDevices} params={params} />}
+          </Route>
+          <Route path="/patients/:patientId/wearables">
+            {(params) => <ProtectedRoute component={WearableDevices} params={params} />}
+          </Route>
+          <Route path="/patients/:patientId/wearables/:deviceId/data">
+            {(params) => <ProtectedRoute component={WearableDeviceData} params={params} />}
           </Route>
           
           {/* Legacy routes - will eventually be redirected to new tools section */}
