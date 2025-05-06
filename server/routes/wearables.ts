@@ -218,7 +218,7 @@ router.get('/patients/:patientId/wearables/:deviceId/readings', auth.isAuthentic
 
     // Add reading type filter if provided
     if (readingType) {
-      query = query.where(eq(deviceReadings.readingType, readingType));
+      query = query.where(eq(deviceReadings.readingType as any, readingType as any));
     }
 
     const readings = await query;
@@ -339,7 +339,8 @@ async function generateMockReadings(device: any) {
   
   if (readings.length > 0) {
     try {
-      await db.insert(deviceReadings).values(readings);
+      // Cast to any to overcome type issues
+      await db.insert(deviceReadings).values(readings as any[]);
     } catch (error) {
       console.error('Error inserting mock readings:', error);
     }

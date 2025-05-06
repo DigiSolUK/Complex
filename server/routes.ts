@@ -11,6 +11,7 @@ import nhsDigitalRoutes from "./routes/superadmin/nhs-integration";
 import tenantRoutes from "./routes/superadmin/tenants";
 import tenantThemeRoutes from "./routes/tenant-theme";
 import patientChatbotRoutes from "./routes/patient-chatbot";
+import wearableRoutes from "./routes/wearables";
 
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -1090,6 +1091,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
   
   // Patient chatbot routes
   app.use('/api/patient-chatbot', patientChatbotRoutes);
+
+  // Wearable device routes
+  app.use('/', wearableRoutes);
 
   // Create HTTP server
   const httpServer = createServer(app);
