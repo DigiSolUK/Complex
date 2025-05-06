@@ -149,7 +149,7 @@ export function Sidebar() {
               }`}
             >
               <Shield className="h-5 w-5 mr-3" />
-              Compliance
+              Compliance Management
             </div>
           </Link>
 
@@ -260,7 +260,7 @@ export function Sidebar() {
                   }`}
                 >
                   <Layers className="h-5 w-5 mr-3" />
-                  Compliance Checks
+                  Compliance Scanner
                 </div>
               </Link>
             </div>
