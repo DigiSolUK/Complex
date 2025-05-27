@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import { Calendar, Download } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -7,6 +10,14 @@ import IncidentsByServiceChart from "@/components/charts/incidents-by-service-ch
 import IncidentTrendChart from "@/components/charts/incident-trend-chart"
 
 export default function AnalyticsPage() {
+  const [timePeriod, setTimePeriod] = useState("30days")
+
+  // Add a function to handle data export
+  const handleExportData = () => {
+    // In a real app, this would generate and download a CSV/Excel file
+    alert("Analytics data export initiated")
+  }
+
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-2">
@@ -16,7 +27,7 @@ export default function AnalyticsPage() {
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Select defaultValue="30days">
+          <Select defaultValue="30days" onValueChange={(value) => setTimePeriod(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Time period" />
             </SelectTrigger>
@@ -31,7 +42,7 @@ export default function AnalyticsPage() {
             <Calendar className="h-4 w-4" />
           </Button>
         </div>
-        <Button variant="outline" className="gap-1">
+        <Button variant="outline" className="gap-1" onClick={handleExportData}>
           <Download className="h-4 w-4" />
           Export Data
         </Button>

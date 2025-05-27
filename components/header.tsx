@@ -25,7 +25,7 @@ export default function Header({ onMenuClick }: HeaderProps) {
   const [searchOpen, setSearchOpen] = useState(false)
 
   return (
-    <header className="fixed top-0 right-0 left-0 md:left-64 z-40 flex h-16 items-center gap-4 border-b border-[#e6ecff] bg-[#f8f9ff] px-4 md:px-6">
+    <header className="fixed top-0 right-0 left-0 md:left-64 z-40 flex h-16 items-center gap-4 border-b border-[#ECEDEE] bg-white px-4 md:px-6">
       <Sheet>
         <SheetTrigger asChild>
           <Button variant="ghost" size="icon" className="md:hidden" onClick={onMenuClick}>

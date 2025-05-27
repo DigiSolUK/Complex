@@ -1,7 +1,19 @@
 "use client"
 
 import { useState } from "react"
-import { AlertTriangle, Bell, CheckCircle, Clock, Link2, MessageSquare, Send, User, Users } from "lucide-react"
+import {
+  AlertTriangle,
+  Bell,
+  CheckCircle,
+  Clock,
+  FileText,
+  Link2,
+  MessageSquare,
+  Send,
+  Shield,
+  User,
+  Users,
+} from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +21,8 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
+import { Label } from "@/components/ui/label"
 
 interface IncidentDetailProps {
   incident: any
@@ -16,6 +30,12 @@ interface IncidentDetailProps {
 
 export default function IncidentDetail({ incident }: IncidentDetailProps) {
   const [newNote, setNewNote] = useState("")
+  const [regulatoryImpact, setRegulatoryImpact] = useState({
+    hasRegulatoryImpact: false,
+    impactLevel: "low",
+    requiresReporting: false,
+    reportingDeadline: "",
+  })
 
   const timelineEvents = [
     {
@@ -179,6 +199,13 @@ export default function IncidentDetail({ incident }: IncidentDetailProps) {
     }
   }
 
+  const handleRegulatoryImpactChange = (field: string, value: any) => {
+    setRegulatoryImpact((prev) => ({
+      ...prev,
+      [field]: value,
+    }))
+  }
+
   return (
     <div className="grid gap-6">
       <div className="flex flex-col gap-2">
@@ -200,10 +227,16 @@ export default function IncidentDetail({ incident }: IncidentDetailProps) {
       <div className="grid gap-6 md:grid-cols-3">
         <div className="md:col-span-2">
           <Tabs defaultValue="timeline" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="timeline">Timeline</TabsTrigger>
               <TabsTrigger value="alerts">Related Alerts ({relatedAlerts.length})</TabsTrigger>
               <TabsTrigger value="runbooks">Runbooks</TabsTrigger>
+              <TabsTrigger value="regulatory">
+                <div className="flex items-center gap-1">
+                  <Shield className="h-4 w-4" />
+                  Regulatory
+                </div>
+              </TabsTrigger>
             </TabsList>
             <TabsContent value="timeline" className="border rounded-md mt-6">
               <div className="p-4 border-b">
@@ -322,6 +355,104 @@ export default function IncidentDetail({ incident }: IncidentDetailProps) {
                 </Card>
               </div>
             </TabsContent>
+            <TabsContent value="regulatory" className="border rounded-md mt-6 p-4">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-[#8855cc]" />
+                    Regulatory Impact Assessment
+                  </h3>
+                  <Button variant="outline" size="sm" className="gap-1">
+                    <FileText className="h-4 w-4" />
+                    Generate FCA Report
+                  </Button>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="hasRegulatoryImpact"
+                      checked={regulatoryImpact.hasRegulatoryImpact}
+                      onCheckedChange={(checked) =>
+                        handleRegulatoryImpactChange("hasRegulatoryImpact", checked === true)
+                      }
+                    />
+                    <Label htmlFor="hasRegulatoryImpact" className="font-medium">
+                      This incident has regulatory impact
+                    </Label>
+                  </div>
+
+                  {regulatoryImpact.hasRegulatoryImpact && (
+                    <>
+                      <div className="grid gap-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="impactLevel">Regulatory Impact Level</Label>
+                          <Select
+                            value={regulatoryImpact.impactLevel}
+                            onValueChange={(value) => handleRegulatoryImpactChange("impactLevel", value)}
+                          >
+                            <SelectTrigger id="impactLevel">
+                              <SelectValue placeholder="Select impact level" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="low">Low - No customer impact</SelectItem>
+                              <SelectItem value="medium">Medium - Limited customer impact</SelectItem>
+                              <SelectItem value="high">High - Significant customer impact</SelectItem>
+                              <SelectItem value="critical">Critical - Service outage</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Checkbox
+                            id="requiresReporting"
+                            checked={regulatoryImpact.requiresReporting}
+                            onCheckedChange={(checked) =>
+                              handleRegulatoryImpactChange("requiresReporting", checked === true)
+                            }
+                          />
+                          <Label htmlFor="requiresReporting">Requires FCA reporting</Label>
+                        </div>
+
+                        {regulatoryImpact.requiresReporting && (
+                          <div className="space-y-2">
+                            <Label htmlFor="reportingDeadline">Reporting Deadline</Label>
+                            <Select
+                              value={regulatoryImpact.reportingDeadline}
+                              onValueChange={(value) => handleRegulatoryImpactChange("reportingDeadline", value)}
+                            >
+                              <SelectTrigger id="reportingDeadline">
+                                <SelectValue placeholder="Select deadline" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="24h">24 hours</SelectItem>
+                                <SelectItem value="48h">48 hours</SelectItem>
+                                <SelectItem value="72h">72 hours</SelectItem>
+                                <SelectItem value="7d">7 days</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </div>
+
+                      <Card>
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-base">FCA Reporting Requirements</CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="text-sm space-y-2">
+                            <p>• Critical incidents must be reported within 24 hours</p>
+                            <p>• High impact incidents must be reported within 72 hours</p>
+                            <p>• All incidents affecting critical services must be included in quarterly reports</p>
+                            <p>• Detailed root cause analysis must be submitted within 7 days of resolution</p>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
           </Tabs>
         </div>
 
@@ -393,6 +524,15 @@ export default function IncidentDetail({ incident }: IncidentDetailProps) {
 
                 <div className="text-muted-foreground">Team</div>
                 <div className="font-medium">Database Team</div>
+
+                <div className="text-muted-foreground">Regulatory Impact</div>
+                <div className="font-medium flex items-center">
+                  {regulatoryImpact.hasRegulatoryImpact ? (
+                    <Badge className="bg-[#ffcc99] text-[#cc8855] border-0">Yes</Badge>
+                  ) : (
+                    <Badge variant="outline">No</Badge>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -411,6 +551,7 @@ export default function IncidentDetail({ incident }: IncidentDetailProps) {
                   <SelectItem value="slack-incidents">#incidents (Slack)</SelectItem>
                   <SelectItem value="teams-sre">SRE Team (Teams)</SelectItem>
                   <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="compliance">Compliance Team</SelectItem>
                 </SelectContent>
               </Select>
               <Button variant="outline" className="w-full">

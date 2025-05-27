@@ -20,12 +20,12 @@ export default function ClientLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        <title>AlertOps - Incident Management Platform</title>
+        <title>Nexus Command Center - Incident Management Platform</title>
         <meta name="description" content="Real-time incident management and alert correlation platform" />
       </head>
       <body className={`${inter.className} antialiased`}>
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="relative min-h-screen bg-[#f8f9ff]">
+          <div className="relative min-h-screen bg-white">
             <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
             <div className="flex flex-col pl-0 md:pl-64">
               <Header onMenuClick={() => setSidebarOpen(true)} />

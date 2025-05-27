@@ -4,17 +4,32 @@ import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { AlertTriangle, Bell, ChevronDown, Clock, Cog, LayoutDashboard, LineChart, Plug, Users, X } from "lucide-react"
+import {
+  AlertTriangle,
+  Bell,
+  BrainCircuit,
+  ChevronDown,
+  Clock,
+  Cog,
+  LayoutDashboard,
+  LineChart,
+  Plug,
+  Shield,
+  Users,
+  X,
+} from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
+import { Badge } from "@/components/ui/badge"
 
 interface SidebarItem {
   title: string
   href: string
   icon: React.ReactNode
   submenu?: { title: string; href: string }[]
+  badge?: string
 }
 
 export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
@@ -61,6 +76,17 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       ],
     },
     {
+      title: "AI Monitoring",
+      href: "/settings/ai-monitoring",
+      icon: <BrainCircuit className="h-5 w-5" />,
+      badge: "New",
+      submenu: [
+        { title: "Insights", href: "/settings/ai-monitoring/insights" },
+        { title: "Configuration", href: "/settings/ai-monitoring" },
+        { title: "Model Training", href: "/settings/ai-monitoring/training" },
+      ],
+    },
+    {
       title: "Teams",
       href: "/teams",
       icon: <Users className="h-5 w-5" />,
@@ -76,6 +102,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       icon: <LineChart className="h-5 w-5" />,
     },
     {
+      title: "Compliance",
+      href: "/compliance",
+      icon: <Shield className="h-5 w-5" />,
+      submenu: [
+        { title: "FCA Reporting", href: "/compliance" },
+        { title: "Audit Logs", href: "/compliance?tab=audit" },
+        { title: "Policies", href: "/compliance/policies" },
+      ],
+    },
+    {
       title: "Settings",
       href: "/settings",
       icon: <Cog className="h-5 w-5" />,
@@ -89,15 +125,15 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-[#f0f4ff] border-r border-[#e6ecff] transition-transform duration-200 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white border-r border-[#ECEDEE] transition-transform duration-200 ease-in-out",
           isMobile && !isOpen ? "-translate-x-full" : "translate-x-0",
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-[#e6ecff] bg-[#f0f4ff]">
+          <div className="flex items-center justify-between h-16 px-4 border-b border-[#ECEDEE] bg-white">
             <Link href="/" className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-[#cc66aa]" />
-              <span className="text-xl font-bold text-gray-800">AlertOps</span>
+              <AlertTriangle className="h-6 w-6 text-[#006FCF]" />
+              <span className="text-xl font-bold text-[#00175A]">Nexus Command</span>
             </Link>
             {isMobile && (
               <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
@@ -114,13 +150,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                       <Button
                         variant="ghost"
                         className={cn(
-                          "w-full justify-between font-normal hover:bg-[#e6ecff] hover:text-[#8855cc]",
-                          pathname.startsWith(item.href) && "bg-[#e6ecff] text-[#8855cc] font-medium",
+                          "w-full justify-between font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF]",
+                          pathname.startsWith(item.href) && "bg-[#E6F2FF] text-[#006FCF] font-medium",
                         )}
                       >
                         <div className="flex items-center">
                           {item.icon}
                           <span className="ml-3">{item.title}</span>
+                          {item.badge && (
+                            <Badge className="ml-2 bg-[#006FCF] text-white text-xs py-0 px-1.5">{item.badge}</Badge>
+                          )}
                         </div>
                         <ChevronDown className="h-4 w-4" />
                       </Button>
@@ -131,8 +170,8 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                           <Button
                             variant="ghost"
                             className={cn(
-                              "w-full justify-start font-normal text-sm hover:bg-[#e6ecff] hover:text-[#8855cc]",
-                              pathname === subItem.href && "bg-[#e6ecff] text-[#8855cc] font-medium",
+                              "w-full justify-start font-normal text-sm hover:bg-[#E6F2FF] hover:text-[#006FCF]",
+                              pathname === subItem.href && "bg-[#E6F2FF] text-[#006FCF] font-medium",
                             )}
                           >
                             {subItem.title}
@@ -146,12 +185,15 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-start font-normal hover:bg-[#e6ecff] hover:text-[#8855cc]",
-                        pathname === item.href && "bg-[#e6ecff] text-[#8855cc] font-medium",
+                        "w-full justify-start font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF]",
+                        pathname === item.href && "bg-[#E6F2FF] text-[#006FCF] font-medium",
                       )}
                     >
                       {item.icon}
                       <span className="ml-3">{item.title}</span>
+                      {item.badge && (
+                        <Badge className="ml-2 bg-[#006FCF] text-white text-xs py-0 px-1.5">{item.badge}</Badge>
+                      )}
                     </Button>
                   </Link>
                 ),

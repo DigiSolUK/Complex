@@ -1,6 +1,8 @@
 "use client"
 
 import { useEffect, useRef } from "react"
+// Add proper chart implementation using Recharts
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 export default function IncidentsByServiceChart() {
   const chartRef = useRef<HTMLDivElement>(null)
@@ -16,19 +18,19 @@ export default function IncidentsByServiceChart() {
 
       // Sample data
       const data = [
-        { service: "Database Cluster", count: 24, color: "bg-[#ff9999]" },
-        { service: "API Services", count: 18, color: "bg-[#99ccff]" },
-        { service: "Payment Gateway", count: 12, color: "bg-[#99ddcc]" },
-        { service: "Content Delivery", count: 9, color: "bg-[#ffee99]" },
-        { service: "Auth System", count: 7, color: "bg-[#cc99ff]" },
-        { service: "Object Storage", count: 5, color: "bg-[#ffb3e6]" },
-        { service: "Container Platform", count: 4, color: "bg-[#ffcc99]" },
+        { service: "Database Cluster", count: 24, color: "#ff9999" },
+        { service: "API Services", count: 18, color: "#99ccff" },
+        { service: "Payment Gateway", count: 12, color: "#99ddcc" },
+        { service: "Content Delivery", count: 9, color: "#ffee99" },
+        { service: "Auth System", count: 7, color: "#cc99ff" },
+        { service: "Object Storage", count: 5, color: "#ffb3e6" },
+        { service: "Container Platform", count: 4, color: "#ffcc99" },
       ]
 
       // Sort data by count (descending)
       data.sort((a, b) => b.count - a.count)
 
-      // Calculate total for percentages
+      // Calculate total incidents
       const total = data.reduce((sum, item) => sum + item.count, 0)
 
       // Create chart elements
@@ -73,9 +75,28 @@ export default function IncidentsByServiceChart() {
     }
   }, [])
 
+  const data = [
+    { service: "Database Cluster", count: 24, color: "#ff9999" },
+    { service: "API Services", count: 18, color: "#99ccff" },
+    { service: "Payment Gateway", count: 12, color: "#99ddcc" },
+    { service: "Content Delivery", count: 9, color: "#ffee99" },
+    { service: "Auth System", count: 7, color: "#cc99ff" },
+    { service: "Object Storage", count: 5, color: "#ffb3e6" },
+    { service: "Container Platform", count: 4, color: "#ffcc99" },
+  ]
+
+  // Sort data by count (descending)
+  data.sort((a, b) => b.count - a.count)
+
   return (
-    <div ref={chartRef} className="w-full h-full flex items-center justify-center">
-      <div className="text-muted-foreground">Loading chart...</div>
-    </div>
+    <ResponsiveContainer width="100%" height="100%">
+      <BarChart data={data} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}>
+        <CartesianGrid strokeDasharray="3 3" horizontal={false} />
+        <XAxis type="number" />
+        <YAxis type="category" dataKey="service" width={100} />
+        <Tooltip formatter={(value) => [`${value} incidents`, "Count"]} labelFormatter={() => ""} />
+        <Bar dataKey="count" fill="#99ccff" radius={[0, 4, 4, 0]} />
+      </BarChart>
+    </ResponsiveContainer>
   )
 }

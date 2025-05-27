@@ -19,6 +19,18 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 export default function OnCallSchedule() {
   const [currentDate, setCurrentDate] = useState(new Date())
 
+  const navigatePrevious = () => {
+    const newDate = new Date(currentDate)
+    newDate.setDate(newDate.getDate() - 7)
+    setCurrentDate(newDate)
+  }
+
+  const navigateNext = () => {
+    const newDate = new Date(currentDate)
+    newDate.setDate(newDate.getDate() + 7)
+    setCurrentDate(newDate)
+  }
+
   const teams = [
     {
       id: 1,
@@ -160,14 +172,14 @@ export default function OnCallSchedule() {
           </Badge>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={navigatePrevious}>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button variant="outline" size="sm" className="gap-1">
             <Calendar className="h-4 w-4" />
             {formatDate(currentDate)}
           </Button>
-          <Button variant="outline" size="icon">
+          <Button variant="outline" size="icon" onClick={navigateNext}>
             <ChevronRight className="h-4 w-4" />
           </Button>
         </div>

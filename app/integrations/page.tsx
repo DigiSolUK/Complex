@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import { Plus } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
@@ -5,7 +8,7 @@ import { Badge } from "@/components/ui/badge"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function IntegrationsPage() {
-  const monitoringIntegrations = [
+  const [monitoringIntegrations, setMonitoringIntegrations] = useState([
     {
       id: 1,
       name: "Datadog",
@@ -48,9 +51,9 @@ export default function IntegrationsPage() {
       status: "not_connected",
       logo: "/dynatrace-logo.png",
     },
-  ]
+  ])
 
-  const notificationIntegrations = [
+  const [notificationIntegrations, setNotificationIntegrations] = useState([
     {
       id: 1,
       name: "Slack",
@@ -86,7 +89,27 @@ export default function IntegrationsPage() {
       status: "not_connected",
       logo: "/webhook-icon.png",
     },
-  ]
+  ])
+
+  const toggleIntegrationStatus = (type: "monitoring" | "notification", id: number) => {
+    if (type === "monitoring") {
+      setMonitoringIntegrations((prev) =>
+        prev.map((integration) =>
+          integration.id === id
+            ? { ...integration, status: integration.status === "connected" ? "not_connected" : "connected" }
+            : integration,
+        ),
+      )
+    } else {
+      setNotificationIntegrations((prev) =>
+        prev.map((integration) =>
+          integration.id === id
+            ? { ...integration, status: integration.status === "connected" ? "not_connected" : "connected" }
+            : integration,
+        ),
+      )
+    }
+  }
 
   return (
     <div className="flex flex-col gap-6">
@@ -139,7 +162,11 @@ export default function IntegrationsPage() {
                   ) : (
                     <>
                       <Badge variant="outline">Not Connected</Badge>
-                      <Button size="sm" className="bg-[#99ccff] text-[#5588cc] hover:bg-[#b3daff]">
+                      <Button
+                        size="sm"
+                        className="bg-[#99ccff] text-[#5588cc] hover:bg-[#b3daff]"
+                        onClick={() => toggleIntegrationStatus("monitoring", integration.id)}
+                      >
                         Connect
                       </Button>
                     </>
@@ -182,7 +209,11 @@ export default function IntegrationsPage() {
                   ) : (
                     <>
                       <Badge variant="outline">Not Connected</Badge>
-                      <Button size="sm" className="bg-[#99ccff] text-[#5588cc] hover:bg-[#b3daff]">
+                      <Button
+                        size="sm"
+                        className="bg-[#99ccff] text-[#5588cc] hover:bg-[#b3daff]"
+                        onClick={() => toggleIntegrationStatus("notification", integration.id)}
+                      >
                         Connect
                       </Button>
                     </>

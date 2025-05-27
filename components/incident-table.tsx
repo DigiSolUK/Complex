@@ -206,67 +206,75 @@ export default function IncidentTable({ limit }: IncidentTableProps) {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {displayedIncidents.map((incident) => (
-              <TableRow key={incident.id} className="cursor-pointer hover:bg-muted/50">
-                <TableCell className="font-medium" onClick={() => setSelectedIncident(incident)}>
-                  <Dialog>
-                    <DialogTrigger asChild>
-                      <div>
-                        <div>{incident.id}</div>
-                        <div className="text-sm text-muted-foreground truncate max-w-[200px]">{incident.title}</div>
-                      </div>
-                    </DialogTrigger>
-                    <DialogContent className="max-w-4xl">
-                      <IncidentDetail incident={incident} />
-                    </DialogContent>
-                  </Dialog>
-                </TableCell>
-                <TableCell>{incident.service}</TableCell>
-                <TableCell>{getSeverityBadge(incident.severity)}</TableCell>
-                <TableCell>{getStatusBadge(incident.status)}</TableCell>
-                <TableCell>{formatDate(incident.createdAt)}</TableCell>
-                <TableCell>
-                  {incident.assignee ? (
-                    <div className="flex items-center gap-2">
-                      <Avatar className="h-6 w-6">
-                        <AvatarImage
-                          src={incident.assignee.avatar || "/placeholder.svg"}
-                          alt={incident.assignee.name}
-                        />
-                        <AvatarFallback>{incident.assignee.initials}</AvatarFallback>
-                      </Avatar>
-                      <span className="text-sm">{incident.assignee.name}</span>
-                    </div>
-                  ) : (
-                    <Badge variant="outline" className="gap-1">
-                      <User className="h-3 w-3" />
-                      <span>Unassigned</span>
-                    </Badge>
-                  )}
-                </TableCell>
-                <TableCell>
-                  <Badge variant="secondary">{incident.alertCount}</Badge>
-                </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8">
-                        <MoreHorizontal className="h-4 w-4" />
-                        <span className="sr-only">Open menu</span>
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem>Acknowledge</DropdownMenuItem>
-                      <DropdownMenuItem>Assign to me</DropdownMenuItem>
-                      <DropdownMenuItem>Escalate</DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem>Resolve</DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+            {displayedIncidents.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  No incidents found.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              displayedIncidents.map((incident) => (
+                <TableRow key={incident.id} className="cursor-pointer hover:bg-muted/50">
+                  <TableCell className="font-medium" onClick={() => setSelectedIncident(incident)}>
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <div>
+                          <div>{incident.id}</div>
+                          <div className="text-sm text-muted-foreground truncate max-w-[200px]">{incident.title}</div>
+                        </div>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-4xl">
+                        <IncidentDetail incident={incident} />
+                      </DialogContent>
+                    </Dialog>
+                  </TableCell>
+                  <TableCell>{incident.service}</TableCell>
+                  <TableCell>{getSeverityBadge(incident.severity)}</TableCell>
+                  <TableCell>{getStatusBadge(incident.status)}</TableCell>
+                  <TableCell>{formatDate(incident.createdAt)}</TableCell>
+                  <TableCell>
+                    {incident.assignee ? (
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage
+                            src={incident.assignee.avatar || "/placeholder.svg"}
+                            alt={incident.assignee.name}
+                          />
+                          <AvatarFallback>{incident.assignee.initials}</AvatarFallback>
+                        </Avatar>
+                        <span className="text-sm">{incident.assignee.name}</span>
+                      </div>
+                    ) : (
+                      <Badge variant="outline" className="gap-1">
+                        <User className="h-3 w-3" />
+                        <span>Unassigned</span>
+                      </Badge>
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{incident.alertCount}</Badge>
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon" className="h-8 w-8">
+                          <MoreHorizontal className="h-4 w-4" />
+                          <span className="sr-only">Open menu</span>
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem>Acknowledge</DropdownMenuItem>
+                        <DropdownMenuItem>Assign to me</DropdownMenuItem>
+                        <DropdownMenuItem>Escalate</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem>Resolve</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>

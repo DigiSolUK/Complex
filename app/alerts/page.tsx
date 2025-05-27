@@ -1,3 +1,6 @@
+"use client"
+
+import { useState } from "react"
 import { Filter } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -6,6 +9,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 
 export default function AlertsPage() {
+  const [searchQuery, setSearchQuery] = useState("")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [severityFilter, setSeverityFilter] = useState("all")
+  const [sourceFilter, setSourceFilter] = useState("all")
+
   const alerts = [
     {
       id: "ALT-4567",
@@ -109,6 +117,19 @@ export default function AlertsPage() {
     },
   ]
 
+  const filteredAlerts = alerts.filter((alert) => {
+    const matchesSearch =
+      searchQuery === "" ||
+      alert.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      alert.id.toLowerCase().includes(searchQuery.toLowerCase())
+
+    const matchesStatus = statusFilter === "all" || alert.status === statusFilter
+    const matchesSeverity = severityFilter === "all" || alert.severity === severityFilter
+    const matchesSource = sourceFilter === "all" || alert.source === sourceFilter
+
+    return matchesSearch && matchesStatus && matchesSeverity && matchesSource
+  })
+
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case "critical":
@@ -144,9 +165,13 @@ export default function AlertsPage() {
       <div className="flex flex-col gap-4">
         <div className="flex items-center gap-4">
           <div className="flex-1">
-            <Input placeholder="Search alerts..." />
+            <Input
+              placeholder="Search alerts..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
           </div>
-          <Select defaultValue="all">
+          <Select defaultValue="all" onValueChange={(value) => setStatusFilter(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
@@ -156,7 +181,7 @@ export default function AlertsPage() {
               <SelectItem value="resolved">Resolved</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select defaultValue="all" onValueChange={(value) => setSeverityFilter(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Severity" />
             </SelectTrigger>
@@ -168,7 +193,7 @@ export default function AlertsPage() {
               <SelectItem value="low">Low</SelectItem>
             </SelectContent>
           </Select>
-          <Select defaultValue="all">
+          <Select defaultValue="all" onValueChange={(value) => setSourceFilter(value)}>
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Source" />
             </SelectTrigger>
@@ -200,7 +225,7 @@ export default function AlertsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {alerts.map((alert) => (
+              {filteredAlerts.map((alert) => (
                 <TableRow key={alert.id}>
                   <TableCell className="font-medium">{alert.id}</TableCell>
                   <TableCell>{alert.title}</TableCell>
