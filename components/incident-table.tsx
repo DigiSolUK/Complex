@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { ChevronDown, Filter, MoreHorizontal, User } from "lucide-react"
+import { ChevronDown, Filter, MoreHorizontal, User, AlertTriangle, Clock, CheckCircle } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,42 +127,64 @@ export default function IncidentTable({ limit }: IncidentTableProps) {
 
   const displayedIncidents = limit ? incidents.slice(0, limit) : incidents
 
+  // Update getSeverityBadge function
   const getSeverityBadge = (severity: string) => {
     switch (severity) {
       case "critical":
-        return <Badge className="bg-[#ff9999] text-[#cc5555] border-0">Critical</Badge>
+        return (
+          <Badge className="bg-[#FFEEF0] text-[#D5001F] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#D5001F] rounded-full animate-pulse"></span>
+            Critical
+          </Badge>
+        )
       case "high":
-        return <Badge className="bg-[#ffcc99] text-[#cc8855] border-0">High</Badge>
+        return (
+          <Badge className="bg-[#FFF4EC] text-[#FF6900] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#FF6900] rounded-full"></span>
+            High
+          </Badge>
+        )
       case "medium":
-        return <Badge className="bg-[#ffee99] text-[#ccbb55] border-0">Medium</Badge>
+        return (
+          <Badge className="bg-[#E6F2FF] text-[#006FCF] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#006FCF] rounded-full"></span>
+            Medium
+          </Badge>
+        )
       case "low":
-        return <Badge className="bg-[#99ddcc] text-[#55aa99] border-0">Low</Badge>
+        return (
+          <Badge className="bg-[#E6F9F1] text-[#00A859] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#00A859] rounded-full"></span>
+            Low
+          </Badge>
+        )
       default:
         return <Badge variant="outline">{severity}</Badge>
     }
   }
 
+  // Update getStatusBadge function
   const getStatusBadge = (status: string) => {
     switch (status) {
       case "triggered":
         return (
-          <div className="flex items-center">
-            <span className="mr-2 h-2 w-2 rounded-full bg-[#ff9999]"></span>
-            <span className="text-[#cc5555] font-medium">Triggered</span>
+          <div className="flex items-center gap-2">
+            <AlertTriangle className="h-4 w-4 text-[#D5001F]" />
+            <span className="text-[#D5001F] font-medium">Triggered</span>
           </div>
         )
       case "acknowledged":
         return (
-          <div className="flex items-center">
-            <span className="mr-2 h-2 w-2 rounded-full bg-[#ffcc99]"></span>
-            <span className="text-[#cc8855] font-medium">Acknowledged</span>
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-[#FF6900]" />
+            <span className="text-[#FF6900] font-medium">Acknowledged</span>
           </div>
         )
       case "resolved":
         return (
-          <div className="flex items-center">
-            <span className="mr-2 h-2 w-2 rounded-full bg-[#99ddcc]"></span>
-            <span className="text-[#55aa99] font-medium">Resolved</span>
+          <div className="flex items-center gap-2">
+            <CheckCircle className="h-4 w-4 text-[#00A859]" />
+            <span className="text-[#00A859] font-medium">Resolved</span>
           </div>
         )
       default:
@@ -180,10 +202,11 @@ export default function IncidentTable({ limit }: IncidentTableProps) {
     }).format(date)
   }
 
+  // Update the table styling in the return statement
   return (
     <>
-      <div className="rounded-md border">
-        <div className="flex items-center justify-between p-4">
+      <div className="rounded-lg overflow-hidden">
+        <div className="flex items-center justify-between p-4 bg-[#F7F8F9] border-b border-[#ECEDEE]">
           <div className="flex flex-1 items-center space-x-2">
             <Button variant="outline" size="sm" className="h-8 gap-1">
               <Filter className="h-3.5 w-3.5" />

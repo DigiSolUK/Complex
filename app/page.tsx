@@ -1,197 +1,333 @@
-import { AlertTriangle, Bell, CheckCircle, Clock, Shield } from "lucide-react"
+"use client"
+
+import { useState } from "react"
+import {
+  Activity,
+  AlertTriangle,
+  ArrowDown,
+  ArrowUp,
+  BrainCircuit,
+  Clock,
+  Shield,
+  TrendingUp,
+  Users,
+} from "lucide-react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
+import { Badge } from "@/components/ui/badge"
 import IncidentTable from "@/components/incident-table"
-import OnCallSchedule from "@/components/on-call-schedule"
-import IncidentsByServiceChart from "@/components/charts/incidents-by-service-chart"
 import IncidentTrendChart from "@/components/charts/incident-trend-chart"
+import IncidentsByServiceChart from "@/components/charts/incidents-by-service-chart"
+import OnCallSchedule from "@/components/on-call-schedule"
 import AIMonitoringInsights from "@/components/ai-monitoring-insights"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 export default function DashboardPage() {
+  const [timeRange, setTimeRange] = useState("24h")
+
+  // Enhanced metrics with trends
+  const metrics = {
+    activeIncidents: {
+      value: 12,
+      trend: -25,
+      trendDirection: "down",
+      status: "improving",
+    },
+    mttr: {
+      value: "15m",
+      trend: -18,
+      trendDirection: "down",
+      status: "improving",
+    },
+    uptime: {
+      value: 99.98,
+      trend: 0.02,
+      trendDirection: "up",
+      status: "stable",
+    },
+    alertsToday: {
+      value: 247,
+      trend: 12,
+      trendDirection: "up",
+      status: "attention",
+    },
+  }
+
+  const getTrendIcon = (direction: string) => {
+    return direction === "up" ? <ArrowUp className="h-4 w-4" /> : <ArrowDown className="h-4 w-4" />
+  }
+
+  const getTrendColor = (status: string) => {
+    switch (status) {
+      case "improving":
+        return "text-[#00A859]"
+      case "attention":
+        return "text-[#FF6900]"
+      case "stable":
+        return "text-[#006FCF]"
+      default:
+        return "text-gray-500"
+    }
+  }
+
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-        <p className="text-muted-foreground">Overview of your incident management system</p>
-      </div>
-
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Incidents</CardTitle>
-            <AlertTriangle className="h-4 w-4 text-[#D5001F]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">+2 in the last hour</p>
-            <div className="mt-4 flex items-center gap-2">
-              <Badge className="bg-[#FFEEF0] text-[#D5001F] border-0">Critical: 3</Badge>
-              <Badge className="bg-[#FFF4EC] text-[#FF6900] border-0">High: 5</Badge>
-              <Badge className="bg-[#E6F2FF] text-[#006FCF] border-0">Medium: 4</Badge>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Alerts Today</CardTitle>
-            <Bell className="h-4 w-4 text-[#FF6900]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">247</div>
-            <p className="text-xs text-muted-foreground">78% correlated into incidents</p>
-            <Progress value={78} className="mt-4 bg-[#ECEDEE]" indicatorClassName="bg-[#006FCF]" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Response Time</CardTitle>
-            <Clock className="h-4 w-4 text-[#006FCF]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">4m 32s</div>
-            <p className="text-xs text-muted-foreground">-12% from last week</p>
-            <Progress value={68} className="mt-4 bg-[#ECEDEE]" indicatorClassName="bg-[#006FCF]" />
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Resolved Today</CardTitle>
-            <CheckCircle className="h-4 w-4 text-[#00A859]" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">18</div>
-            <p className="text-xs text-muted-foreground">Avg resolution time: 32m 14s</p>
-            <Progress value={85} className="mt-4 bg-[#ECEDEE]" indicatorClassName="bg-[#00A859]" />
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid gap-6 md:grid-cols-2">
-        <AIMonitoringInsights />
-
-        <Card className="border-[#E6F2FF]">
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-base flex items-center gap-2">
-                <Shield className="h-5 w-5 text-[#006FCF]" />
-                FCA Compliance Status
-              </CardTitle>
-              <Button variant="outline" size="sm" className="gap-1">
-                <Shield className="h-4 w-4" />
-                View Full Report
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Critical Services Uptime</span>
-                  <Badge className="bg-[#E6F9F1] text-[#00A859] border-[#00A859]">Compliant</Badge>
-                </div>
-                <Progress value={99.98} max={100} className="h-2 bg-[#ECEDEE]" indicatorClassName="bg-[#00A859]" />
-                <div className="flex justify-between text-xs">
-                  <span>99.98%</span>
-                  <span className="text-muted-foreground">Target: 99.95%</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">P1 Response Time</span>
-                  <Badge className="bg-[#E6F9F1] text-[#00A859] border-[#00A859]">Compliant</Badge>
-                </div>
-                <Progress value={12} max={15} className="h-2 bg-[#ECEDEE]" indicatorClassName="bg-[#00A859]" />
-                <div className="flex justify-between text-xs">
-                  <span>12 min</span>
-                  <span className="text-muted-foreground">Target: 15 min</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Resilience Testing</span>
-                  <Badge className="bg-[#FFF4EC] text-[#FF6900] border-[#FF6900]">Attention</Badge>
-                </div>
-                <Progress value={75} max={100} className="h-2 bg-[#ECEDEE]" indicatorClassName="bg-[#FF6900]" />
-                <div className="flex justify-between text-xs">
-                  <span>75% complete</span>
-                  <span className="text-muted-foreground">Target: 100%</span>
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span className="text-sm text-muted-foreground">Incident Reporting</span>
-                  <Badge className="bg-[#E6F9F1] text-[#00A859] border-[#00A859]">Compliant</Badge>
-                </div>
-                <Progress value={100} max={100} className="h-2 bg-[#ECEDEE]" indicatorClassName="bg-[#00A859]" />
-                <div className="flex justify-between text-xs">
-                  <span>100% reported</span>
-                  <span className="text-muted-foreground">Target: 100%</span>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Tabs defaultValue="incidents" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="incidents">Active Incidents</TabsTrigger>
-          <TabsTrigger value="on-call">On-Call Schedule</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="incidents" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Recent Incidents</h2>
-            <Button variant="outline" size="sm">
-              View All Incidents
+    <div className="min-h-screen bg-[#F7F8F9]">
+      <div className="container-responsive py-8 space-y-8 animate-fade-in">
+        {/* Header Section */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-4xl font-bold text-[#00175A] mb-2">Operations Dashboard</h1>
+            <p className="text-lg text-[#53565A]">Real-time monitoring and incident management</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Button variant="outline" className="bg-white border-[#ECEDEE] hover:bg-[#F7F8F9]">
+              <Clock className="h-4 w-4 mr-2" />
+              Last 24 Hours
+            </Button>
+            <Button className="bg-[#006FCF] hover:bg-[#00175A] text-white shadow-md">
+              <TrendingUp className="h-4 w-4 mr-2" />
+              View Analytics
             </Button>
           </div>
-          <IncidentTable limit={5} />
-        </TabsContent>
+        </div>
 
-        <TabsContent value="on-call" className="space-y-4">
-          <div className="flex justify-between items-center">
-            <h2 className="text-xl font-semibold">Current On-Call</h2>
-            <Button variant="outline" size="sm">
-              Manage Schedules
-            </Button>
+        {/* Key Metrics Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <Card className="card-enhanced border-0 overflow-hidden">
+            <div className="h-2 gradient-blue"></div>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-[#53565A]">Active Incidents</CardTitle>
+                <div className="p-2 bg-[#E6F2FF] rounded-lg">
+                  <AlertTriangle className="h-5 w-5 text-[#006FCF]" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline justify-between">
+                <div className="text-3xl font-bold text-[#00175A]">{metrics.activeIncidents.value}</div>
+                <div className={`flex items-center gap-1 text-sm ${getTrendColor(metrics.activeIncidents.status)}`}>
+                  {getTrendIcon(metrics.activeIncidents.trendDirection)}
+                  <span>{Math.abs(metrics.activeIncidents.trend)}%</span>
+                </div>
+              </div>
+              <Progress value={30} className="mt-3 h-2" indicatorClassName="bg-[#006FCF]" />
+              <p className="text-xs text-[#53565A] mt-2">3 critical, 5 high priority</p>
+            </CardContent>
+          </Card>
+
+          <Card className="card-enhanced border-0 overflow-hidden">
+            <div className="h-2 gradient-green"></div>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-[#53565A]">Mean Time to Resolve</CardTitle>
+                <div className="p-2 bg-[#E6F9F1] rounded-lg">
+                  <Clock className="h-5 w-5 text-[#00A859]" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline justify-between">
+                <div className="text-3xl font-bold text-[#00175A]">{metrics.mttr.value}</div>
+                <div className={`flex items-center gap-1 text-sm ${getTrendColor(metrics.mttr.status)}`}>
+                  {getTrendIcon(metrics.mttr.trendDirection)}
+                  <span>{Math.abs(metrics.mttr.trend)}%</span>
+                </div>
+              </div>
+              <Progress value={75} className="mt-3 h-2" indicatorClassName="bg-[#00A859]" />
+              <p className="text-xs text-[#53565A] mt-2">Target: 20 minutes</p>
+            </CardContent>
+          </Card>
+
+          <Card className="card-enhanced border-0 overflow-hidden">
+            <div className="h-2 gradient-orange"></div>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-[#53565A]">System Uptime</CardTitle>
+                <div className="p-2 bg-[#FFF4EC] rounded-lg">
+                  <Activity className="h-5 w-5 text-[#FF6900]" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline justify-between">
+                <div className="text-3xl font-bold text-[#00175A]">{metrics.uptime.value}%</div>
+                <div className={`flex items-center gap-1 text-sm ${getTrendColor(metrics.uptime.status)}`}>
+                  {getTrendIcon(metrics.uptime.trendDirection)}
+                  <span>{metrics.uptime.trend}%</span>
+                </div>
+              </div>
+              <Progress value={99.98} className="mt-3 h-2" indicatorClassName="bg-[#FF6900]" />
+              <p className="text-xs text-[#53565A] mt-2">SLA Target: 99.95%</p>
+            </CardContent>
+          </Card>
+
+          <Card className="card-enhanced border-0 overflow-hidden">
+            <div className="h-2 gradient-red"></div>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm font-medium text-[#53565A]">Alerts Today</CardTitle>
+                <div className="p-2 bg-[#FFEEF0] rounded-lg">
+                  <Shield className="h-5 w-5 text-[#D5001F]" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-baseline justify-between">
+                <div className="text-3xl font-bold text-[#00175A]">{metrics.alertsToday.value}</div>
+                <div className={`flex items-center gap-1 text-sm ${getTrendColor(metrics.alertsToday.status)}`}>
+                  {getTrendIcon(metrics.alertsToday.trendDirection)}
+                  <span>{metrics.alertsToday.trend}%</span>
+                </div>
+              </div>
+              <Progress value={65} className="mt-3 h-2" indicatorClassName="bg-[#D5001F]" />
+              <p className="text-xs text-[#53565A] mt-2">12 critical, 35 high priority</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* AI Insights Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="lg:col-span-2">
+            <AIMonitoringInsights />
           </div>
-          <OnCallSchedule />
-        </TabsContent>
-
-        <TabsContent value="analytics" className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
+          <div className="space-y-6">
+            <Card className="card-enhanced border-0">
               <CardHeader>
-                <CardTitle>Incidents by Service</CardTitle>
-                <CardDescription>Last 30 days</CardDescription>
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Quick Actions</CardTitle>
+                  <Badge className="bg-[#E6F2FF] text-[#006FCF] border-0">5 Pending</Badge>
+                </div>
               </CardHeader>
-              <CardContent className="h-80">
-                <IncidentsByServiceChart />
+              <CardContent className="space-y-3">
+                <Button className="w-full justify-start bg-white border border-[#ECEDEE] text-[#00175A] hover:bg-[#E6F2FF] hover:border-[#006FCF]">
+                  <AlertTriangle className="h-4 w-4 mr-2 text-[#D5001F]" />
+                  Review Critical Incidents
+                </Button>
+                <Button className="w-full justify-start bg-white border border-[#ECEDEE] text-[#00175A] hover:bg-[#E6F2FF] hover:border-[#006FCF]">
+                  <Users className="h-4 w-4 mr-2 text-[#006FCF]" />
+                  Update On-Call Schedule
+                </Button>
+                <Button className="w-full justify-start bg-white border border-[#ECEDEE] text-[#00175A] hover:bg-[#E6F2FF] hover:border-[#006FCF]">
+                  <Shield className="h-4 w-4 mr-2 text-[#00A859]" />
+                  Generate Compliance Report
+                </Button>
+                <Button className="w-full justify-start bg-white border border-[#ECEDEE] text-[#00175A] hover:bg-[#E6F2FF] hover:border-[#006FCF]">
+                  <BrainCircuit className="h-4 w-4 mr-2 text-[#FF6900]" />
+                  Configure AI Thresholds
+                </Button>
               </CardContent>
             </Card>
-            <Card>
+
+            <Card className="card-enhanced border-0 bg-gradient-to-br from-[#006FCF] to-[#00175A] text-white">
               <CardHeader>
-                <CardTitle>Incident Trend</CardTitle>
-                <CardDescription>Last 7 days</CardDescription>
+                <CardTitle className="text-white">System Health Score</CardTitle>
+                <CardDescription className="text-blue-100">Overall system performance</CardDescription>
               </CardHeader>
-              <CardContent className="h-80">
-                <IncidentTrendChart />
+              <CardContent>
+                <div className="flex items-center justify-center">
+                  <div className="relative">
+                    <div className="text-5xl font-bold">94</div>
+                    <div className="text-sm text-blue-100 text-center mt-1">Excellent</div>
+                  </div>
+                </div>
+                <div className="mt-6 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-100">Availability</span>
+                    <span className="font-medium">99.98%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-100">Performance</span>
+                    <span className="font-medium">92%</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-blue-100">Security</span>
+                    <span className="font-medium">96%</span>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
-        </TabsContent>
-      </Tabs>
+        </div>
+
+        {/* Main Content Tabs */}
+        <Tabs defaultValue="incidents" className="space-y-6">
+          <TabsList className="bg-white border border-[#ECEDEE] p-1">
+            <TabsTrigger value="incidents" className="data-[state=active]:bg-[#006FCF] data-[state=active]:text-white">
+              Active Incidents
+            </TabsTrigger>
+            <TabsTrigger value="analytics" className="data-[state=active]:bg-[#006FCF] data-[state=active]:text-white">
+              Analytics
+            </TabsTrigger>
+            <TabsTrigger value="oncall" className="data-[state=active]:bg-[#006FCF] data-[state=active]:text-white">
+              On-Call Schedule
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="incidents" className="space-y-6">
+            <Card className="card-enhanced border-0">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl">Recent Incidents</CardTitle>
+                    <CardDescription>Active and recently resolved incidents</CardDescription>
+                  </div>
+                  <Button variant="outline" className="bg-white">
+                    View All Incidents
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <IncidentTable limit={5} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="analytics" className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <Card className="card-enhanced border-0">
+                <CardHeader>
+                  <CardTitle>Incident Trend</CardTitle>
+                  <CardDescription>Last 7 days</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <IncidentTrendChart />
+                </CardContent>
+              </Card>
+
+              <Card className="card-enhanced border-0">
+                <CardHeader>
+                  <CardTitle>Incidents by Service</CardTitle>
+                  <CardDescription>Distribution across services</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <IncidentsByServiceChart />
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="oncall" className="space-y-6">
+            <Card className="card-enhanced border-0">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div>
+                    <CardTitle className="text-xl">On-Call Schedule</CardTitle>
+                    <CardDescription>Current and upcoming on-call rotations</CardDescription>
+                  </div>
+                  <Button variant="outline" className="bg-white">
+                    Manage Schedule
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <OnCallSchedule />
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      </div>
     </div>
   )
 }

@@ -17,6 +17,8 @@ import {
   Shield,
   Users,
   X,
+  Activity,
+  HardDrive,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -50,6 +52,27 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       title: "Dashboard",
       href: "/",
       icon: <LayoutDashboard className="h-5 w-5" />,
+    },
+    {
+      title: "Assets",
+      href: "/assets",
+      icon: <HardDrive className="h-5 w-5" />,
+      submenu: [
+        { title: "Inventory", href: "/assets" },
+        { title: "Discovery", href: "/assets/discovery" },
+        { title: "Monitoring", href: "/assets?tab=monitoring" },
+        { title: "Remote Access", href: "/assets?tab=remote" },
+      ],
+    },
+    {
+      title: "Monitoring",
+      href: "/monitoring",
+      icon: <Activity className="h-5 w-5" />,
+      submenu: [
+        { title: "Overview", href: "/monitoring" },
+        { title: "Applications", href: "/monitoring/applications" },
+        { title: "Infrastructure", href: "/monitoring/infrastructure" },
+      ],
     },
     {
       title: "Incidents",
@@ -90,6 +113,10 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       title: "Teams",
       href: "/teams",
       icon: <Users className="h-5 w-5" />,
+      submenu: [
+        { title: "All Teams", href: "/teams" },
+        { title: "Support Teams", href: "/settings/support-teams" },
+      ],
     },
     {
       title: "Integrations",
@@ -106,8 +133,9 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
       href: "/compliance",
       icon: <Shield className="h-5 w-5" />,
       submenu: [
+        { title: "Dashboard", href: "/compliance/dashboard" },
         { title: "FCA Reporting", href: "/compliance" },
-        { title: "Audit Logs", href: "/compliance?tab=audit" },
+        { title: "Reports", href: "/compliance/reports" },
         { title: "Policies", href: "/compliance/policies" },
       ],
     },
@@ -125,24 +153,26 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
 
       <div
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white border-r border-[#ECEDEE] transition-transform duration-200 ease-in-out",
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-xl transition-transform duration-200 ease-in-out",
           isMobile && !isOpen ? "-translate-x-full" : "translate-x-0",
         )}
       >
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-4 border-b border-[#ECEDEE] bg-white">
-            <Link href="/" className="flex items-center gap-2">
-              <AlertTriangle className="h-6 w-6 text-[#006FCF]" />
-              <span className="text-xl font-bold text-[#00175A]">Nexus Command</span>
+          <div className="flex items-center justify-between h-16 px-6 border-b border-[#ECEDEE] bg-gradient-to-r from-[#006FCF] to-[#00175A]">
+            <Link href="/" className="flex items-center gap-3">
+              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
+                <AlertTriangle className="h-6 w-6 text-white" />
+              </div>
+              <span className="text-xl font-bold text-white">Nexus Command</span>
             </Link>
             {isMobile && (
-              <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden">
+              <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden text-white hover:bg-white/20">
                 <X className="h-5 w-5" />
               </Button>
             )}
           </div>
-          <ScrollArea className="flex-1 px-3 py-2">
-            <nav className="space-y-1">
+          <ScrollArea className="flex-1 px-3 py-4">
+            <nav className="space-y-2">
               {sidebarItems.map((item) =>
                 item.submenu ? (
                   <Collapsible key={item.href} className="w-full">
@@ -150,7 +180,7 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                       <Button
                         variant="ghost"
                         className={cn(
-                          "w-full justify-between font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF]",
+                          "w-full justify-between font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF] px-4 py-2.5",
                           pathname.startsWith(item.href) && "bg-[#E6F2FF] text-[#006FCF] font-medium",
                         )}
                       >
@@ -158,19 +188,21 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                           {item.icon}
                           <span className="ml-3">{item.title}</span>
                           {item.badge && (
-                            <Badge className="ml-2 bg-[#006FCF] text-white text-xs py-0 px-1.5">{item.badge}</Badge>
+                            <Badge className="ml-2 bg-gradient-to-r from-[#006FCF] to-[#00175A] text-white text-xs py-0 px-1.5 border-0">
+                              {item.badge}
+                            </Badge>
                           )}
                         </div>
                         <ChevronDown className="h-4 w-4" />
                       </Button>
                     </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-10 space-y-1 pt-1">
+                    <CollapsibleContent className="pl-10 space-y-1 pt-2">
                       {item.submenu.map((subItem) => (
                         <Link key={subItem.href} href={subItem.href}>
                           <Button
                             variant="ghost"
                             className={cn(
-                              "w-full justify-start font-normal text-sm hover:bg-[#E6F2FF] hover:text-[#006FCF]",
+                              "w-full justify-start font-normal text-sm hover:bg-[#E6F2FF] hover:text-[#006FCF] py-2",
                               pathname === subItem.href && "bg-[#E6F2FF] text-[#006FCF] font-medium",
                             )}
                           >
@@ -185,14 +217,16 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
                     <Button
                       variant="ghost"
                       className={cn(
-                        "w-full justify-start font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF]",
+                        "w-full justify-start font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF] px-4 py-2.5",
                         pathname === item.href && "bg-[#E6F2FF] text-[#006FCF] font-medium",
                       )}
                     >
                       {item.icon}
                       <span className="ml-3">{item.title}</span>
                       {item.badge && (
-                        <Badge className="ml-2 bg-[#006FCF] text-white text-xs py-0 px-1.5">{item.badge}</Badge>
+                        <Badge className="ml-2 bg-gradient-to-r from-[#006FCF] to-[#00175A] text-white text-xs py-0 px-1.5 border-0">
+                          {item.badge}
+                        </Badge>
                       )}
                     </Button>
                   </Link>
@@ -200,6 +234,15 @@ export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose
               )}
             </nav>
           </ScrollArea>
+          <div className="p-4 border-t border-[#ECEDEE]">
+            <div className="p-4 bg-gradient-to-br from-[#E6F2FF] to-[#F7F8F9] rounded-lg">
+              <h3 className="font-semibold text-[#00175A] mb-1">Need Help?</h3>
+              <p className="text-xs text-[#53565A] mb-3">Contact our support team for assistance</p>
+              <Button size="sm" className="w-full bg-[#006FCF] hover:bg-[#00175A] text-white">
+                Get Support
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     </>
