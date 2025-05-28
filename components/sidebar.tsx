@@ -17,6 +17,7 @@ import {
   MonitorSmartphone,
   ChevronRight,
   Shield,
+  BrainCircuit,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -93,6 +94,12 @@ export default function Sidebar() {
       icon: <Network className="h-5 w-5" />,
       href: "/integrations",
       active: pathname === "/integrations",
+    },
+    {
+      label: "AI Integration",
+      icon: <BrainCircuit className="h-5 w-5" />,
+      href: "/ai-integration",
+      active: pathname === "/ai-integration" || pathname.startsWith("/ai-integration/"),
     },
     {
       label: "Settings",
