@@ -78,7 +78,7 @@ export default function SettingsPage() {
 
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="john.doe@amex.com" />
+                <Input id="email" type="email" defaultValue="john.doe@company.com" />
               </div>
 
               <div className="space-y-2">
@@ -351,11 +351,11 @@ export default function SettingsPage() {
 
                   <div className="space-y-2">
                     <Label>Color Scheme</Label>
-                    <RadioGroup defaultValue="amex">
+                    <RadioGroup defaultValue="default">
                       <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="amex" id="theme-amex" />
-                        <label htmlFor="theme-amex" className="text-sm">
-                          American Express Blue
+                        <RadioGroupItem value="default" id="theme-default" />
+                        <label htmlFor="theme-default" className="text-sm">
+                          Default Blue
                         </label>
                       </div>
                       <div className="flex items-center space-x-2">
@@ -556,7 +556,7 @@ export default function SettingsPage() {
                       <img src="/slack-logo.png" alt="Slack" className="h-8 w-8" />
                       <div>
                         <p className="font-medium">Slack</p>
-                        <p className="text-sm text-muted-foreground">Connected to American Express workspace</p>
+                        <p className="text-sm text-muted-foreground">Connected to Nexus workspace</p>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
