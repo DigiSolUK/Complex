@@ -83,9 +83,9 @@ export default function IncidentsPage() {
       </div>
 
       <div className="bg-white border border-[#E5E7EB] rounded-lg shadow-sm">
-        <div className="p-4 border-b border-[#E5E7EB]">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <Tabs defaultValue="all" className="w-full">
+        <Tabs defaultValue="all" className="w-full">
+          <div className="p-4 border-b border-[#E5E7EB]">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <TabsList className="bg-[#F9FAFB] p-1 h-auto">
                 <TabsTrigger
                   value="all"
@@ -112,56 +112,56 @@ export default function IncidentsPage() {
                   Resolved
                 </TabsTrigger>
               </TabsList>
-            </Tabs>
-            <div className="flex items-center gap-2">
-              <Select defaultValue="severity">
-                <SelectTrigger className="w-[180px] bg-white border-[#E5E7EB]">
-                  <SelectValue placeholder="Sort by" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="severity">Sort by Severity</SelectItem>
-                  <SelectItem value="time">Sort by Time</SelectItem>
-                  <SelectItem value="service">Sort by Service</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" className="gap-1 border-[#E5E7EB]">
-                <ListFilter className="h-4 w-4" />
-                Group
-              </Button>
-              <Button
-                className="gap-1 bg-[#006FCF] hover:bg-[#00175A] text-white"
-                onClick={() => setCreateModalOpen(true)}
-              >
-                <Plus className="h-4 w-4" />
-                Create Incident
-              </Button>
+              <div className="flex items-center gap-2">
+                <Select defaultValue="severity">
+                  <SelectTrigger className="w-[180px] bg-white border-[#E5E7EB]">
+                    <SelectValue placeholder="Sort by" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="severity">Sort by Severity</SelectItem>
+                    <SelectItem value="time">Sort by Time</SelectItem>
+                    <SelectItem value="service">Sort by Service</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button variant="outline" className="gap-1 border-[#E5E7EB]">
+                  <ListFilter className="h-4 w-4" />
+                  Group
+                </Button>
+                <Button
+                  className="gap-1 bg-[#006FCF] hover:bg-[#00175A] text-white"
+                  onClick={() => setCreateModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Create Incident
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <TabsContent value="all" className="m-0">
-          <Suspense fallback={<IncidentTableSkeleton />}>
-            <IncidentTable />
-          </Suspense>
-        </TabsContent>
+          <TabsContent value="all" className="m-0">
+            <Suspense fallback={<IncidentTableSkeleton />}>
+              <IncidentTable />
+            </Suspense>
+          </TabsContent>
 
-        <TabsContent value="triggered" className="m-0">
-          <Suspense fallback={<IncidentTableSkeleton />}>
-            <IncidentTable />
-          </Suspense>
-        </TabsContent>
+          <TabsContent value="triggered" className="m-0">
+            <Suspense fallback={<IncidentTableSkeleton />}>
+              <IncidentTable />
+            </Suspense>
+          </TabsContent>
 
-        <TabsContent value="acknowledged" className="m-0">
-          <Suspense fallback={<IncidentTableSkeleton />}>
-            <IncidentTable />
-          </Suspense>
-        </TabsContent>
+          <TabsContent value="acknowledged" className="m-0">
+            <Suspense fallback={<IncidentTableSkeleton />}>
+              <IncidentTable />
+            </Suspense>
+          </TabsContent>
 
-        <TabsContent value="resolved" className="m-0">
-          <Suspense fallback={<IncidentTableSkeleton />}>
-            <IncidentTable />
-          </Suspense>
-        </TabsContent>
+          <TabsContent value="resolved" className="m-0">
+            <Suspense fallback={<IncidentTableSkeleton />}>
+              <IncidentTable />
+            </Suspense>
+          </TabsContent>
+        </Tabs>
       </div>
 
       <CreateIncidentModal open={createModalOpen} onOpenChange={setCreateModalOpen} />
