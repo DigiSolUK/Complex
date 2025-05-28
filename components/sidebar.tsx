@@ -1,250 +1,163 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
   AlertTriangle,
+  BarChart2,
   Bell,
-  BrainCircuit,
-  ChevronDown,
-  Clock,
   Cog,
-  LayoutDashboard,
-  LineChart,
-  Plug,
+  Database,
+  Gauge,
+  Home,
+  LifeBuoy,
+  Network,
+  Ticket,
+  MonitorSmartphone,
+  ChevronRight,
   Shield,
-  Users,
-  X,
-  Activity,
-  HardDrive,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
-import { Badge } from "@/components/ui/badge"
 
-interface SidebarItem {
-  title: string
-  href: string
-  icon: React.ReactNode
-  submenu?: { title: string; href: string }[]
-  badge?: string
-}
-
-export default function Sidebar({ isOpen, onClose }: { isOpen?: boolean; onClose?: () => void }) {
+export default function Sidebar() {
   const pathname = usePathname()
+  const [collapsed, setCollapsed] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768)
+      setIsMobile(window.innerWidth < 1024)
+      if (window.innerWidth < 1024) {
+        setCollapsed(true)
+      }
     }
     checkMobile()
     window.addEventListener("resize", checkMobile)
     return () => window.removeEventListener("resize", checkMobile)
   }, [])
 
-  const sidebarItems: SidebarItem[] = [
+  const routes = [
     {
-      title: "Dashboard",
+      label: "Dashboard",
+      icon: <Home className="h-5 w-5" />,
       href: "/",
-      icon: <LayoutDashboard className="h-5 w-5" />,
+      active: pathname === "/",
     },
     {
-      title: "Assets",
-      href: "/assets",
-      icon: <HardDrive className="h-5 w-5" />,
-      submenu: [
-        { title: "Inventory", href: "/assets" },
-        { title: "Discovery", href: "/assets/discovery" },
-        { title: "Monitoring", href: "/assets?tab=monitoring" },
-        { title: "Remote Access", href: "/assets?tab=remote" },
-      ],
-    },
-    {
-      title: "Monitoring",
-      href: "/monitoring",
-      icon: <Activity className="h-5 w-5" />,
-      submenu: [
-        { title: "Overview", href: "/monitoring" },
-        { title: "Applications", href: "/monitoring/applications" },
-        { title: "Infrastructure", href: "/monitoring/infrastructure" },
-      ],
-    },
-    {
-      title: "Incidents",
-      href: "/incidents",
+      label: "Incidents",
       icon: <AlertTriangle className="h-5 w-5" />,
-      submenu: [
-        { title: "Active", href: "/incidents/active" },
-        { title: "Acknowledged", href: "/incidents/acknowledged" },
-        { title: "Resolved", href: "/incidents/resolved" },
-      ],
+      href: "/incidents",
+      active: pathname === "/incidents" || pathname.startsWith("/incidents/"),
     },
     {
-      title: "Alerts",
-      href: "/alerts",
+      label: "Tickets",
+      icon: <Ticket className="h-5 w-5" />,
+      href: "/tickets",
+      active: pathname === "/tickets" || pathname.startsWith("/tickets/"),
+    },
+    {
+      label: "Alerts",
       icon: <Bell className="h-5 w-5" />,
+      href: "/alerts",
+      active: pathname === "/alerts" || pathname.startsWith("/alerts/"),
     },
     {
-      title: "On-Call",
-      href: "/on-call",
-      icon: <Clock className="h-5 w-5" />,
-      submenu: [
-        { title: "Schedules", href: "/on-call/schedules" },
-        { title: "Escalation Policies", href: "/on-call/escalation-policies" },
-      ],
+      label: "Monitoring",
+      icon: <Gauge className="h-5 w-5" />,
+      href: "/monitoring",
+      active: pathname === "/monitoring" || pathname.startsWith("/monitoring/"),
     },
     {
-      title: "AI Monitoring",
-      href: "/settings/ai-monitoring",
-      icon: <BrainCircuit className="h-5 w-5" />,
-      badge: "New",
-      submenu: [
-        { title: "Insights", href: "/settings/ai-monitoring/insights" },
-        { title: "Configuration", href: "/settings/ai-monitoring" },
-        { title: "Model Training", href: "/settings/ai-monitoring/training" },
-      ],
+      label: "Assets",
+      icon: <Database className="h-5 w-5" />,
+      href: "/assets",
+      active: pathname === "/assets" || pathname.startsWith("/assets/"),
     },
     {
-      title: "Teams",
-      href: "/teams",
-      icon: <Users className="h-5 w-5" />,
-      submenu: [
-        { title: "All Teams", href: "/teams" },
-        { title: "Support Teams", href: "/settings/support-teams" },
-      ],
-    },
-    {
-      title: "Integrations",
-      href: "/integrations",
-      icon: <Plug className="h-5 w-5" />,
-    },
-    {
-      title: "Analytics",
+      label: "Analytics",
+      icon: <BarChart2 className="h-5 w-5" />,
       href: "/analytics",
-      icon: <LineChart className="h-5 w-5" />,
+      active: pathname === "/analytics",
     },
     {
-      title: "Compliance",
-      href: "/compliance",
+      label: "Compliance",
       icon: <Shield className="h-5 w-5" />,
-      submenu: [
-        { title: "Dashboard", href: "/compliance/dashboard" },
-        { title: "FCA Reporting", href: "/compliance" },
-        { title: "Reports", href: "/compliance/reports" },
-        { title: "Policies", href: "/compliance/policies" },
-      ],
+      href: "/compliance",
+      active: pathname === "/compliance" || pathname.startsWith("/compliance/"),
     },
     {
-      title: "Settings",
-      href: "/settings",
+      label: "Integrations",
+      icon: <Network className="h-5 w-5" />,
+      href: "/integrations",
+      active: pathname === "/integrations",
+    },
+    {
+      label: "Settings",
       icon: <Cog className="h-5 w-5" />,
+      href: "/settings",
+      active: pathname === "/settings" || pathname.startsWith("/settings/"),
     },
   ]
 
   return (
-    <>
-      {/* Mobile overlay */}
-      {isMobile && isOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={onClose} />}
-
-      <div
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white shadow-xl transition-transform duration-200 ease-in-out",
-          isMobile && !isOpen ? "-translate-x-full" : "translate-x-0",
-        )}
-      >
-        <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between h-16 px-6 border-b border-[#ECEDEE] bg-gradient-to-r from-[#006FCF] to-[#00175A]">
-            <Link href="/" className="flex items-center gap-3">
-              <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
-                <AlertTriangle className="h-6 w-6 text-white" />
-              </div>
+    <div
+      className={cn(
+        "fixed inset-y-0 left-0 z-50 flex h-full flex-col bg-[#001B5A] transition-all duration-300",
+        collapsed ? "w-[60px]" : "w-[260px]",
+      )}
+    >
+      <div className="flex h-16 items-center border-b border-[#0A2A6B] px-4">
+        <Link href="/" className="flex items-center gap-2">
+          {collapsed ? (
+            <MonitorSmartphone className="h-6 w-6 text-white" />
+          ) : (
+            <>
+              <MonitorSmartphone className="h-6 w-6 text-white" />
               <span className="text-xl font-bold text-white">Nexus Command</span>
-            </Link>
-            {isMobile && (
-              <Button variant="ghost" size="icon" onClick={onClose} className="md:hidden text-white hover:bg-white/20">
-                <X className="h-5 w-5" />
-              </Button>
-            )}
-          </div>
-          <ScrollArea className="flex-1 px-3 py-4">
-            <nav className="space-y-2">
-              {sidebarItems.map((item) =>
-                item.submenu ? (
-                  <Collapsible key={item.href} className="w-full">
-                    <CollapsibleTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className={cn(
-                          "w-full justify-between font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF] px-4 py-2.5",
-                          pathname.startsWith(item.href) && "bg-[#E6F2FF] text-[#006FCF] font-medium",
-                        )}
-                      >
-                        <div className="flex items-center">
-                          {item.icon}
-                          <span className="ml-3">{item.title}</span>
-                          {item.badge && (
-                            <Badge className="ml-2 bg-gradient-to-r from-[#006FCF] to-[#00175A] text-white text-xs py-0 px-1.5 border-0">
-                              {item.badge}
-                            </Badge>
-                          )}
-                        </div>
-                        <ChevronDown className="h-4 w-4" />
-                      </Button>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent className="pl-10 space-y-1 pt-2">
-                      {item.submenu.map((subItem) => (
-                        <Link key={subItem.href} href={subItem.href}>
-                          <Button
-                            variant="ghost"
-                            className={cn(
-                              "w-full justify-start font-normal text-sm hover:bg-[#E6F2FF] hover:text-[#006FCF] py-2",
-                              pathname === subItem.href && "bg-[#E6F2FF] text-[#006FCF] font-medium",
-                            )}
-                          >
-                            {subItem.title}
-                          </Button>
-                        </Link>
-                      ))}
-                    </CollapsibleContent>
-                  </Collapsible>
-                ) : (
-                  <Link key={item.href} href={item.href}>
-                    <Button
-                      variant="ghost"
-                      className={cn(
-                        "w-full justify-start font-normal hover:bg-[#E6F2FF] hover:text-[#006FCF] px-4 py-2.5",
-                        pathname === item.href && "bg-[#E6F2FF] text-[#006FCF] font-medium",
-                      )}
-                    >
-                      {item.icon}
-                      <span className="ml-3">{item.title}</span>
-                      {item.badge && (
-                        <Badge className="ml-2 bg-gradient-to-r from-[#006FCF] to-[#00175A] text-white text-xs py-0 px-1.5 border-0">
-                          {item.badge}
-                        </Badge>
-                      )}
-                    </Button>
-                  </Link>
-                ),
-              )}
-            </nav>
-          </ScrollArea>
-          <div className="p-4 border-t border-[#ECEDEE]">
-            <div className="p-4 bg-gradient-to-br from-[#E6F2FF] to-[#F7F8F9] rounded-lg">
-              <h3 className="font-semibold text-[#00175A] mb-1">Need Help?</h3>
-              <p className="text-xs text-[#53565A] mb-3">Contact our support team for assistance</p>
-              <Button size="sm" className="w-full bg-[#006FCF] hover:bg-[#00175A] text-white">
-                Get Support
-              </Button>
-            </div>
-          </div>
-        </div>
+            </>
+          )}
+        </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          className="ml-auto text-white hover:bg-[#0A2A6B]"
+          onClick={() => setCollapsed(!collapsed)}
+        >
+          <ChevronRight className={cn("h-5 w-5 transition-transform", !collapsed && "rotate-180")} />
+        </Button>
       </div>
-    </>
+      <ScrollArea className="flex-1">
+        <div className="px-2 py-4">
+          {routes.map((route) => (
+            <Link
+              key={route.href}
+              href={route.href}
+              className={cn(
+                "flex items-center gap-3 rounded-md px-3 py-2.5 mb-1 text-sm font-medium transition-colors",
+                route.active ? "bg-[#0A2A6B] text-white" : "text-[#8A9CC9] hover:bg-[#0A2A6B] hover:text-white",
+              )}
+            >
+              {route.icon}
+              {!collapsed && <span>{route.label}</span>}
+            </Link>
+          ))}
+        </div>
+      </ScrollArea>
+      <div className="border-t border-[#0A2A6B] p-2">
+        <Link
+          href="#"
+          className={cn(
+            "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+            "bg-[#1E4DB7] text-white hover:bg-[#2E5DC7]",
+          )}
+        >
+          <LifeBuoy className="h-5 w-5" />
+          {!collapsed && <span>Support</span>}
+        </Link>
+      </div>
+    </div>
   )
 }

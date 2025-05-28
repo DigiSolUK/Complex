@@ -1,148 +1,100 @@
 "use client"
 
+import type React from "react"
+
 import { useState } from "react"
 import {
   AlertTriangle,
-  Bell,
-  CheckCircle,
   Clock,
-  FileText,
-  Link2,
-  MessageSquare,
-  Send,
-  Shield,
+  CheckCircle,
   User,
-  Users,
+  MessageSquare,
+  BarChart,
+  Server,
+  Activity,
+  Link,
+  ChevronRight,
+  FileText,
+  PlusCircle,
 } from "lucide-react"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { ScrollArea } from "@/components/ui/scroll-area"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Label } from "@/components/ui/label"
 
 interface IncidentDetailProps {
   incident: any
 }
 
 export default function IncidentDetail({ incident }: IncidentDetailProps) {
-  const [newNote, setNewNote] = useState("")
-  const [regulatoryImpact, setRegulatoryImpact] = useState({
-    hasRegulatoryImpact: false,
-    impactLevel: "low",
-    requiresReporting: false,
-    reportingDeadline: "",
-  })
+  const [activeTab, setActiveTab] = useState("overview")
+  const [comment, setComment] = useState("")
 
-  const timelineEvents = [
-    {
-      id: 1,
-      type: "alert",
-      title: "Alert triggered: Database CPU Utilization > 90%",
-      timestamp: "2025-05-27T16:30:00Z",
-      source: "Datadog",
-    },
-    {
-      id: 2,
-      type: "alert",
-      title: "Alert triggered: Database Connection Pool Exhausted",
-      timestamp: "2025-05-27T16:30:15Z",
-      source: "CloudWatch",
-    },
-    {
-      id: 3,
-      type: "incident",
-      title: "Incident created from correlated alerts",
-      timestamp: "2025-05-27T16:30:30Z",
-    },
-    {
-      id: 4,
-      type: "alert",
-      title: "Alert triggered: Database Read Replica Lag > 120s",
-      timestamp: "2025-05-27T16:31:00Z",
-      source: "Prometheus",
-    },
-    {
-      id: 5,
-      type: "notification",
-      title: "On-call engineer notified via Slack and SMS",
-      timestamp: "2025-05-27T16:31:30Z",
-    },
-    {
-      id: 6,
-      type: "alert",
-      title: "Alert triggered: API Error Rate > 5%",
-      timestamp: "2025-05-27T16:32:00Z",
-      source: "New Relic",
-    },
-    {
-      id: 7,
-      type: "alert",
-      title: "Alert correlated to incident",
-      timestamp: "2025-05-27T16:32:15Z",
-    },
-    {
-      id: 8,
-      type: "escalation",
-      title: "Escalation: No acknowledgment after 5 minutes",
-      timestamp: "2025-05-27T16:35:30Z",
-    },
-  ]
+  const getSeverityBadge = (severity: string) => {
+    switch (severity) {
+      case "critical":
+        return (
+          <Badge className="bg-[#FFEEF0] text-[#D5001F] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#D5001F] rounded-full animate-pulse"></span>
+            Critical
+          </Badge>
+        )
+      case "high":
+        return (
+          <Badge className="bg-[#FFF4EC] text-[#FF6900] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#FF6900] rounded-full"></span>
+            High
+          </Badge>
+        )
+      case "medium":
+        return (
+          <Badge className="bg-[#E6F2FF] text-[#006FCF] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#006FCF] rounded-full"></span>
+            Medium
+          </Badge>
+        )
+      case "low":
+        return (
+          <Badge className="bg-[#E6F9F1] text-[#00A859] border-0 font-medium gap-1">
+            <span className="w-2 h-2 bg-[#00A859] rounded-full"></span>
+            Low
+          </Badge>
+        )
+      default:
+        return <Badge variant="outline">{severity}</Badge>
+    }
+  }
 
-  const relatedAlerts = [
-    {
-      id: "ALT-4567",
-      title: "Database CPU Utilization > 90%",
-      source: "Datadog",
-      timestamp: "2025-05-27T16:30:00Z",
-      severity: "critical",
-    },
-    {
-      id: "ALT-4568",
-      title: "Database Connection Pool Exhausted",
-      source: "CloudWatch",
-      timestamp: "2025-05-27T16:30:15Z",
-      severity: "critical",
-    },
-    {
-      id: "ALT-4569",
-      title: "Database Read Replica Lag > 120s",
-      source: "Prometheus",
-      timestamp: "2025-05-27T16:31:00Z",
-      severity: "high",
-    },
-    {
-      id: "ALT-4570",
-      title: "API Error Rate > 5%",
-      source: "New Relic",
-      timestamp: "2025-05-27T16:32:00Z",
-      severity: "high",
-    },
-    {
-      id: "ALT-4571",
-      title: "Database Query Latency > 500ms",
-      source: "Datadog",
-      timestamp: "2025-05-27T16:33:00Z",
-      severity: "medium",
-    },
-    {
-      id: "ALT-4572",
-      title: "Cache Hit Ratio < 80%",
-      source: "CloudWatch",
-      timestamp: "2025-05-27T16:34:00Z",
-      severity: "medium",
-    },
-    {
-      id: "ALT-4573",
-      title: "Database Connections > 85% of limit",
-      source: "Prometheus",
-      timestamp: "2025-05-27T16:35:00Z",
-      severity: "medium",
-    },
-  ]
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "triggered":
+        return (
+          <Badge className="bg-[#FFEEF0] text-[#D5001F] border-0 font-medium gap-1">
+            <AlertTriangle className="h-3.5 w-3.5 mr-1" />
+            Triggered
+          </Badge>
+        )
+      case "acknowledged":
+        return (
+          <Badge className="bg-[#FFF4EC] text-[#FF6900] border-0 font-medium gap-1">
+            <Clock className="h-3.5 w-3.5 mr-1" />
+            Acknowledged
+          </Badge>
+        )
+      case "resolved":
+        return (
+          <Badge className="bg-[#E6F9F1] text-[#00A859] border-0 font-medium gap-1">
+            <CheckCircle className="h-3.5 w-3.5 mr-1" />
+            Resolved
+          </Badge>
+        )
+      default:
+        return <Badge variant="outline">{status}</Badge>
+    }
+  }
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString)
@@ -155,412 +107,533 @@ export default function IncidentDetail({ incident }: IncidentDetailProps) {
     }).format(date)
   }
 
+  const timeline = [
+    {
+      id: 1,
+      type: "created",
+      timestamp: new Date(incident.createdAt).getTime(),
+      user: null,
+      message: "Incident created automatically by monitoring system",
+    },
+    {
+      id: 2,
+      type: "alert",
+      timestamp: new Date(incident.createdAt).getTime() + 60000,
+      user: null,
+      message: "Alert: Database CPU utilization exceeded 90% threshold",
+    },
+    {
+      id: 3,
+      type: "alert",
+      timestamp: new Date(incident.createdAt).getTime() + 120000,
+      user: null,
+      message: "Alert: Database memory utilization exceeded 85% threshold",
+    },
+    {
+      id: 4,
+      type: "notification",
+      timestamp: new Date(incident.createdAt).getTime() + 180000,
+      user: null,
+      message: "On-call team notified via SMS and email",
+    },
+  ]
+
+  if (incident.status === "acknowledged" && incident.assignee) {
+    timeline.push({
+      id: 5,
+      type: "acknowledged",
+      timestamp: new Date(incident.createdAt).getTime() + 600000,
+      user: incident.assignee,
+      message: `Incident acknowledged by ${incident.assignee.name}`,
+    })
+  }
+
+  if (incident.status === "resolved" && incident.assignee) {
+    timeline.push({
+      id: 5,
+      type: "acknowledged",
+      timestamp: new Date(incident.createdAt).getTime() + 600000,
+      user: incident.assignee,
+      message: `Incident acknowledged by ${incident.assignee.name}`,
+    })
+    timeline.push({
+      id: 6,
+      type: "resolved",
+      timestamp: new Date(incident.createdAt).getTime() + 3600000,
+      user: incident.assignee,
+      message: `Incident resolved by ${incident.assignee.name}`,
+    })
+  }
+
   const getTimelineIcon = (type: string) => {
     switch (type) {
+      case "created":
+        return <AlertTriangle className="h-5 w-5 text-[#D5001F]" />
       case "alert":
-        return <Bell className="h-4 w-4 text-[#cc5555]" />
-      case "incident":
-        return <AlertTriangle className="h-4 w-4 text-[#cc5555]" />
+        return <Bell className="h-5 w-5 text-[#FF6900]" />
       case "notification":
-        return <MessageSquare className="h-4 w-4 text-[#5588cc]" />
-      case "note":
-        return <MessageSquare className="h-4 w-4 text-[#8855cc]" />
-      case "acknowledgment":
-        return <User className="h-4 w-4 text-[#cc8855]" />
-      case "escalation":
-        return <Users className="h-4 w-4 text-[#cc66aa]" />
-      case "resolution":
-        return <CheckCircle className="h-4 w-4 text-[#55aa99]" />
+        return <MessageSquare className="h-5 w-5 text-[#006FCF]" />
+      case "acknowledged":
+        return <Clock className="h-5 w-5 text-[#FF6900]" />
+      case "comment":
+        return <MessageSquare className="h-5 w-5 text-[#006FCF]" />
+      case "resolved":
+        return <CheckCircle className="h-5 w-5 text-[#00A859]" />
       default:
-        return <Clock className="h-4 w-4" />
+        return <Activity className="h-5 w-5 text-[#006FCF]" />
     }
   }
 
-  const getSeverityBadge = (severity: string) => {
-    switch (severity) {
+  const impactedServices = [
+    {
+      name: incident.service,
+      status: "critical",
+      type: "primary",
+    },
+    {
+      name: "User Authentication",
+      status: "degraded",
+      type: "dependent",
+    },
+    {
+      name: "Payment Processing",
+      status: "operational",
+      type: "dependent",
+    },
+  ]
+
+  const getServiceStatusBadge = (status: string) => {
+    switch (status) {
       case "critical":
-        return <Badge className="bg-[#ff9999] text-[#cc5555] border-0">Critical</Badge>
-      case "high":
-        return <Badge className="bg-[#ffcc99] text-[#cc8855] border-0">High</Badge>
-      case "medium":
-        return <Badge className="bg-[#ffee99] text-[#ccbb55] border-0">Medium</Badge>
-      case "low":
-        return <Badge className="bg-[#99ddcc] text-[#55aa99] border-0">Low</Badge>
+        return <Badge className="bg-[#FFEEF0] text-[#D5001F] border-0 font-normal">Critical</Badge>
+      case "degraded":
+        return <Badge className="bg-[#FFF4EC] text-[#FF6900] border-0 font-normal">Degraded</Badge>
+      case "operational":
+        return <Badge className="bg-[#E6F9F1] text-[#00A859] border-0 font-normal">Operational</Badge>
       default:
-        return <Badge variant="outline">{severity}</Badge>
+        return <Badge variant="outline">{status}</Badge>
     }
-  }
-
-  const handleSubmitNote = () => {
-    if (newNote.trim()) {
-      // In a real app, this would add the note to the incident
-      console.log("Adding note:", newNote)
-      setNewNote("")
-    }
-  }
-
-  const handleRegulatoryImpactChange = (field: string, value: any) => {
-    setRegulatoryImpact((prev) => ({
-      ...prev,
-      [field]: value,
-    }))
   }
 
   return (
-    <div className="grid gap-6">
+    <div className="space-y-6">
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2">
-          <h2 className="text-2xl font-bold">{incident.id}</h2>
-          <Badge variant="destructive">Critical</Badge>
-          <div className="flex items-center text-sm text-muted-foreground">
-            <span className="mr-2 h-2 w-2 rounded-full bg-destructive"></span>
-            Triggered
-          </div>
+          <h2 className="text-2xl font-bold text-[#00175A]">{incident.id}</h2>
+          {getSeverityBadge(incident.severity)}
+          {getStatusBadge(incident.status)}
         </div>
         <h3 className="text-xl">{incident.title}</h3>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <div>Service: {incident.service}</div>
+        <div className="flex items-center gap-4 text-sm text-[#6B7280]">
           <div>Created: {formatDate(incident.createdAt)}</div>
+          <div>Service: {incident.service}</div>
+          <div>Alerts: {incident.alertCount}</div>
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
-        <div className="md:col-span-2">
-          <Tabs defaultValue="timeline" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="timeline">Timeline</TabsTrigger>
-              <TabsTrigger value="alerts">Related Alerts ({relatedAlerts.length})</TabsTrigger>
-              <TabsTrigger value="runbooks">Runbooks</TabsTrigger>
-              <TabsTrigger value="regulatory">
-                <div className="flex items-center gap-1">
-                  <Shield className="h-4 w-4" />
-                  Regulatory
-                </div>
-              </TabsTrigger>
-            </TabsList>
-            <TabsContent value="timeline" className="border rounded-md mt-6">
-              <div className="p-4 border-b">
-                <h3 className="font-semibold">Incident Timeline</h3>
-              </div>
-              <ScrollArea className="h-[400px] p-4">
-                <div className="space-y-4">
-                  {timelineEvents.map((event) => (
-                    <div key={event.id} className="flex gap-3">
-                      <div className="mt-1 h-6 w-6 rounded-full bg-muted flex items-center justify-center">
-                        {getTimelineIcon(event.type)}
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm">{event.title}</p>
-                        <div className="flex gap-2 text-xs text-muted-foreground">
-                          <span>{formatDate(event.timestamp)}</span>
-                          {event.source && (
-                            <>
-                              <span>•</span>
-                              <span>{event.source}</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </ScrollArea>
-              <div className="p-4 border-t">
-                <div className="flex gap-2">
-                  <Textarea
-                    placeholder="Add a note to the incident..."
-                    className="min-h-[80px]"
-                    value={newNote}
-                    onChange={(e) => setNewNote(e.target.value)}
-                  />
-                </div>
-                <div className="flex justify-end mt-2">
-                  <Button onClick={handleSubmitNote} className="gap-1">
-                    <Send className="h-4 w-4" />
-                    Add Note
-                  </Button>
-                </div>
-              </div>
-            </TabsContent>
-            <TabsContent value="alerts" className="border rounded-md mt-6">
-              <div className="p-4 border-b">
-                <h3 className="font-semibold">Related Alerts</h3>
-              </div>
-              <ScrollArea className="h-[400px]">
-                <div className="p-4 space-y-3">
-                  {relatedAlerts.map((alert) => (
-                    <Card key={alert.id}>
-                      <CardHeader className="p-4 pb-2">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium">{alert.id}</span>
-                            {getSeverityBadge(alert.severity)}
-                          </div>
-                          <span className="text-xs text-muted-foreground">{formatDate(alert.timestamp)}</span>
-                        </div>
-                        <CardTitle className="text-base">{alert.title}</CardTitle>
-                      </CardHeader>
-                      <CardContent className="p-4 pt-0">
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <span>Source: {alert.source}</span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-            <TabsContent value="runbooks" className="border rounded-md mt-6 p-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold">Suggested Runbooks</h3>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <Link2 className="h-4 w-4" />
-                    Add Runbook
-                  </Button>
-                </div>
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-base">Database High CPU Troubleshooting</CardTitle>
-                    <CardDescription>Steps to diagnose and resolve database CPU issues</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="text-sm space-y-2">
-                      <p>1. Check for long-running queries using the monitoring dashboard</p>
-                      <p>2. Examine query plans for inefficient execution</p>
-                      <p>3. Look for connection pool exhaustion</p>
-                      <p>4. Consider scaling up database resources if needed</p>
-                    </div>
-                    <Button variant="link" className="p-0 h-auto mt-2">
-                      View full runbook
-                    </Button>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="p-4 pb-2">
-                    <CardTitle className="text-base">API Error Rate Troubleshooting</CardTitle>
-                    <CardDescription>Steps to diagnose and resolve API errors</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-4 pt-0">
-                    <div className="text-sm space-y-2">
-                      <p>1. Check API logs for specific error messages</p>
-                      <p>2. Verify database connectivity</p>
-                      <p>3. Check for recent deployments or changes</p>
-                      <p>4. Examine downstream service dependencies</p>
-                    </div>
-                    <Button variant="link" className="p-0 h-auto mt-2">
-                      View full runbook
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </TabsContent>
-            <TabsContent value="regulatory" className="border rounded-md mt-6 p-4">
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-semibold flex items-center gap-2">
-                    <Shield className="h-5 w-5 text-[#8855cc]" />
-                    Regulatory Impact Assessment
-                  </h3>
-                  <Button variant="outline" size="sm" className="gap-1">
-                    <FileText className="h-4 w-4" />
-                    Generate FCA Report
-                  </Button>
-                </div>
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="bg-[#F9FAFB] p-1 h-auto w-full justify-start">
+          <TabsTrigger
+            value="overview"
+            className="px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#00175A] data-[state=active]:font-medium"
+          >
+            Overview
+          </TabsTrigger>
+          <TabsTrigger
+            value="timeline"
+            className="px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#00175A] data-[state=active]:font-medium"
+          >
+            Timeline
+          </TabsTrigger>
+          <TabsTrigger
+            value="alerts"
+            className="px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#00175A] data-[state=active]:font-medium"
+          >
+            Alerts ({incident.alertCount})
+          </TabsTrigger>
+          <TabsTrigger
+            value="related"
+            className="px-4 py-2 data-[state=active]:bg-white data-[state=active]:shadow-sm data-[state=active]:text-[#00175A] data-[state=active]:font-medium"
+          >
+            Related Items
+          </TabsTrigger>
+        </TabsList>
 
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="hasRegulatoryImpact"
-                      checked={regulatoryImpact.hasRegulatoryImpact}
-                      onCheckedChange={(checked) =>
-                        handleRegulatoryImpactChange("hasRegulatoryImpact", checked === true)
-                      }
-                    />
-                    <Label htmlFor="hasRegulatoryImpact" className="font-medium">
-                      This incident has regulatory impact
-                    </Label>
+        <TabsContent value="overview" className="mt-6">
+          <div className="grid gap-6 md:grid-cols-3">
+            <div className="md:col-span-2 space-y-6">
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center">
+                    <Server className="h-5 w-5 mr-2 text-[#006FCF]" />
+                    Incident Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div>
+                    <h4 className="font-medium mb-2">Description</h4>
+                    <p className="text-[#6B7280]">
+                      {incident.title}. This incident was automatically detected by our monitoring system when CPU
+                      utilization exceeded the configured threshold of 90% for more than 5 minutes.
+                    </p>
                   </div>
+                  <div>
+                    <h4 className="font-medium mb-2">Impact</h4>
+                    <p className="text-[#6B7280]">
+                      This incident is causing degraded performance for users accessing the {incident.service}. Response
+                      times have increased by 300% and some requests are timing out.
+                    </p>
+                  </div>
+                </CardContent>
+              </Card>
 
-                  {regulatoryImpact.hasRegulatoryImpact && (
-                    <>
-                      <div className="grid gap-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="impactLevel">Regulatory Impact Level</Label>
-                          <Select
-                            value={regulatoryImpact.impactLevel}
-                            onValueChange={(value) => handleRegulatoryImpactChange("impactLevel", value)}
-                          >
-                            <SelectTrigger id="impactLevel">
-                              <SelectValue placeholder="Select impact level" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="low">Low - No customer impact</SelectItem>
-                              <SelectItem value="medium">Medium - Limited customer impact</SelectItem>
-                              <SelectItem value="high">High - Significant customer impact</SelectItem>
-                              <SelectItem value="critical">Critical - Service outage</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-
-                        <div className="flex items-center space-x-2">
-                          <Checkbox
-                            id="requiresReporting"
-                            checked={regulatoryImpact.requiresReporting}
-                            onCheckedChange={(checked) =>
-                              handleRegulatoryImpactChange("requiresReporting", checked === true)
-                            }
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center">
+                    <Activity className="h-5 w-5 mr-2 text-[#006FCF]" />
+                    Service Impact
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {impactedServices.map((service, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB]"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div
+                            className={`w-2 h-full min-h-[40px] rounded-full ${
+                              service.status === "critical"
+                                ? "bg-[#D5001F]"
+                                : service.status === "degraded"
+                                  ? "bg-[#FF6900]"
+                                  : "bg-[#00A859]"
+                            }`}
                           />
-                          <Label htmlFor="requiresReporting">Requires FCA reporting</Label>
+                          <div>
+                            <div className="font-medium">{service.name}</div>
+                            <div className="text-sm text-[#6B7280]">
+                              {service.type === "primary" ? "Primary affected service" : "Dependent service"}
+                            </div>
+                          </div>
                         </div>
+                        <div className="flex items-center gap-2">
+                          {getServiceStatusBadge(service.status)}
+                          <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                            <ChevronRight className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
 
-                        {regulatoryImpact.requiresReporting && (
-                          <div className="space-y-2">
-                            <Label htmlFor="reportingDeadline">Reporting Deadline</Label>
-                            <Select
-                              value={regulatoryImpact.reportingDeadline}
-                              onValueChange={(value) => handleRegulatoryImpactChange("reportingDeadline", value)}
-                            >
-                              <SelectTrigger id="reportingDeadline">
-                                <SelectValue placeholder="Select deadline" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="24h">24 hours</SelectItem>
-                                <SelectItem value="48h">48 hours</SelectItem>
-                                <SelectItem value="72h">72 hours</SelectItem>
-                                <SelectItem value="7d">7 days</SelectItem>
-                              </SelectContent>
-                            </Select>
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg flex items-center">
+                    <BarChart className="h-5 w-5 mr-2 text-[#006FCF]" />
+                    Metrics
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="h-[200px] flex items-center justify-center bg-[#F9FAFB] rounded-md border border-[#E5E7EB]">
+                    <p className="text-[#6B7280]">CPU & Memory utilization charts would appear here</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            <div className="space-y-6">
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Incident Actions</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {incident.status === "triggered" && (
+                    <Button className="w-full justify-start gap-2 bg-[#FFF4EC] text-[#FF6900] hover:bg-[#FFE4D1] hover:text-[#FF6900]">
+                      <Clock className="h-4 w-4" />
+                      Acknowledge Incident
+                    </Button>
+                  )}
+                  {incident.status !== "resolved" && (
+                    <Button className="w-full justify-start gap-2 bg-[#E6F9F1] text-[#00A859] hover:bg-[#D1F2E6] hover:text-[#00A859]">
+                      <CheckCircle className="h-4 w-4" />
+                      Resolve Incident
+                    </Button>
+                  )}
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+                  >
+                    <User className="h-4 w-4" />
+                    Assign to me
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    Add Comment
+                  </Button>
+                  <Button
+                    variant="outline"
+                    className="w-full justify-start gap-2 border-[#E5E7EB] text-[#6B7280] hover:bg-[#F9FAFB]"
+                  >
+                    <Link className="h-4 w-4" />
+                    Link Related Items
+                  </Button>
+                </CardContent>
+              </Card>
+
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Assignment</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Select defaultValue={incident.assignee ? "assigned" : "unassigned"}>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Assign to..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="unassigned">Unassigned</SelectItem>
+                      <SelectItem value="assigned">
+                        {incident.assignee ? incident.assignee.name : "Assign to me"}
+                      </SelectItem>
+                      <SelectItem value="team">Database Team</SelectItem>
+                      <SelectItem value="escalate">Escalate to L2</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </CardContent>
+              </Card>
+
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Incident Details</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2 text-sm">
+                    <div className="text-[#6B7280]">Status</div>
+                    <div className="font-medium capitalize">{incident.status}</div>
+
+                    <div className="text-[#6B7280]">Severity</div>
+                    <div className="font-medium capitalize">{incident.severity}</div>
+
+                    <div className="text-[#6B7280]">Service</div>
+                    <div className="font-medium">{incident.service}</div>
+
+                    <div className="text-[#6B7280]">Created</div>
+                    <div className="font-medium">{formatDate(incident.createdAt)}</div>
+
+                    <div className="text-[#6B7280]">Source</div>
+                    <div className="font-medium">Monitoring System</div>
+
+                    <div className="text-[#6B7280]">Alert Count</div>
+                    <div className="font-medium">{incident.alertCount}</div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="border-[#E5E7EB] shadow-sm">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-base">Related Documentation</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex items-center gap-2 p-2 rounded-md hover:bg-[#F9FAFB] cursor-pointer">
+                    <FileText className="h-4 w-4 text-[#006FCF]" />
+                    <span className="text-sm">Database Troubleshooting Guide</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-md hover:bg-[#F9FAFB] cursor-pointer">
+                    <FileText className="h-4 w-4 text-[#006FCF]" />
+                    <span className="text-sm">Incident Response Playbook</span>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 rounded-md hover:bg-[#F9FAFB] cursor-pointer">
+                    <PlusCircle className="h-4 w-4 text-[#006FCF]" />
+                    <span className="text-sm text-[#006FCF]">Add Documentation</span>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="timeline" className="mt-6">
+          <Card className="border-[#E5E7EB] shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Incident Timeline</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                <div className="space-y-4">
+                  {timeline.map((event, index) => (
+                    <div key={event.id} className="flex gap-4">
+                      <div className="flex flex-col items-center">
+                        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#F9FAFB] border border-[#E5E7EB]">
+                          {getTimelineIcon(event.type)}
+                        </div>
+                        {index < timeline.length - 1 && <div className="h-full w-px bg-[#E5E7EB] my-1"></div>}
+                      </div>
+                      <div className="flex-1 pb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="font-medium">{event.message}</div>
+                          <div className="text-sm text-[#6B7280]">{formatDate(new Date(event.timestamp))}</div>
+                        </div>
+                        {event.user && (
+                          <div className="mt-2 flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src={event.user.avatar || "/placeholder.svg"} alt={event.user.name} />
+                              <AvatarFallback className="bg-[#006FCF] text-white text-xs">
+                                {event.user.initials}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="text-sm">{event.user.name}</span>
                           </div>
                         )}
                       </div>
+                    </div>
+                  ))}
+                </div>
 
-                      <Card>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="text-base">FCA Reporting Requirements</CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="text-sm space-y-2">
-                            <p>• Critical incidents must be reported within 24 hours</p>
-                            <p>• High impact incidents must be reported within 72 hours</p>
-                            <p>• All incidents affecting critical services must be included in quarterly reports</p>
-                            <p>• Detailed root cause analysis must be submitted within 7 days of resolution</p>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    </>
-                  )}
+                <div className="border-t border-[#E5E7EB] pt-4">
+                  <h4 className="font-medium mb-2">Add Comment</h4>
+                  <div className="space-y-3">
+                    <Textarea
+                      placeholder="Add a comment or update..."
+                      className="min-h-[100px] border-[#E5E7EB]"
+                      value={comment}
+                      onChange={(e) => setComment(e.target.value)}
+                    />
+                    <div className="flex justify-end">
+                      <Button className="bg-[#006FCF] hover:bg-[#00175A]">Add Comment</Button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-
-        <div className="space-y-6">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Incident Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Button className="w-full justify-start gap-2 bg-[#99ccff] text-[#5588cc] hover:bg-[#b3daff] hover:text-[#5588cc]">
-                <User className="h-4 w-4" />
-                Acknowledge
-              </Button>
-              <Button
-                variant="outline"
-                className="w-full justify-start gap-2 border-[#cc99ff] text-[#8855cc] hover:bg-[#e6d9ff] hover:text-[#8855cc]"
-              >
-                <Users className="h-4 w-4" />
-                Escalate
-              </Button>
-              <Button className="w-full justify-start gap-2 bg-[#99ddcc] text-[#55aa99] hover:bg-[#b3e6dd] hover:text-[#55aa99]">
-                <CheckCircle className="h-4 w-4" />
-                Resolve
-              </Button>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Assignment</CardTitle>
+        <TabsContent value="alerts" className="mt-6">
+          <Card className="border-[#E5E7EB] shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Related Alerts</CardTitle>
             </CardHeader>
             <CardContent>
-              <Select defaultValue="unassigned">
-                <SelectTrigger>
-                  <SelectValue placeholder="Assign to..." />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="unassigned">Unassigned</SelectItem>
-                  <SelectItem value="me">Assign to me</SelectItem>
-                  <SelectItem value="sarah">Sarah Johnson</SelectItem>
-                  <SelectItem value="michael">Michael Chen</SelectItem>
-                  <SelectItem value="alex">Alex Rodriguez</SelectItem>
-                  <SelectItem value="emma">Emma Wilson</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="space-y-4">
+                {Array.from({ length: incident.alertCount }).map((_, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB] hover:bg-[#F9FAFB] cursor-pointer"
+                  >
+                    <div className="flex items-center gap-3">
+                      <AlertTriangle
+                        className={`h-5 w-5 ${index % 3 === 0 ? "text-[#D5001F]" : index % 3 === 1 ? "text-[#FF6900]" : "text-[#006FCF]"}`}
+                      />
+                      <div>
+                        <div className="font-medium">
+                          {index % 3 === 0
+                            ? "CPU Utilization Exceeded 90%"
+                            : index % 3 === 1
+                              ? "Memory Utilization Exceeded 85%"
+                              : "Disk I/O Latency Exceeded 100ms"}
+                        </div>
+                        <div className="text-sm text-[#6B7280]">
+                          {formatDate(new Date(incident.createdAt).getTime() + index * 60000)}
+                        </div>
+                      </div>
+                    </div>
+                    <ChevronRight className="h-5 w-5 text-[#6B7280]" />
+                  </div>
+                ))}
+              </div>
             </CardContent>
           </Card>
+        </TabsContent>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Incident Details</CardTitle>
+        <TabsContent value="related" className="mt-6">
+          <Card className="border-[#E5E7EB] shadow-sm">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg">Related Items</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-muted-foreground">Status</div>
-                <div className="font-medium">Triggered</div>
+            <CardContent>
+              <div className="space-y-6">
+                <div>
+                  <h4 className="font-medium mb-3">Related Incidents</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB] hover:bg-[#F9FAFB] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-5 w-5 text-[#FF6900]" />
+                        <div>
+                          <div className="font-medium">INC-1220: Database Performance Degradation</div>
+                          <div className="text-sm text-[#6B7280]">Resolved 3 days ago</div>
+                        </div>
+                      </div>
+                      <Badge className="bg-[#E6F9F1] text-[#00A859] border-0 font-normal">Resolved</Badge>
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB] hover:bg-[#F9FAFB] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-5 w-5 text-[#D5001F]" />
+                        <div>
+                          <div className="font-medium">INC-1198: Database Cluster Failover</div>
+                          <div className="text-sm text-[#6B7280]">Resolved 1 week ago</div>
+                        </div>
+                      </div>
+                      <Badge className="bg-[#E6F9F1] text-[#00A859] border-0 font-normal">Resolved</Badge>
+                    </div>
+                  </div>
+                </div>
 
-                <div className="text-muted-foreground">Priority</div>
-                <div className="font-medium">P1 - Critical</div>
+                <div>
+                  <h4 className="font-medium mb-3">Related Changes</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB] hover:bg-[#F9FAFB] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <Activity className="h-5 w-5 text-[#006FCF]" />
+                        <div>
+                          <div className="font-medium">CHG-567: Database Configuration Update</div>
+                          <div className="text-sm text-[#6B7280]">Implemented yesterday</div>
+                        </div>
+                      </div>
+                      <Badge className="bg-[#E6F2FF] text-[#006FCF] border-0 font-normal">Completed</Badge>
+                    </div>
+                  </div>
+                </div>
 
-                <div className="text-muted-foreground">Service</div>
-                <div className="font-medium">{incident.service}</div>
-
-                <div className="text-muted-foreground">Created</div>
-                <div className="font-medium">{formatDate(incident.createdAt)}</div>
-
-                <div className="text-muted-foreground">Alert Count</div>
-                <div className="font-medium">{incident.alertCount}</div>
-
-                <div className="text-muted-foreground">Team</div>
-                <div className="font-medium">Database Team</div>
-
-                <div className="text-muted-foreground">Regulatory Impact</div>
-                <div className="font-medium flex items-center">
-                  {regulatoryImpact.hasRegulatoryImpact ? (
-                    <Badge className="bg-[#ffcc99] text-[#cc8855] border-0">Yes</Badge>
-                  ) : (
-                    <Badge variant="outline">No</Badge>
-                  )}
+                <div>
+                  <h4 className="font-medium mb-3">Related Assets</h4>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB] hover:bg-[#F9FAFB] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <Server className="h-5 w-5 text-[#006FCF]" />
+                        <div>
+                          <div className="font-medium">db-cluster-01</div>
+                          <div className="text-sm text-[#6B7280]">Primary Database Cluster</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-[#6B7280]" />
+                    </div>
+                    <div className="flex items-center justify-between p-3 rounded-md border border-[#E5E7EB] hover:bg-[#F9FAFB] cursor-pointer">
+                      <div className="flex items-center gap-3">
+                        <Server className="h-5 w-5 text-[#006FCF]" />
+                        <div>
+                          <div className="font-medium">db-node-03</div>
+                          <div className="text-sm text-[#6B7280]">Database Node</div>
+                        </div>
+                      </div>
+                      <ChevronRight className="h-5 w-5 text-[#6B7280]" />
+                    </div>
+                  </div>
                 </div>
               </div>
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-base">Notify</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Select>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select channel" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="slack-db-team">#db-team (Slack)</SelectItem>
-                  <SelectItem value="slack-incidents">#incidents (Slack)</SelectItem>
-                  <SelectItem value="teams-sre">SRE Team (Teams)</SelectItem>
-                  <SelectItem value="email">Email</SelectItem>
-                  <SelectItem value="compliance">Compliance Team</SelectItem>
-                </SelectContent>
-              </Select>
-              <Button variant="outline" className="w-full">
-                Send Notification
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
+        </TabsContent>
+      </Tabs>
     </div>
   )
+}
+
+function Bell(props: React.ComponentProps<typeof AlertTriangle>) {
+  return <AlertTriangle {...props} />
 }

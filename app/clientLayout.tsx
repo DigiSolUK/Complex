@@ -1,39 +1,33 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
-import "@/app/globals.css"
-import { Inter } from "next/font/google"
-import { ThemeProvider } from "@/components/theme-provider"
+
+import { useState, useEffect } from "react"
+import { usePathname } from "next/navigation"
 import Sidebar from "@/components/sidebar"
 import Header from "@/components/header"
 
-const inter = Inter({ subsets: ["latin"] })
+export default function ClientLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname()
+  const [isMounted, setIsMounted] = useState(false)
 
-export default function ClientLayout({
-  children,
-}: {
-  children: React.ReactNode
-}) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  useEffect(() => {
+    setIsMounted(true)
+  }, [])
+
+  if (!isMounted) {
+    return null
+  }
 
   return (
-    <html lang="en" suppressHydrationWarning>
-      <head>
-        <title>Nexus Command Center - Incident Management Platform</title>
-        <meta name="description" content="Real-time incident management and alert correlation platform" />
-      </head>
-      <body className={`${inter.className} antialiased bg-[#F7F8F9]`}>
-        <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-          <div className="relative min-h-screen">
-            <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-            <div className="flex flex-col pl-0 md:pl-64">
-              <Header onMenuClick={() => setSidebarOpen(true)} />
-              <main className="flex-1 mt-16 min-h-[calc(100vh-4rem)]">{children}</main>
-            </div>
-          </div>
-        </ThemeProvider>
-      </body>
-    </html>
+    <div className="flex min-h-screen bg-[#F9FAFB]">
+      <Sidebar />
+      <div className="flex flex-1 flex-col md:pl-[60px] lg:pl-[260px]">
+        <Header />
+        <main className="flex-1 pt-16">
+          <div className="container mx-auto p-6">{children}</div>
+        </main>
+      </div>
+    </div>
   )
 }
